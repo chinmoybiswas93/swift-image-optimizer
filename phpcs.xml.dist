@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<ruleset name="Swift Image Optimizer">
+	<description>Coding standards for the Swift Image Optimizer plugin.</description>
+
+	<file>.</file>
+
+	<exclude-pattern>/vendor/*</exclude-pattern>
+	<exclude-pattern>/node_modules/*</exclude-pattern>
+	<exclude-pattern>/build/*</exclude-pattern>
+
+	<arg name="extensions" value="php"/>
+	<arg name="colors"/>
+	<arg value="sp"/>
+
+	<rule ref="WordPress-Extra"/>
+	<rule ref="WordPress-Docs"/>
+
+	<!-- Text domain must match the plugin slug. -->
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array">
+				<element value="swift-image-optimizer"/>
+			</property>
+		</properties>
+	</rule>
+
+	<!-- Every global symbol must carry the plugin prefix. -->
+	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+		<properties>
+			<property name="prefixes" type="array">
+				<element value="swift_image_optimizer"/>
+				<element value="SWIFT_IMAGE_OPTIMIZER"/>
+				<element value="SwiftImageOptimizer"/>
+			</property>
+		</properties>
+	</rule>
+
+	<!-- Minimum supported versions. -->
+	<config name="minimum_wp_version" value="6.0"/>
+	<config name="testVersion" value="7.4-"/>
+	<rule ref="PHPCompatibilityWP"/>
+</ruleset>

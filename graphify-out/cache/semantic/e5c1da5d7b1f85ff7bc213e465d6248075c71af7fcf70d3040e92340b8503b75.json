@@ -1,0 +1,1 @@
+{"nodes": [{"id": "repositories_settingsrepository_settingsrepository", "label": "SettingsRepository", "file_type": "code", "source_file": "src/Repositories/SettingsRepository.php", "source_location": "class SettingsRepository", "source_url": null, "captured_at": null, "author": null, "contributor": null}], "edges": [], "hyperedges": []}
