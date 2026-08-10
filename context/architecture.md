@@ -2,97 +2,83 @@
 
 ## Class map
 
-Restructured 2026-08-09 from feature folders (`Admin/`, `Rest/`, `Backup/`, `Bulk/`, `Rewrite/`,
-`Upload/`, `Engine/`) to layered folders (`Http/`, `Services/`, `Repositories/`, `Providers/`,
-`Hooks/`), mirroring the sibling `swiftlisting` plugin's architectural style. No dependency was
-added — this plugin still ships without Composer, using its own hand-rolled PSR-4-lite
-autoloader (`swift-image-optimizer.php`) plus a small plugin-owned `Support\Container`/`App`
-facade and `Providers\ServiceProvider`/`PluginBootstrapper` pair that imitate the *shape* of
-`swiftlisting`'s DI container without depending on its framework package. See "Architectural
-decisions made during the build" in `progress-tracker.md` for the full rationale.
+Restructured 2026-08-10 from the layered `src/` + `Providers/` + `Repositories/` arrangement to a
+FluentCart-style layout: Composer PSR-4 with an `app/` root, a small plugin-owned `Foundation`
+kernel, and a Vite-built React front end. Composer carries **no runtime dependencies** — the
+`vendor/` directory holds only the generated autoloader, committed because WordPress.org runs no
+build step on the destination server.
+
+`wpfluent/framework`, which produces this layout in FluentCart itself, is not installable: the
+whole `wpfluent` GitHub organisation is private and the package is absent from Packagist. The
+~300 lines under `app/Foundation/` reproduce the parts the plugin actually uses — container,
+config, view, router — and nothing else.
 
 ```
-swift-image-optimizer.php          Bootstrap: constants, PSR-4 autoloader (src/ + database/ roots), activation hooks
-uninstall.php                      Drops table + options. Never deletes user media.
+swift-image-optimizer.php   IIFE bootstrap: constants, then boot/app.php + vendor/autoload.php
+uninstall.php               Drops tables + options via DBMigrator. Never deletes user media.
 
-src/
-├── Plugin.php                     Thin bootstrap. Builds a PluginBootstrapper with every provider and boots it.
-│
-├── Support/
-│   ├── Container.php              Minimal make()/singleton()/bind()/instance()/bound()
-│   ├── App.php                    Static facade over Container — App::make(), App::singleton(), etc.
-│   └── Lock.php                   Atomic cross-request lock built on add_option(), with stale-lock breaking
-│
-├── Providers/
-│   ├── ServiceProvider.php        Abstract register()/boot() base every provider extends
-│   ├── PluginBootstrapper.php     create()->providers([...])->boot() — register() on all, then boot() on all
-│   ├── AppServiceProvider.php     Binds Optimizer/AttachmentConverter/Runner/DatabaseRewriter singletons; schema install + settings-registration + engine-reset hooks
-│   ├── UploadServiceProvider.php  Wires Services\Upload\Interceptor (Feature 1)
-│   ├── BackupServiceProvider.php  Wires Hooks\Scheduler\RetentionCron
-│   ├── RewriteServiceProvider.php Wires Services\Rewrite\Fallback404
-│   ├── RestServiceProvider.php    Wires Http\Controllers\Controller
-│   ├── AdminServiceProvider.php   Wires Notices/ListTable/SettingsPage/Assets, is_admin()-gated
-│   ├── LoggingServiceProvider.php Resets the logger's cached flag on settings save; marks on/off transitions
-│   └── CliServiceProvider.php     Wires Services\Bulk\Cli, WP_CLI-gated
-│
+boot/
+├── app.php                 Returns the kernel closure: builds Application, registers activation/
+│                           deactivation handlers, runs the migrator on init.
+├── bindings.php            Container singletons: rewriter, optimizer, converter, runner (+ class aliases)
+└── globals.php             swift_image_optimizer_app/_config/_view/_log helpers (composer files autoload)
+
+config/                     Plain arrays, read via App::config()->get('app.slug')
+├── app.php                 slug, text domain, hook prefix, rest_namespace/version, env
+├── optimizer.php           Settings defaults and the bounds the sanitizer enforces
+└── vite.php                Dev-server host/port, only consulted when app.env is 'dev'
+
+app/
+├── App.php                 Static facade: make/singleton/alias/view/config/router/path/url
+├── Vite.php                Resolves a resources/ path through assets/manifest.json, enqueues it,
+│                           emits type="module", auto-enqueues the chunk's CSS
+├── Foundation/
+│   ├── Application.php     Kernel: loads config, binds view/router, requires the hook manifests,
+│   │                       registers routes on rest_api_init
+│   ├── Container.php       bind/singleton/instance/alias + reflection auto-wiring
+│   ├── Config.php          Dot-notation access over config/*.php
+│   ├── View.php            app/Views renderer, dot or slash notation, path-traversal guarded
+│   ├── Router.php          prefix()/withPolicy()/group() DSL over register_rest_route
+│   └── Route.php           One declared route: method, uri, action, policy, args
+├── Hooks/
+│   ├── actions.php         THE registration manifest - every hook the plugin owns
+│   ├── Handlers/           ActivationHandler, DeactivationHandler, MenuHandler, NoticeHandler,
+│   │                       MediaLibraryHandler, AssetHandler
+│   ├── Scheduler/JobRunner.php   Daily purge of expired backups
+│   └── CLI/Commands.php    wp swift-image-optimizer optimize|restore|stats|diagnostics|logs|requeue
 ├── Http/
-│   ├── Controllers/Controller.php All REST routes
-│   └── Admin/
-│       ├── Assets.php             Media Library bundle, enqueued wherever media-views loads
-│       ├── ListTable.php          Column, row actions, bulk actions, modal payload
-│       ├── Notices.php            "no engine available" warning
-│       └── SettingsPage.php       Media submenu + React mount + wp_localize_script
-│
-├── Repositories/
-│   ├── SettingsRepository.php     register_setting + defaults + sanitize (was Admin\Settings)
-│   └── StatsRepository.php        Aggregate savings from the log table (was Stats)
-│
-├── Services/
-│   ├── Optimizer.php              File in → WebP file out. Knows nothing about attachments.
-│   ├── AttachmentConverter.php    Feature 2 orchestrator. Backup → convert → rewrite → log.
-│   │
-│   ├── Engine/
-│   │   ├── EngineInterface.php    is_available(), name(), supports(), supports_file(), decodes_in_process(), convert()
-│   │   ├── AbstractEngine.php     Shared option parsing, dimension math, EXIF orientation read
-│   │   ├── ImagickEngine.php      Preferred — the only engine that preserves ICC
-│   │   ├── CwebpEngine.php        Opt-in exec() path, guarded
-│   │   ├── GdEngine.php           Universal fallback
-│   │   └── EngineFactory.php      Detection + chain() + for_file() + settings override
-│   │
-│   ├── Upload/Interceptor.php     Feature 1. wp_handle_upload.
-│   │
-│   ├── Rewrite/
-│   │   ├── UrlMap.php             Builds old→new pairs for every size and URL form
-│   │   ├── DatabaseRewriter.php   Serialization-safe replace across 7 tables, targeted cache invalidation
-│   │   └── Fallback404.php        Serves the WebP when an old URL is requested (indexed lookup)
-│   │
-│   ├── Backup/BackupManager.php   Store / restore / delete / disk usage / manifest verification,
-│   │                               disk-space precheck, path-traversal safe
-│   │
-│   ├── Logging/Logger.php         File-backed debug.log-style trail. Static, DB-free, 10MB cap + 1 rollover
-│   │
-│   ├── Diagnostics/EnvironmentReport.php  Engines / PHP / filesystem / WordPress / plugin, each row
-│   │                               carrying a state and a plain-language remedy
-│   │
-│   └── Bulk/
-│       ├── Scanner.php            LEFT JOIN queries for outstanding work
-│       ├── Runner.php             Adaptive batching, locking, resumable progress
-│       └── Cli.php                wp swift-image-optimizer optimize|restore|stats|diagnostics|logs|requeue
-│
-└── Hooks/Scheduler/RetentionCron.php  Daily purge of expired backups (cron scheduling only;
-                                        the class this schedules is Services\Backup\BackupManager)
+│   ├── Controllers/        Controller (base), Optimize, Bulk, Backup, Diagnostics, Log, Stats
+│   ├── Policies/           Policy (base), AdminPolicy (manage_options), MediaPolicy (upload_files+edit_posts)
+│   ├── Requests/           OptimizeRequest, LogQueryRequest — WP args schemas + sanitizers
+│   └── Routes/             routes.php (aggregator) + api.php (the route table)
+├── Models/
+│   ├── Model.php           Thin prepared-statement $wpdb base. Not an ORM.
+│   ├── OptimizationLog.php The log table: statuses, upsert/find/update/delete, stats cache flush
+│   └── UrlLookup.php       The indexed old-URL table: remember/forget/lookup
+├── Modules/                Reserved for self-contained feature packages
+├── Services/               Domain layer: Optimizer, AttachmentConverter, Lock, Engine/, Backup/,
+│                           Bulk/, Rewrite/, Logging/, Diagnostics/, Upload/
+└── Views/                  Plain-PHP templates
+    └── admin/              admin_app.php (SPA mount) + parts/{notice,media-column}.php
 
-database/Database.php              Sibling PSR-4 root, namespace SwiftImageOptimizer\Database.
-                                    Log table + URL lookup table schema, CRUD, status constants.
-                                    Mirrors the app/ vs database/ split used by swiftlisting.
+database/                   namespace SwiftImageOptimizer\Database, classmap-autoloaded
+├── DBMigrator.php          Schema version gate, migrator list, migrateUp/maybeMigrateDBChanges/dropTables
+├── DataBackfills.php       Post-upgrade data migrations (url_map -> lookup table)
+└── Migrations/             LogMigrator, UrlMigrator — one dbDelta per table
 
-admin/index.js                     React dashboard (Bulk / Settings / Backups / Troubleshoot tabs)
-admin/index.scss                   Dashboard styles, all sio- prefixed
-admin/media.js                     Grid toolbar buttons + modal panel (Backbone, no React)
-admin/media.scss                   Card and progress styles
-build/                             wp-scripts output — committed, never hand-edited
-                                   two entries: admin.* (with React) and media.* (wp-i18n only)
+resources/                  React + SCSS source. Excluded from the shipped zip.
+├── admin/{bootstrap,Components,Pages,Partials,Icons,Services}
+├── media/media.js          Media Library integration (wp.media Backbone, deliberately no React)
+└── styles/                 _controls.scss (the component set), admin.scss, media.scss
+
+assets/                     Vite output + manifest.json — committed, never hand-edited
+vendor/                     Composer's autoloader only. No packages.
 ```
+
+There is deliberately **no `src/`, no `Providers/`, no `Repositories/`, no `Http/Admin/`**. The
+eight service providers collapsed into `app/Hooks/actions.php`; `SettingsRepository` and
+`StatsRepository` remain under `app/Repositories/` pending a move to `api/`, which is the one
+part of the FluentCart layout not yet populated.
 
 ## Architecture invariants
 
@@ -112,13 +98,13 @@ so treat them as non-negotiable.
 | 9 | **The log table's `status` stays `optimized` when a backup expires.** Availability is tracked by an empty `backup_path`. | Changing the status would zero that image's contribution to the savings stats. |
 | 10 | **Attachment references stored as IDs need no rewriting.** Only hardcoded URL strings are touched. | IDs resolve through metadata, which is updated separately. Rewriting them would be wrong. |
 | 11 | **Never rewrite derived caches** (`_elementor_css`, `_bricks_css*`, `_transient_*`, `_wp_attachment_metadata`). Flush them instead. | They are regenerated from source data and their formats are not ours to edit. |
-| 12 | **`build/` is committed.** | WordPress.org ships the directory as-is; there is no build step on the user's server. |
+| 12 | **`assets/` and `vendor/` are committed.** | WordPress.org ships the plugin as-is; there is no npm or Composer step on the user's server. Edit `resources/`, never `assets/`. |
 | 13 | **No external HTTP requests, ever.** | Privacy claim in the readme, and a .org review requirement. |
 | 14 | **Custom media-toolbar buttons must manage their own visibility.** Core's `SelectModeToggle` skips `.media-button` in both directions (`media-grid.js:337`, `:350`). | It never hides *or* re-shows them, so a button that does not toggle its own `hidden` class will be stuck in whichever state it started in. |
 | 15 | **Refetch the attachment model after converting it.** | Conversion changes the filename. Without `model.fetch()` every thumbnail in the grid 404s and the modal shows stale data. |
 | 16 | **Engine selection is a chain, not a choice.** `EngineFactory::chain()` plus `EngineInterface::supports_file()`. | An engine can read a format in general and still be wrong for one file: cwebp cannot rotate, GD cannot decode CMYK. Returning a single engine turned either into a failed or corrupted image. An explicit preference moves an engine to the front, it does not replace the chain. |
 | 17 | **The logger writes to a file, never to the database.** | It is called from inside the upload handler, cron and WP-CLI, and its whole job is to record what happened while the rewriter was modifying the database. Errors are always written; only the verbose trail is gated on the setting. |
-| 18 | **Cross-request locks use `add_option()`, not transients.** | `get_transient()` then `set_transient()` is check-then-set; two simultaneous requests both see "unlocked". The options table's unique key on `option_name` makes the database arbitrate. See `Support\Lock`. |
+| 18 | **Cross-request locks use `add_option()`, not transients.** | `get_transient()` then `set_transient()` is check-then-set; two simultaneous requests both see "unlocked". The options table's unique key on `option_name` makes the database arbitrate. See `Services\Lock`. |
 | 19 | **The rewriter invalidates the objects it touched, never the whole cache.** Descriptors carry an `object` column and a cache `group`. | `wp_cache_flush()` once per batch discards a persistent object cache every few seconds during a bulk run — worst on the large sites that need bulk most. |
 | 20 | **Old URLs resolve from an indexed table** (`swift_image_optimizer_urls`), matched on full path before basename. | The 404 fallback was a `LIKE` over a LONGTEXT column: unindexable, and triggered by every bot probing an old filename. Basename-only matching also confused two images sharing a name in different month folders. |
 | 21 | **Uploaded originals are backed up before the source is deleted**, gated on `backup_uploads`, failing closed. | Without it an upload is a one-way door. The manifest is written in the same shape the converter path uses, so Restore needs no separate code path. |
@@ -137,7 +123,7 @@ wp_handle_upload( $upload )
   └─ park result in $pending[ path ]
 
 add_attachment( $id )
-  └─ match get_attached_file($id) against $pending → Database::upsert()
+  └─ match get_attached_file($id) against $pending → OptimizationLog::upsert()
 ```
 
 WordPress then generates every subsize as WebP with no further involvement from us.
@@ -158,7 +144,7 @@ AttachmentConverter::convert( $id, $defer_rewrite )
  10. UrlMap::build( $before, $after )  → 18 URL pairs for a typical image
  11. DatabaseRewriter::replace()       unless deferred for batching
  12. delete $old_files not present in $after
- 13. Database::upsert()                log row incl. url_map and backup pointer
+ 13. OptimizationLog::upsert()                log row incl. url_map and backup pointer
 ```
 
 `$defer_rewrite = true` returns the map instead of applying it, so `Services\Bulk\Runner` can merge many
@@ -216,7 +202,7 @@ carries a path.
 | `old_basename` | Indexed. Matched only when the request path does not resolve. |
 | `new_url` | Where to redirect |
 
-**Schema version 3** — bumping `Database::SCHEMA_VERSION` triggers `dbDelta` on the next `init`.
+**Schema version 3** — bumping `DBMigrator::SCHEMA_VERSION` triggers `dbDelta` on the next `init`.
 Upgrading from v2 also backfills this table from existing `url_map` values, without which the
 fallback would silently stop working the moment it switched tables.
 

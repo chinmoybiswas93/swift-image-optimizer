@@ -1,0 +1,32 @@
+{
+	"name": "crocodevs/swift-image-optimizer",
+	"description": "Automatically convert and compress images to WebP on upload, plus individual and bulk optimization for the WordPress Media Library.",
+	"type": "wordpress-plugin",
+	"license": "GPL-2.0-or-later",
+	"authors": [
+		{
+			"name": "crocodevs",
+			"homepage": "https://crocodevs.com"
+		}
+	],
+	"require": {
+		"php": ">=7.4"
+	},
+	"autoload": {
+		"psr-4": {
+			"SwiftImageOptimizer\\App\\": "app/"
+		},
+		"classmap": [
+			"database/"
+		],
+		"files": [
+			"boot/globals.php"
+		]
+	},
+	"config": {
+		"optimize-autoloader": true,
+		"platform": {
+			"php": "7.4"
+		}
+	}
+}

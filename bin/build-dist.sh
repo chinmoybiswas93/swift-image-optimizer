@@ -19,13 +19,18 @@ ZIP_FILE="$DIST_BASE/${PLUGIN_SLUG}-${VERSION}.zip"
 
 echo "==> Building $PLUGIN_SLUG v$VERSION"
 
-# 1. Build production JS/CSS into ./build
-#    (No Composer step: this plugin is dependency-free, with its own
-#    hand-rolled PSR-4-lite autoloader - there's no vendor/ to install.)
+# 1. Build production JS/CSS from resources/ into ./assets
 echo "==> Running npm build"
-( cd "$PLUGIN_ROOT" && npm run build )
+( cd "$PLUGIN_ROOT" && npm install --include=dev --no-audit --no-fund && npm run build )
 
-# 2. Stage runtime subset
+# 2. Generate the production autoloader.
+#    The plugin has no Composer dependencies - this only regenerates
+#    vendor/autoload.php, which ships because WordPress.org installs run no
+#    build step on the destination server.
+echo "==> Generating autoloader"
+( cd "$PLUGIN_ROOT" && composer install --no-dev --optimize-autoloader --no-interaction )
+
+# 3. Stage runtime subset
 echo "==> Staging $DIST_DIR"
 rm -rf "$DIST_BASE"
 mkdir -p "$DIST_DIR"
@@ -36,22 +41,23 @@ rsync -a \
   --exclude='.DS_Store' \
   --exclude='node_modules/' \
   --exclude='package.json' --exclude='package-lock.json' \
-  --exclude='webpack.config.js' \
+  --exclude='vite.config.js' \
+  --exclude='composer.json' --exclude='composer.lock' \
   --exclude='tests/' --exclude='test-results/' \
   --exclude='test-screenshots/' --exclude='playwright-report/' \
   --exclude='playwright.config.js' \
   --exclude='context/' \
   --exclude='graphify-out/' --exclude='.graphifyignore' \
   --exclude='dist/' --exclude='bin/' \
-  --exclude='admin/' \
+  --exclude='resources/' \
   --exclude='phpcs.xml.dist' \
   "$PLUGIN_ROOT/" "$DIST_DIR/"
 
-# 3. Zip it (single top-level directory matching the slug)
+# 4. Zip it (single top-level directory matching the slug)
 echo "==> Creating $ZIP_FILE"
 ( cd "$DIST_BASE" && zip -rq "$(basename "$ZIP_FILE")" "$PLUGIN_SLUG" )
 
-# 4. Remove the staged directory; keep only the zip
+# 5. Remove the staged directory; keep only the zip
 echo "==> Cleaning up staged directory"
 rm -rf "$DIST_DIR"
 

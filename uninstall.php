@@ -14,9 +14,12 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 
 global $wpdb;
 
-require_once __DIR__ . '/database/Database.php';
+// WordPress runs this file without loading the plugin, so the autoloader has
+// to be pulled in by hand. The migrator resolves its table names through the
+// models, so a single-file require is no longer enough.
+require_once __DIR__ . '/vendor/autoload.php';
 
-\SwiftImageOptimizer\Database\Database::drop();
+\SwiftImageOptimizer\Database\DBMigrator::dropTables();
 
 /**
  * Remove one of the plugin's own working directories inside uploads.

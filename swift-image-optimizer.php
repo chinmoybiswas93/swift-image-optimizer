@@ -27,74 +27,22 @@ define( 'SWIFT_IMAGE_OPTIMIZER_URL', plugin_dir_url( __FILE__ ) );
 define( 'SWIFT_IMAGE_OPTIMIZER_BASENAME', plugin_basename( __FILE__ ) );
 
 /**
- * PSR-4 style autoloader for the plugin's own classes.
+ * Boot the plugin and return the Application.
  *
- * Maps SwiftImageOptimizer\Foo\Bar to src/Foo/Bar.php, with one exception:
- * SwiftImageOptimizer\Database\Foo maps to database/Foo.php instead - a
- * sibling root to src/, mirroring the app/ vs database/ split used by larger
- * sibling plugins. Deliberately dependency free so the plugin ships without
- * a Composer autoloader.
+ * The second argument is evaluated only for its side effect: it registers
+ * Composer's autoloader before boot/app.php's closure runs, so the closure can
+ * reference plugin classes. SwiftImageOptimizer\App\Foo maps PSR-4 to app/Foo,
+ * and the Database namespace is a classmapped sibling root.
  *
- * @param string $class_name Fully qualified class name.
- * @return void
+ * The plugin has no Composer dependencies - vendor/ holds nothing but the
+ * generated autoloader, committed so the plugin ships without needing a build
+ * step on the destination server.
+ *
+ * @return \SwiftImageOptimizer\App\Foundation\Application
  */
-function swift_image_optimizer_autoload( $class_name ) {
-	$prefix = 'SwiftImageOptimizer\\';
-
-	if ( 0 !== strpos( $class_name, $prefix ) ) {
-		return;
-	}
-
-	$database_prefix = 'SwiftImageOptimizer\\Database\\';
-
-	if ( 0 === strpos( $class_name, $database_prefix ) ) {
-		$relative = substr( $class_name, strlen( $database_prefix ) );
-		$path     = SWIFT_IMAGE_OPTIMIZER_DIR . 'database/' . str_replace( '\\', '/', $relative ) . '.php';
-	} else {
-		$relative = substr( $class_name, strlen( $prefix ) );
-		$path     = SWIFT_IMAGE_OPTIMIZER_DIR . 'src/' . str_replace( '\\', '/', $relative ) . '.php';
-	}
-
-	if ( is_readable( $path ) ) {
-		require_once $path;
-	}
-}
-spl_autoload_register( 'swift_image_optimizer_autoload' );
-
-/**
- * Boot the plugin.
- *
- * @return \SwiftImageOptimizer\Plugin
- */
-function swift_image_optimizer() {
-	static $instance = null;
-
-	if ( null === $instance ) {
-		$instance = new \SwiftImageOptimizer\Plugin();
-	}
-
-	return $instance;
-}
-
-add_action( 'plugins_loaded', 'swift_image_optimizer' );
-
-/**
- * Activation: create the log table and schedule the retention cron.
- *
- * @return void
- */
-function swift_image_optimizer_activate() {
-	\SwiftImageOptimizer\Database\Database::install();
-	\SwiftImageOptimizer\Hooks\Scheduler\RetentionCron::schedule();
-}
-register_activation_hook( __FILE__, 'swift_image_optimizer_activate' );
-
-/**
- * Deactivation: clear scheduled events. Data and files are left intact.
- *
- * @return void
- */
-function swift_image_optimizer_deactivate() {
-	\SwiftImageOptimizer\Hooks\Scheduler\RetentionCron::unschedule();
-}
-register_deactivation_hook( __FILE__, 'swift_image_optimizer_deactivate' );
+return ( function ( $boot ) {
+	return $boot( __FILE__ );
+} )(
+	require __DIR__ . '/boot/app.php',
+	require __DIR__ . '/vendor/autoload.php'
+);

@@ -1,12 +1,49 @@
 # Agent Instructions — Swift Image Optimizer
 
 You are working inside the **swift-image-optimizer** WordPress plugin.
-PHP 7.4+ and React (`@wordpress/scripts`). Not Node, not Next.js, no TypeScript, no Composer.
+PHP 7.4+ and React 18 built with Vite. Not Node, not Next.js, no TypeScript.
 
-Everything lives under `app/public/wp-content/plugins/swift-image-optimizer/`. Namespace is
-`SwiftImageOptimizer\`, autoloaded by the hand-rolled PSR-4-lite loader in
-`swift-image-optimizer.php` — `src/` for everything, plus `database/` for the `Database`
-namespace only. Text domain, slug, and option prefix are all `swift-image-optimizer`.
+Everything lives under `app/public/wp-content/plugins/swift-image-optimizer/`. Composer
+autoloads three roots, with **no runtime dependencies** — `vendor/` holds only the generated
+autoloader, and it is committed because WordPress.org runs no build step on the destination
+server:
+
+| Namespace | Path | Autoload |
+|---|---|---|
+| `SwiftImageOptimizer\App\` | `app/` | psr-4 |
+| `SwiftImageOptimizer\Api\` | `api/` | psr-4 (reserved; not yet populated) |
+| `SwiftImageOptimizer\Database\` | `database/` | classmap |
+
+Text domain, slug, and option prefix are all `swift-image-optimizer`.
+
+## Layout
+
+The plugin follows a FluentCart-style layout. There is **no `src/`, no `Providers/`, no
+`Repositories/`, and no `Http/Admin/`** — do not reintroduce them.
+
+```
+swift-image-optimizer.php   IIFE bootstrap: require boot/app.php + vendor/autoload.php
+boot/       app.php (kernel closure), bindings.php (container singletons), globals.php
+config/     app.php, optimizer.php, vite.php — plain arrays, read via App::config()->get('app.slug')
+app/
+  App.php           static facade: make/view/config/router/path/url
+  Vite.php          resolves resources/ paths through assets/manifest.json and enqueues them
+  Foundation/       Application, Container (reflection auto-wiring), Config, View, Router, Route
+  Hooks/            actions.php is the registration manifest; Handlers/, Scheduler/, CLI/
+  Http/             Controllers/, Policies/, Requests/, Routes/{routes,api}.php
+  Models/           Model (thin $wpdb base), OptimizationLog, UrlLookup
+  Modules/          reserved for self-contained feature packages
+  Services/         the domain layer (Optimizer, AttachmentConverter, Engine/, Backup/, …)
+  Views/            plain-PHP templates; App::view()->render('admin.admin_app', $data)
+database/   DBMigrator, DataBackfills, Migrations/{LogMigrator,UrlMigrator}
+resources/  React + SCSS source (excluded from the shipped zip)
+assets/     built output + manifest.json (committed)
+```
+
+Registration goes in `app/Hooks/actions.php` — one readable list of `(new Handler)->register();`
+lines. Routes go in `app/Http/Routes/api.php` using the fluent DSL
+(`$router->prefix('bulk')->withPolicy('AdminPolicy')->group(...)`); every route needs a policy,
+because a route without one is refused rather than made public.
 
 ## What makes this plugin different from any other
 
@@ -34,8 +71,13 @@ Project skills live in `app/public/.agents/skills/` and load when working from `
 
 ## Research the graph, don't read the tree
 
-The knowledge graph at `graphify-out/` covers all 59 source and doc files (391 nodes, 498 edges).
-One query costs a fraction of what reading files costs.
+The knowledge graph at `graphify-out/` indexes the source and doc files. One query costs a
+fraction of what reading files costs.
+
+> **The graph is stale.** It was built against the old `src/` + `Providers/` + `Repositories/`
+> layout and still names classes that no longer exist (`Plugin`, `*ServiceProvider`,
+> `SettingsPage`, `ListTable`, `RetentionCron`, `Database`, `Services\Bulk\Cli`). Run
+> `/graphify --update` before trusting it.
 
 ```bash
 graphify query "how does BackupManager expire backups"
@@ -71,15 +113,22 @@ longer exists.
 
 ## Hard rules
 
-- **Never `global $wpdb` in plugin code** — go through `Database` / the repositories
+- **Never `global $wpdb` in plugin code** — go through `app/Models/` (`OptimizationLog`,
+  `UrlLookup`). The two deliberate exceptions are `Services/Rewrite/DatabaseRewriter` and
+  `database/DataBackfills`, where serialization-safe multi-table SQL cannot go through a model
 - **Never delete by glob over a shared directory.** Delete only paths you created, resolved from
   your own records. A glob cleanup already destroyed 54 real user backups.
 - Never weaken a guard (`is_serialized()`, the `__PHP_Incomplete_Class` check, the path-traversal
   check in `BackupManager`) to make a test pass — the test is wrong
-- Never hand-edit `build/**` — regenerate with `npm run build`
+- Never hand-edit `assets/**` — that is Vite output; edit `resources/**` and run `npm run build`
+- **No `@wordpress/components`, no `wp-element`, no `wp.media` styling classes in our own UI.**
+  React comes from npm and every control is ours (`resources/admin/Components/`). `@wordpress/i18n`
+  is the one exception, aliased to the global `wp.i18n` so `wp_set_script_translations()` works.
+  Markup uses `sio-*` classes, never core's `notice notice-*`, `button button-*` or `.description`
 - Never touch `wp-content/uploads/swift-image-optimizer-backups/` — that is user data
 - Never modify a file outside the current spec's "Files changed"
-- Never install a Composer or npm package not named in the spec
+- Never add a Composer *runtime* dependency — the plugin ships dependency-free by design.
+  npm packages are build-time only and still need to be named in the spec
 - Never rename a class, hook, option, or table not in the current spec
 - Every new PHP file: `if ( ! defined( 'ABSPATH' ) ) { exit; }`, correct namespace, path matching
   the namespace
@@ -94,8 +143,9 @@ findings that were pure fiction:
 
 - **Local names every database `local`** — only the socket differs. cb-test.local is socket
   `aRpCXvFUz`. The wrong socket silently pairs one site's files with another site's database.
-- **CLI PHP has no Imagick; the site's web PHP does.** So the harnesses exercise `cwebp` while
-  users get `imagick`. Never conclude an engine is unavailable from a CLI check.
+- **CLI PHP and the site's web PHP have different extensions.** Never conclude an engine is
+  unavailable from a CLI check — read engine availability off the admin diagnostics screen, which
+  runs under web PHP.
 
 Both cases are written up with the exact commands in `context/ai-workflow-rules.md`. When a
 result says something surprising about the *environment* rather than the code, check the
@@ -104,11 +154,13 @@ environment first.
 ## A unit is not complete until
 
 1. `npm run lint:php` clean (and `npm run lint:js` if JS changed)
-2. The relevant PHP harnesses pass; `npm run test:e2e` too if admin UI changed
-3. `/security-review` on the diff — plus `owasp-security-review` on the files if the unit touched
+2. `composer dump-autoload -o` clean, and every moved class still resolves — a namespace/path
+   mismatch is a fatal at call time, not at load
+3. `npm run build` succeeds and the admin screen still mounts; `npm run test:e2e` if the UI changed
+4. `/security-review` on the diff — plus `owasp-security-review` on the files if the unit touched
    REST, upload, shell-out, or backup/restore
-4. `/graphify --update`
-5. `progress-tracker.md` updated: spec moved to `specs/done/`, row added to Completed, next unit
+5. `/graphify --update`
+6. `progress-tracker.md` updated: spec moved to `specs/done/`, row added to Completed, next unit
    set In Progress, any architectural decision recorded in `architecture.md`
 
 If tests fail, say so and show the output. Never describe partial work as complete, and
