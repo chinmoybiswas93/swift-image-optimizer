@@ -47,11 +47,26 @@ if ( '' === $expected || ! hash_equals( $expected, $given ) ) {
 	exit( "bad token\n" );
 }
 
+/*
+ * An explicit allowlist, not just a sanitised filename. Stripping everything
+ * but [a-z0-9-] already rules out traversal, but it would still happily
+ * include this file into itself, or pull in bootstrap.php on its own. Naming
+ * the three suites is clearer than reasoning about which of the neighbouring
+ * files are safe to execute.
+ */
+$suites = array( 'rewriter-test', 'convert-restore-e2e', 'bulk-e2e' );
+
 $suite = isset( $_GET['suite'] ) ? basename( (string) $_GET['suite'] ) : '';
 $suite = preg_replace( '/[^a-z0-9\-]/', '', strtolower( $suite ) );
-$file  = __DIR__ . '/' . $suite . '.php';
 
-if ( '' === $suite || ! file_exists( $file ) ) {
+if ( ! in_array( $suite, $suites, true ) ) {
+	http_response_code( 404 );
+	exit( "no such suite\n" );
+}
+
+$file = __DIR__ . '/' . $suite . '.php';
+
+if ( ! file_exists( $file ) ) {
 	http_response_code( 404 );
 	exit( "no such suite\n" );
 }
