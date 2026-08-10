@@ -7,7 +7,7 @@
 
 namespace SwiftImageOptimizer\App\Models;
 
-if (!defined('ABSPATH')) {
+if ( ! defined('ABSPATH')) {
     exit;
 }
 
@@ -19,8 +19,8 @@ if (!defined('ABSPATH')) {
  * filename would trigger. This is the same data in a shape the database can
  * actually look up.
  */
-class UrlLookup extends Model
-{
+class UrlLookup extends Model {
+
     /**
      * Table name without the site prefix.
      *
@@ -40,13 +40,12 @@ class UrlLookup extends Model
      * @param array<string, string> $urlMap       Old URL to new URL.
      * @return int Rows written.
      */
-    public static function remember($attachmentId, array $urlMap)
-    {
+    public static function remember( $attachmentId, array $urlMap ) {
         $attachmentId = (int) $attachmentId;
 
         self::forget($attachmentId);
 
-        if ($attachmentId <= 0 || !$urlMap) {
+        if ($attachmentId <= 0 || ! $urlMap) {
             return 0;
         }
 
@@ -58,19 +57,19 @@ class UrlLookup extends Model
         foreach ($urlMap as $old => $new) {
             $path = wp_parse_url(str_replace('\\/', '/', $old), PHP_URL_PATH);
 
-            if (!$path) {
+            if ( ! $path) {
                 continue;
             }
 
-            $relative = ($base && 0 === strpos($path, $base))
+            $relative = ( $base && 0 === strpos($path, $base) )
                 ? ltrim(substr($path, strlen($base)), '/')
                 : ltrim($path, '/');
 
-            if ('' === $relative || isset($seen[$relative])) {
+            if ('' === $relative || isset($seen[ $relative ])) {
                 continue;
             }
 
-            $seen[$relative] = true;
+            $seen[ $relative ] = true;
 
             self::insertRow([
                 'attachment_id' => $attachmentId,
@@ -91,9 +90,8 @@ class UrlLookup extends Model
      * @param int $attachmentId Attachment ID.
      * @return void
      */
-    public static function forget($attachmentId)
-    {
-        self::deleteWhere(['attachment_id' => (int) $attachmentId]);
+    public static function forget( $attachmentId ) {
+        self::deleteWhere([ 'attachment_id' => (int) $attachmentId ]);
     }
 
     /**
@@ -107,8 +105,7 @@ class UrlLookup extends Model
      * @param string $basename     Requested filename.
      * @return string Replacement URL, or an empty string.
      */
-    public static function lookup($relativePath, $basename)
-    {
+    public static function lookup( $relativePath, $basename ) {
         $db    = self::db();
         $table = self::table();
 

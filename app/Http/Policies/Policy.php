@@ -9,7 +9,7 @@ namespace SwiftImageOptimizer\App\Http\Policies;
 
 use WP_REST_Request;
 
-if (!defined('ABSPATH')) {
+if ( ! defined('ABSPATH')) {
     exit;
 }
 
@@ -20,13 +20,13 @@ if (!defined('ABSPATH')) {
  * controller it guards - is what makes it reviewable: every route's policy is
  * visible in the route file, and there is one place per capability rule.
  */
-abstract class Policy
-{
+abstract class Policy {
+
     /**
      * Whether the request may proceed.
      *
      * @param WP_REST_Request $request Request.
      * @return bool
      */
-    abstract public function verifyRequest(WP_REST_Request $request);
+    abstract public function verifyRequest( WP_REST_Request $request );
 }

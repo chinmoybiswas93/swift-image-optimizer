@@ -7,7 +7,7 @@
 
 namespace SwiftImageOptimizer\App\Http\Requests;
 
-if (!defined('ABSPATH')) {
+if ( ! defined('ABSPATH')) {
     exit;
 }
 
@@ -19,21 +19,20 @@ if (!defined('ABSPATH')) {
  * asserted about, and the rule that IDs are positive integers lives in one
  * place rather than being restated per route.
  */
-class OptimizeRequest
-{
+class OptimizeRequest {
+
     /**
      * WordPress REST args schema.
      *
      * @return array<string, mixed>
      */
-    public static function args()
-    {
+    public static function args() {
         return [
             'ids' => [
                 'type'              => 'array',
                 'required'          => true,
-                'items'             => ['type' => 'integer'],
-                'sanitize_callback' => [self::class, 'sanitizeIds'],
+                'items'             => [ 'type' => 'integer' ],
+                'sanitize_callback' => [ self::class, 'sanitizeIds' ],
             ],
         ];
     }
@@ -41,14 +40,13 @@ class OptimizeRequest
     /**
      * Reduce the input to a list of positive integer IDs.
      *
-     * absint turns anything non-numeric into 0, and the filter drops those, so
+     * The absint() call turns anything non-numeric into 0, and the filter drops those, so
      * a malformed entry is discarded rather than becoming attachment 0.
      *
      * @param mixed $value Raw input.
      * @return int[]
      */
-    public static function sanitizeIds($value)
-    {
+    public static function sanitizeIds( $value ) {
         return array_values(array_filter(array_map('absint', (array) $value)));
     }
 }

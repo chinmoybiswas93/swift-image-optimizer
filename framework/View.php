@@ -9,7 +9,7 @@ namespace SwiftImageOptimizer\Framework;
 
 use RuntimeException;
 
-if (!defined('ABSPATH')) {
+if ( ! defined('ABSPATH')) {
     exit;
 }
 
@@ -23,8 +23,8 @@ if (!defined('ABSPATH')) {
  * Deliberately not a template engine - templates are PHP, escaped with the
  * usual WordPress helpers.
  */
-class View
-{
+class View {
+
     /**
      * Absolute path to the views root, with trailing slash.
      *
@@ -40,10 +40,11 @@ class View
     private $shared = [];
 
     /**
+     * Point the renderer at the views directory.
+     *
      * @param string $root Absolute path to the views directory.
      */
-    public function __construct($root)
-    {
+    public function __construct( $root ) {
         $this->root = rtrim($root, '/') . '/';
     }
 
@@ -53,8 +54,7 @@ class View
      * @param array<string, mixed> $data Shared variables.
      * @return void
      */
-    public function share(array $data)
-    {
+    public function share( array $data ) {
         $this->shared = array_merge($this->shared, $data);
     }
 
@@ -65,8 +65,7 @@ class View
      * @param array<string, mixed> $data Variables extracted into the template.
      * @return void
      */
-    public function render($view, array $data = [])
-    {
+    public function render( $view, array $data = [] ) {
         // The template is trusted plugin code that echoes its own escaped
         // markup, so it is emitted verbatim rather than re-escaped here.
         echo $this->make($view, $data); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
@@ -81,11 +80,10 @@ class View
      *
      * @throws RuntimeException When the template does not exist.
      */
-    public function make($view, array $data = [])
-    {
+    public function make( $view, array $data = [] ) {
         $path = $this->resolve($view);
 
-        if (!$path) {
+        if ( ! $path) {
             throw new RuntimeException("View '{$view}' not found in {$this->root}");
         }
 
@@ -106,8 +104,7 @@ class View
      * @param string $view View path.
      * @return bool
      */
-    public function exists($view)
-    {
+    public function exists( $view ) {
         return (bool) $this->resolve($view);
     }
 
@@ -117,8 +114,7 @@ class View
      * @param string $view View path in dot or slash notation.
      * @return string|null Absolute path, or null when absent or out of bounds.
      */
-    private function resolve($view)
-    {
+    private function resolve( $view ) {
         $relative = str_replace('.php', '', (string) $view);
         $relative = str_replace('.', '/', $relative);
         $relative = ltrim(str_replace('\\', '/', $relative), '/');
@@ -130,7 +126,7 @@ class View
         $real = realpath($path);
         $root = realpath($this->root);
 
-        if (!$real || !$root || 0 !== strpos($real, $root . DIRECTORY_SEPARATOR)) {
+        if ( ! $real || ! $root || 0 !== strpos($real, $root . DIRECTORY_SEPARATOR)) {
             return null;
         }
 

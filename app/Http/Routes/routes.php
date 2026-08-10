@@ -9,11 +9,16 @@
  * @package SwiftImageOptimizer
  */
 
-if (!defined('ABSPATH')) {
+if ( ! defined('ABSPATH')) {
     exit;
 }
 
-/** @var \SwiftImageOptimizer\Framework\Router $router */
-$router->group(function ($router) {
+/**
+ * Router instance supplied by the route loader.
+ *
+ * @var \SwiftImageOptimizer\Framework\Router $router
+ */
+// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- $router is consumed by api.php, which is required into this closure's scope.
+$router->group(function ( $router ) {
     require __DIR__ . '/api.php';
 });

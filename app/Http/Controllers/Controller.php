@@ -10,7 +10,7 @@ namespace SwiftImageOptimizer\App\Http\Controllers;
 use WP_Error;
 use WP_REST_Response;
 
-if (!defined('ABSPATH')) {
+if ( ! defined('ABSPATH')) {
     exit;
 }
 
@@ -20,8 +20,8 @@ if (!defined('ABSPATH')) {
  * Controllers are resolved from the container by the router, so they declare
  * their dependencies as constructor arguments and never reach for a global.
  */
-abstract class Controller
-{
+abstract class Controller {
+
     /**
      * Return a successful response.
      *
@@ -29,8 +29,7 @@ abstract class Controller
      * @param int   $status HTTP status.
      * @return WP_REST_Response
      */
-    protected function sendSuccess($data, $status = 200)
-    {
+    protected function sendSuccess( $data, $status = 200 ) {
         return new WP_REST_Response($data, $status);
     }
 
@@ -43,8 +42,7 @@ abstract class Controller
      * @param array<string, mixed> $data    Extra context.
      * @return WP_Error
      */
-    protected function sendError($code, $message, $status = 400, array $data = [])
-    {
-        return new WP_Error($code, $message, array_merge(['status' => $status], $data));
+    protected function sendError( $code, $message, $status = 400, array $data = [] ) {
+        return new WP_Error($code, $message, array_merge([ 'status' => $status ], $data));
     }
 }

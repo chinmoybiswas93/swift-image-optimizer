@@ -75,20 +75,20 @@ class GdEngine extends AbstractEngine {
 			$resized = imagecreatetruecolor( $width, $height );
 
 			if ( ! $resized ) {
-				imagedestroy( $image );
+				$this->free_image( $image );
 				return new WP_Error( 'swift_image_optimizer_resize_failed', __( 'Could not allocate the resized image.', 'swift-image-optimizer' ) );
 			}
 
 			$this->preserve_alpha( $resized );
 
 			imagecopyresampled( $resized, $image, 0, 0, 0, 0, $width, $height, $src_width, $src_height );
-			imagedestroy( $image );
+			$this->free_image( $image );
 			$image = $resized;
 		}
 
 		$written = imagewebp( $image, $destination, $options['quality'] );
 
-		imagedestroy( $image );
+		$this->free_image( $image );
 
 		if ( ! $written || ! file_exists( $destination ) || 0 === filesize( $destination ) ) {
 			return new WP_Error( 'swift_image_optimizer_encode_failed', __( 'GD failed to write the WebP file.', 'swift-image-optimizer' ) );
@@ -123,6 +123,29 @@ class GdEngine extends AbstractEngine {
 				return false;
 		}
 		// phpcs:enable WordPress.PHP.NoSilencedErrors.Discouraged
+	}
+
+	/**
+	 * Release a GD image handle.
+	 *
+	 * `imagedestroy()` is deprecated as of PHP 8.4, but on this plugin's PHP
+	 * 7.4 floor it is what actually frees the underlying resource. On PHP 8+
+	 * the handle is a `GdImage` object and the call is a no-op, so clearing
+	 * the caller's reference is what releases it. Version-gating keeps both
+	 * ends of the supported range correct: no deprecation notice on 8.4+,
+	 * and no delayed free on 7.4 - which matters here, because this engine
+	 * decodes whole images into memory (invariant 7).
+	 *
+	 * @param resource|\GdImage|null $image GD image handle, cleared by reference.
+	 * @return void
+	 */
+	private function free_image( &$image ) {
+		if ( PHP_VERSION_ID < 80000 && is_resource( $image ) ) {
+			// phpcs:ignore Generic.PHP.DeprecatedFunctions.Deprecated -- Not deprecated on the PHP 7.4 branch this is gated to, and the only way to free the resource there.
+			imagedestroy( $image );
+		}
+
+		$image = null;
 	}
 
 	/**
@@ -182,7 +205,7 @@ class GdEngine extends AbstractEngine {
 			return $image;
 		}
 
-		imagedestroy( $image );
+		$this->free_image( $image );
 		$this->preserve_alpha( $rotated );
 
 		return $rotated;

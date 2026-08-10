@@ -257,6 +257,7 @@ class Optimizer {
 			return $configured;
 		}
 
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WordPress core's own filter; it has to keep core's name to read the configured value.
 		$threshold = (int) apply_filters( 'big_image_size_threshold', 2560, array( 0, 0 ), '', 0 );
 
 		if ( $configured > 0 && $threshold > 0 ) {

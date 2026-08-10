@@ -517,7 +517,7 @@ class AttachmentConverter {
 		$placeholders = implode( ', ', array_fill( 0, count( $paths ), '%s' ) );
 		$params       = array_merge( $paths, array( (int) $attachment_id ) );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Identifiers come from $wpdb; every value is prepared.
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a core identifier and cannot be bound; $placeholders is a generated %s list and every value goes through prepare() in $params.
 		$owned = $wpdb->get_col(
 			$wpdb->prepare(
 				"SELECT meta_value FROM {$wpdb->postmeta}
@@ -527,6 +527,7 @@ class AttachmentConverter {
 				$params
 			)
 		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		if ( empty( $owned ) ) {
 			return $map;

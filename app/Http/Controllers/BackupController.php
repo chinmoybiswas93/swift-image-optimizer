@@ -14,22 +14,21 @@ use SwiftImageOptimizer\App\Services\Logging\Logger;
 use SwiftImageOptimizer\App\Services\Optimizer;
 use WP_REST_Response;
 
-if (!defined('ABSPATH')) {
+if ( ! defined('ABSPATH')) {
     exit;
 }
 
 /**
  * Reclaiming disk space: stored backups and abandoned temp files.
  */
-class BackupController extends Controller
-{
+class BackupController extends Controller {
+
     /**
      * Delete every stored backup immediately.
      *
      * @return WP_REST_Response
      */
-    public function purge()
-    {
+    public function purge() {
         global $wpdb;
 
         $table = OptimizationLog::table();
@@ -57,8 +56,7 @@ class BackupController extends Controller
      *
      * @return WP_REST_Response
      */
-    public function cleanup()
-    {
+    public function cleanup() {
         $removed = Optimizer::sweep_temp_files();
 
         Logger::start_run('admin');

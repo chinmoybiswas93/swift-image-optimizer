@@ -15,7 +15,7 @@ use SwiftImageOptimizer\App\Services\Bulk\Runner;
 use SwiftImageOptimizer\App\Services\Optimizer;
 use SwiftImageOptimizer\App\Services\Rewrite\DatabaseRewriter;
 
-if (!defined('ABSPATH')) {
+if ( ! defined('ABSPATH')) {
     exit;
 }
 

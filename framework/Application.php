@@ -9,7 +9,7 @@ namespace SwiftImageOptimizer\Framework;
 
 use SwiftImageOptimizer\App\App;
 
-if (!defined('ABSPATH')) {
+if ( ! defined('ABSPATH')) {
     exit;
 }
 
@@ -23,8 +23,8 @@ if (!defined('ABSPATH')) {
  * it in one readable manifest (app/Hooks/actions.php) and one bindings file
  * (boot/bindings.php).
  */
-class Application extends Container
-{
+class Application extends Container {
+
     /**
      * Root namespace of the app/ PSR-4 tree. Bare policy and controller names
      * declared in route files are resolved against it.
@@ -53,10 +53,11 @@ class Application extends Container
     private $pluginFile;
 
     /**
+     * Anchor the application to the main plugin file.
+     *
      * @param string $file Absolute path to the main plugin file.
      */
-    public function __construct($file)
-    {
+    public function __construct( $file ) {
         $this->pluginFile = $file;
         $this->basePath   = plugin_dir_path($file);
         $this->baseUrl    = plugin_dir_url($file);
@@ -83,8 +84,7 @@ class Application extends Container
      * @param string $path Path relative to the plugin root.
      * @return string
      */
-    public function path($path = '')
-    {
+    public function path( $path = '' ) {
         return $this->basePath . ltrim($path, '/');
     }
 
@@ -94,8 +94,7 @@ class Application extends Container
      * @param string $path Path relative to the plugin root.
      * @return string
      */
-    public function url($path = '')
-    {
+    public function url( $path = '' ) {
         return $this->baseUrl . ltrim($path, '/');
     }
 
@@ -104,8 +103,7 @@ class Application extends Container
      *
      * @return string
      */
-    public function pluginFile()
-    {
+    public function pluginFile() {
         return $this->pluginFile;
     }
 
@@ -114,8 +112,7 @@ class Application extends Container
      *
      * @return Config
      */
-    public function config()
-    {
+    public function config() {
         return $this->make('config');
     }
 
@@ -124,8 +121,7 @@ class Application extends Container
      *
      * @return View
      */
-    public function view()
-    {
+    public function view() {
         return $this->make('view');
     }
 
@@ -134,8 +130,7 @@ class Application extends Container
      *
      * @return Router
      */
-    public function router()
-    {
+    public function router() {
         return $this->make('router');
     }
 
@@ -144,8 +139,7 @@ class Application extends Container
      *
      * @return void
      */
-    private function loadConfig()
-    {
+    private function loadConfig() {
         $this->instance('config', Config::fromDirectory($this->path('config')));
     }
 
@@ -154,8 +148,7 @@ class Application extends Container
      *
      * @return void
      */
-    private function bindCoreComponents()
-    {
+    private function bindCoreComponents() {
         $this->singleton('view', function () {
             return new View($this->path('app/Views'));
         });
@@ -174,8 +167,7 @@ class Application extends Container
      *
      * @return void
      */
-    private function loadBindings()
-    {
+    private function loadBindings() {
         $path = $this->path('boot/bindings.php');
 
         if (is_readable($path)) {
@@ -190,9 +182,8 @@ class Application extends Container
      *
      * @return void
      */
-    private function requireCommonFiles()
-    {
-        foreach (['actions', 'filters'] as $file) {
+    private function requireCommonFiles() {
+        foreach ([ 'actions', 'filters' ] as $file) {
             $path = $this->path('app/Hooks/' . $file . '.php');
 
             if (is_readable($path)) {
@@ -208,12 +199,11 @@ class Application extends Container
      *
      * @return void
      */
-    private function addRestApiInitAction()
-    {
+    private function addRestApiInitAction() {
         add_action('rest_api_init', function () {
             $routes = $this->path('app/Http/Routes/routes.php');
 
-            if (!is_readable($routes)) {
+            if ( ! is_readable($routes)) {
                 return;
             }
 

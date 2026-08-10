@@ -13,22 +13,21 @@ use SwiftImageOptimizer\App\Services\Logging\Logger;
 use SwiftImageOptimizer\App\Services\Optimizer;
 use WP_REST_Response;
 
-if (!defined('ABSPATH')) {
+if ( ! defined('ABSPATH')) {
     exit;
 }
 
 /**
  * Server and plugin environment report backing the Troubleshoot screen.
  */
-class DiagnosticsController extends Controller
-{
+class DiagnosticsController extends Controller {
+
     /**
      * The full report.
      *
      * @return WP_REST_Response
      */
-    public function index()
-    {
+    public function index() {
         $report = EnvironmentReport::get();
 
         $report['text']      = EnvironmentReport::as_text();

@@ -9,7 +9,7 @@ namespace SwiftImageOptimizer\App\Http\Policies;
 
 use WP_REST_Request;
 
-if (!defined('ABSPATH')) {
+if ( ! defined('ABSPATH')) {
     exit;
 }
 
@@ -19,16 +19,15 @@ if (!defined('ABSPATH')) {
  *
  * Replaces the old Controller::can_manage().
  */
-class AdminPolicy extends Policy
-{
+class AdminPolicy extends Policy {
+
     /**
      * {@inheritDoc}
      *
      * @param WP_REST_Request $request Request.
      * @return bool
      */
-    public function verifyRequest(WP_REST_Request $request)
-    {
+    public function verifyRequest( WP_REST_Request $request ) {
         unset($request);
 
         return current_user_can('manage_options');

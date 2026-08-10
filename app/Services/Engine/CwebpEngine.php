@@ -1,6 +1,6 @@
 <?php
 /**
- * cwebp binary conversion engine.
+ * Conversion engine backed by the cwebp binary.
  *
  * @package SwiftImageOptimizer
  */
@@ -43,11 +43,6 @@ class CwebpEngine extends AbstractEngine {
 		$disabled = array_map( 'trim', $disabled );
 
 		if ( in_array( 'exec', $disabled, true ) ) {
-			return false;
-		}
-
-		// Safe mode style hardening on some hosts.
-		if ( ini_get( 'safe_mode' ) ) {
 			return false;
 		}
 
@@ -120,7 +115,7 @@ class CwebpEngine extends AbstractEngine {
 	}
 
 	/**
-	 * cwebp runs as a separate process, outside PHP's memory limit.
+	 * The cwebp binary runs as a separate process, outside PHP's memory limit.
 	 *
 	 * @return bool
 	 */
@@ -131,7 +126,7 @@ class CwebpEngine extends AbstractEngine {
 	/**
 	 * Whether cwebp can correctly convert this particular file.
 	 *
-	 * cwebp does not rotate. It has no equivalent of Imagick's autoOrient()
+	 * The binary does not rotate. It has no equivalent of Imagick's autoOrient()
 	 * or the manual rotation GdEngine performs, and `-metadata icc` discards
 	 * the EXIF block that carries the orientation flag - so a photo shot in
 	 * portrait would be written permanently sideways with nothing left to say
@@ -201,8 +196,8 @@ class CwebpEngine extends AbstractEngine {
 		$output      = array();
 		$return_code = 1;
 
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec -- Guarded by can_exec(); every argument is escaped above.
-		@exec( $command, $output, $return_code ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Failures are reported through $return_code.
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec, WordPress.PHP.NoSilencedErrors.Discouraged -- Guarded by can_exec() and every argument is escaped above; failures are reported through $return_code.
+		@exec( $command, $output, $return_code );
 
 		if ( 0 !== $return_code || ! file_exists( $destination ) || 0 === filesize( $destination ) ) {
 			return new WP_Error(

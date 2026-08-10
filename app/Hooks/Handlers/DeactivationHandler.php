@@ -9,7 +9,7 @@ namespace SwiftImageOptimizer\App\Hooks\Handlers;
 
 use SwiftImageOptimizer\App\Hooks\Scheduler\JobRunner;
 
-if (!defined('ABSPATH')) {
+if ( ! defined('ABSPATH')) {
     exit;
 }
 
@@ -18,15 +18,14 @@ if (!defined('ABSPATH')) {
  * deactivation is not uninstallation, and a site that reactivates should find
  * its optimized library exactly as it left it.
  */
-class DeactivationHandler
-{
+class DeactivationHandler {
+
     /**
      * Run deactivation.
      *
      * @return void
      */
-    public function handle()
-    {
+    public function handle() {
         JobRunner::unschedule();
 
         do_action('swift_image_optimizer/deactivated');

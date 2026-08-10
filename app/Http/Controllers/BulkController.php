@@ -11,7 +11,7 @@ use SwiftImageOptimizer\App\Services\Bulk\Runner;
 use WP_Error;
 use WP_REST_Response;
 
-if (!defined('ABSPATH')) {
+if ( ! defined('ABSPATH')) {
     exit;
 }
 
@@ -22,8 +22,8 @@ if (!defined('ABSPATH')) {
  * segment. They are four routes now, which is what lets each one declare its
  * own HTTP verb - polling status over GET rather than POST.
  */
-class BulkController extends Controller
-{
+class BulkController extends Controller {
+
     /**
      * Bulk runner instance.
      *
@@ -32,10 +32,11 @@ class BulkController extends Controller
     private $runner;
 
     /**
+     * Wire the controller to the bulk runner.
+     *
      * @param Runner $runner Runner instance.
      */
-    public function __construct(Runner $runner)
-    {
+    public function __construct( Runner $runner ) {
         $this->runner = $runner;
     }
 
@@ -44,8 +45,7 @@ class BulkController extends Controller
      *
      * @return WP_REST_Response
      */
-    public function start()
-    {
+    public function start() {
         return $this->sendSuccess($this->runner->start());
     }
 
@@ -54,8 +54,7 @@ class BulkController extends Controller
      *
      * @return WP_REST_Response
      */
-    public function status()
-    {
+    public function status() {
         return $this->sendSuccess($this->runner->state());
     }
 
@@ -64,8 +63,7 @@ class BulkController extends Controller
      *
      * @return WP_REST_Response|WP_Error
      */
-    public function batch()
-    {
+    public function batch() {
         $state = $this->runner->process_batch();
 
         return is_wp_error($state) ? $state : $this->sendSuccess($state);
@@ -76,8 +74,7 @@ class BulkController extends Controller
      *
      * @return WP_REST_Response
      */
-    public function cancel()
-    {
+    public function cancel() {
         return $this->sendSuccess($this->runner->cancel());
     }
 }

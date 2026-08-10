@@ -9,7 +9,7 @@ namespace SwiftImageOptimizer\App\Models;
 
 use wpdb;
 
-if (!defined('ABSPATH')) {
+if ( ! defined('ABSPATH')) {
     exit;
 }
 
@@ -22,8 +22,8 @@ if (!defined('ABSPATH')) {
  * does buy is a single place where the table prefix is applied and where the
  * stats cache is invalidated, so callers stop reaching for global $wpdb.
  */
-abstract class Model
-{
+abstract class Model {
+
     /**
      * Table name without the site prefix. Subclasses must set this.
      *
@@ -36,8 +36,7 @@ abstract class Model
      *
      * @return string
      */
-    public static function table()
-    {
+    public static function table() {
         return self::db()->prefix . static::$table;
     }
 
@@ -46,8 +45,7 @@ abstract class Model
      *
      * @return wpdb
      */
-    protected static function db()
-    {
+    protected static function db() {
         global $wpdb;
 
         return $wpdb;
@@ -59,8 +57,7 @@ abstract class Model
      * @param array<string, mixed> $row Column values.
      * @return bool True on success.
      */
-    protected static function replaceRow(array $row)
-    {
+    protected static function replaceRow( array $row ) {
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-owned table, no core API available.
         return false !== self::db()->replace(static::table(), $row);
     }
@@ -71,8 +68,7 @@ abstract class Model
      * @param array<string, mixed> $row Column values.
      * @return bool True on success.
      */
-    protected static function insertRow(array $row)
-    {
+    protected static function insertRow( array $row ) {
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-owned table, no core API available.
         return false !== self::db()->insert(static::table(), $row);
     }
@@ -84,8 +80,7 @@ abstract class Model
      * @param array<string, mixed> $where Match conditions.
      * @return bool True on success.
      */
-    protected static function updateWhere(array $data, array $where)
-    {
+    protected static function updateWhere( array $data, array $where ) {
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-owned table, no core API available.
         return false !== self::db()->update(static::table(), $data, $where);
     }
@@ -96,8 +91,7 @@ abstract class Model
      * @param array<string, mixed> $where Match conditions.
      * @return bool True on success.
      */
-    protected static function deleteWhere(array $where)
-    {
+    protected static function deleteWhere( array $where ) {
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin-owned table, no core API available.
         return false !== self::db()->delete(static::table(), $where);
     }

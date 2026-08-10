@@ -13,7 +13,7 @@ use SwiftImageOptimizer\Framework\Config;
 use SwiftImageOptimizer\Framework\Router;
 use SwiftImageOptimizer\Framework\View;
 
-if (!defined('ABSPATH')) {
+if ( ! defined('ABSPATH')) {
     exit;
 }
 
@@ -24,8 +24,8 @@ if (!defined('ABSPATH')) {
  *     App::view()->render('admin.admin_app', $data);
  *     App::config()->get('app.slug');
  */
-class App
-{
+class App {
+
     /**
      * The booted application.
      *
@@ -39,8 +39,7 @@ class App
      * @param Application $app The application.
      * @return void
      */
-    public static function setInstance(Application $app)
-    {
+    public static function setInstance( Application $app ) {
         self::$app = $app;
     }
 
@@ -51,8 +50,7 @@ class App
      *
      * @throws RuntimeException When called before the plugin has booted.
      */
-    public static function getInstance()
-    {
+    public static function getInstance() {
         if (null === self::$app) {
             throw new RuntimeException('Swift Image Optimizer has not booted yet.');
         }
@@ -66,8 +64,7 @@ class App
      * @param string $abstract Binding key or class name.
      * @return mixed
      */
-    public static function make($abstract)
-    {
+    public static function make( $abstract ) {
         return self::getInstance()->make($abstract);
     }
 
@@ -78,8 +75,7 @@ class App
      * @param callable $concrete Factory returning the concrete instance.
      * @return void
      */
-    public static function singleton($abstract, callable $concrete)
-    {
+    public static function singleton( $abstract, callable $concrete ) {
         self::getInstance()->singleton($abstract, $concrete);
     }
 
@@ -90,8 +86,7 @@ class App
      * @param callable $concrete Factory returning the concrete instance.
      * @return void
      */
-    public static function bind($abstract, callable $concrete)
-    {
+    public static function bind( $abstract, callable $concrete ) {
         self::getInstance()->bind($abstract, $concrete, false);
     }
 
@@ -102,8 +97,7 @@ class App
      * @param mixed  $instance Instance to store.
      * @return void
      */
-    public static function instance($abstract, $instance)
-    {
+    public static function instance( $abstract, $instance ) {
         self::getInstance()->instance($abstract, $instance);
     }
 
@@ -114,8 +108,7 @@ class App
      * @param string $alias    Short name.
      * @return void
      */
-    public static function alias($abstract, $alias)
-    {
+    public static function alias( $abstract, $alias ) {
         self::getInstance()->alias($abstract, $alias);
     }
 
@@ -125,8 +118,7 @@ class App
      * @param string $abstract Binding key.
      * @return bool
      */
-    public static function bound($abstract)
-    {
+    public static function bound( $abstract ) {
         return self::getInstance()->bound($abstract);
     }
 
@@ -135,8 +127,7 @@ class App
      *
      * @return Config
      */
-    public static function config()
-    {
+    public static function config() {
         return self::getInstance()->config();
     }
 
@@ -145,8 +136,7 @@ class App
      *
      * @return View
      */
-    public static function view()
-    {
+    public static function view() {
         return self::getInstance()->view();
     }
 
@@ -155,8 +145,7 @@ class App
      *
      * @return Router
      */
-    public static function router()
-    {
+    public static function router() {
         return self::getInstance()->router();
     }
 
@@ -166,8 +155,7 @@ class App
      * @param string $path Path relative to the plugin root.
      * @return string
      */
-    public static function path($path = '')
-    {
+    public static function path( $path = '' ) {
         return self::getInstance()->path($path);
     }
 
@@ -177,8 +165,7 @@ class App
      * @param string $path Path relative to the plugin root.
      * @return string
      */
-    public static function url($path = '')
-    {
+    public static function url( $path = '' ) {
         return self::getInstance()->url($path);
     }
 }

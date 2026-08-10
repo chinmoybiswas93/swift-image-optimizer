@@ -15,18 +15,31 @@ has ever confirmed it — WPCS is not installed in this environment. Until this 
 
 ## Setup
 
+WPCS is installed **outside the plugin tree**, and deliberately not as a `require-dev` here:
+
 ```bash
-cd wp-content/plugins/swift-image-optimizer
-composer require --dev \
+# Anywhere except the plugin directory.
+mkdir -p ~/.wpcs && cd ~/.wpcs
+composer config --no-plugins allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
+composer require \
   wp-coding-standards/wpcs \
   phpcompatibility/phpcompatibility-wp \
   dealerdirect/phpcodesniffer-composer-installer
-vendor/bin/phpcs --standard=phpcs.xml.dist -s
+
+# Then, from the plugin root:
+~/.wpcs/vendor/bin/phpcs --standard=phpcs.xml.dist -s .
 ```
 
-Composer is a **dev-only** dependency. It must not become a runtime one — the plugin ships with
-a hand-rolled autoloader and no `vendor/` directory. Add `vendor/` to `.gitignore` (already
-done) and confirm it is excluded from any release archive.
+Put that `vendor/bin` on `PATH` and `npm run lint:php` works; without it the script prints a
+pointer back to this file rather than failing obscurely.
+
+> **Why not `composer require --dev` inside the plugin?** Because this plugin's `vendor/` is
+> **committed** and must contain nothing but the generated PSR-4 autoloader — architecture
+> invariant 12, and the reason `.gitignore` explicitly does *not* ignore it. WordPress.org runs
+> no Composer step on the destination server, so the autoloader ships as-is. Installing WPCS
+> into that directory would put ~7 dev packages into the released plugin unless every future
+> build remembered `--no-dev` first. An earlier draft of this spec said to add `vendor/` to
+> `.gitignore` "(already done)"; that was wrong on both counts and has been corrected.
 
 ## Expected findings
 
@@ -52,22 +65,22 @@ Predicted from writing the code, in rough order of likely volume:
    and the ignore gets a comment.
 3. **Do not change behaviour.** This is a lint pass. Any behavioural change belongs in its own
    unit.
-4. **Re-run all four test harnesses afterwards.** 107 assertions must still pass. Auto-fixers
+4. **Re-run all five test harnesses afterwards.** 143 assertions must still pass. Auto-fixers
    (`phpcbf`) in particular can silently change semantics around array syntax and spacing.
 
 ## Also verify in this unit
 
 - `readme.txt` parses against the .org readme validator
-- No external HTTP request exists anywhere: `grep -rn "wp_remote_\|curl_\|file_get_contents( *'http" src/`
-- No `error_log` / `var_dump` / `print_r` left in `src/`
+- No external HTTP request exists anywhere (invariant 13): `grep -rnE "wp_remote_|curl_|file_get_contents\( *'http" app/ api/ framework/ database/ boot/`
+- No `error_log` / `var_dump` / `print_r` left in `app/`, `api/`, `framework/` or `database/`
 - `uninstall.php` removes options and the table but **never** touches media or backups
 - The plugin header's `Requires PHP` and `Requires at least` match reality
 - Every file parses under PHP 7.4
 
 ## Files changed
 
-Potentially any file under `src/`, plus `composer.json` (new, dev-only) and `readme.txt`.
+Potentially any file under `app/`, `api/`, `framework/` or `database/`, plus `phpcs.xml.dist` and `readme.txt`. `composer.json` is deliberately NOT changed - see Setup.
 
 ## Done when
 
-`vendor/bin/phpcs --standard=phpcs.xml.dist -s` exits clean, and all 107 assertions still pass.
+`phpcs --standard=phpcs.xml.dist -s .` exits clean, and all 143 assertions still pass.

@@ -10,7 +10,7 @@ namespace SwiftImageOptimizer\App\Hooks\Handlers;
 use SwiftImageOptimizer\App\Hooks\Scheduler\JobRunner;
 use SwiftImageOptimizer\Database\DBMigrator;
 
-if (!defined('ABSPATH')) {
+if ( ! defined('ABSPATH')) {
     exit;
 }
 
@@ -20,16 +20,15 @@ if (!defined('ABSPATH')) {
  * Activation is the only place the schema is created eagerly; on every other
  * request the migrator runs on init and no-ops when the version matches.
  */
-class ActivationHandler
-{
+class ActivationHandler {
+
     /**
      * Run activation.
      *
      * @param bool $networkWide Whether the plugin was network-activated.
      * @return void
      */
-    public function handle($networkWide = false)
-    {
+    public function handle( $networkWide = false ) {
         if ($networkWide && is_multisite()) {
             $this->handleNetwork();
 
@@ -44,9 +43,8 @@ class ActivationHandler
      *
      * @return void
      */
-    private function handleNetwork()
-    {
-        $sites = get_sites(['fields' => 'ids', 'number' => 0]);
+    private function handleNetwork() {
+        $sites = get_sites([ 'fields' => 'ids', 'number' => 0 ]);
 
         foreach ($sites as $siteId) {
             switch_to_blog($siteId);
@@ -62,8 +60,7 @@ class ActivationHandler
      *
      * @return void
      */
-    private function activateSite()
-    {
+    private function activateSite() {
         DBMigrator::migrateUp();
 
         JobRunner::schedule();

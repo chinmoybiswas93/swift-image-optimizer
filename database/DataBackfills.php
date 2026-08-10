@@ -35,7 +35,7 @@ class DataBackfills {
 
 		$table = OptimizationLog::table();
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Plugin-owned table; one-off schema upgrade.
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Plugin-owned table name cannot be bound; the status value is prepared. One-off schema upgrade.
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT attachment_id, url_map FROM {$table} WHERE status = %s AND url_map != ''",
@@ -43,6 +43,7 @@ class DataBackfills {
 			),
 			ARRAY_A
 		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		if ( ! is_array( $rows ) ) {
 			return 0;

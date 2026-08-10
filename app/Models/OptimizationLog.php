@@ -7,7 +7,7 @@
 
 namespace SwiftImageOptimizer\App\Models;
 
-if (!defined('ABSPATH')) {
+if ( ! defined('ABSPATH')) {
     exit;
 }
 
@@ -18,8 +18,8 @@ if (!defined('ABSPATH')) {
  * dedupe and the media-library column. It was previously the read/write half
  * of the Database god-class.
  */
-class OptimizationLog extends Model
-{
+class OptimizationLog extends Model {
+
     /**
      * Table name without the site prefix.
      *
@@ -45,8 +45,7 @@ class OptimizationLog extends Model
      *
      * @return array<string, mixed>
      */
-    public static function defaults()
-    {
+    public static function defaults() {
         return [
             'status'         => self::STATUS_OPTIMIZED,
             'original_file'  => '',
@@ -71,8 +70,7 @@ class OptimizationLog extends Model
      * @param array<string, mixed> $data         Column values.
      * @return bool True on success.
      */
-    public static function upsert($attachmentId, array $data)
-    {
+    public static function upsert( $attachmentId, array $data ) {
         $attachmentId = (int) $attachmentId;
 
         if ($attachmentId <= 0) {
@@ -99,8 +97,7 @@ class OptimizationLog extends Model
      * @param int $attachmentId Attachment ID.
      * @return array<string, mixed>|null Row, or null when absent.
      */
-    public static function find($attachmentId)
-    {
+    public static function find( $attachmentId ) {
         $attachmentId = (int) $attachmentId;
 
         if ($attachmentId <= 0) {
@@ -116,7 +113,7 @@ class OptimizationLog extends Model
             ARRAY_A
         );
 
-        if (!$row) {
+        if ( ! $row) {
             return null;
         }
 
@@ -132,13 +129,12 @@ class OptimizationLog extends Model
      * @param array<string, mixed> $data         Column values.
      * @return bool True on success.
      */
-    public static function update($attachmentId, array $data)
-    {
+    public static function update( $attachmentId, array $data ) {
         if (isset($data['url_map']) && is_array($data['url_map'])) {
             $data['url_map'] = wp_json_encode($data['url_map']);
         }
 
-        $result = self::updateWhere($data, ['attachment_id' => (int) $attachmentId]);
+        $result = self::updateWhere($data, [ 'attachment_id' => (int) $attachmentId ]);
 
         self::flushStatsCache();
 
@@ -151,9 +147,8 @@ class OptimizationLog extends Model
      * @param int $attachmentId Attachment ID.
      * @return bool True on success.
      */
-    public static function delete($attachmentId)
-    {
-        $result = self::deleteWhere(['attachment_id' => (int) $attachmentId]);
+    public static function delete( $attachmentId ) {
+        $result = self::deleteWhere([ 'attachment_id' => (int) $attachmentId ]);
 
         self::flushStatsCache();
 
@@ -165,8 +160,7 @@ class OptimizationLog extends Model
      *
      * @return void
      */
-    public static function flushStatsCache()
-    {
+    public static function flushStatsCache() {
         delete_transient(self::STATS_CACHE_KEY);
     }
 }

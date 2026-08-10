@@ -9,15 +9,15 @@
  * @package SwiftImageOptimizer
  */
 
-if (!defined('ABSPATH')) {
+if ( ! defined('ABSPATH')) {
     exit;
 }
 
 return [
     // The option row that holds the user's saved settings.
-    'option_name' => 'swift_image_optimizer_settings',
+    'option_name'    => 'swift_image_optimizer_settings',
 
-    'defaults' => [
+    'defaults'       => [
         'auto_optimize'       => 1,
         'quality'             => 82,
         'max_dimension'       => 2560,
@@ -33,7 +33,7 @@ return [
     ],
 
     // Settings stored as 0/1. Anything falsy becomes 0.
-    'booleans' => [
+    'booleans'       => [
         'auto_optimize',
         'disable_wp_scaling',
         'skip_if_larger',
@@ -44,19 +44,19 @@ return [
         'enable_log',
     ],
 
-    'quality' => [
+    'quality'        => [
         'min' => 1,
         'max' => 100,
     ],
 
     // 0 means "do not downscale"; any other value is clamped into the range.
-    'max_dimension' => [
+    'max_dimension'  => [
         'min' => 100,
         'max' => 10000,
     ],
 
-    'engines' => ['auto', 'imagick', 'cwebp', 'gd'],
+    'engines'        => [ 'auto', 'imagick', 'cwebp', 'gd' ],
 
     // Backup retention in days. 0 means "keep forever".
-    'retention_days' => [0, 7, 30, 90],
+    'retention_days' => [ 0, 7, 30, 90 ],
 ];

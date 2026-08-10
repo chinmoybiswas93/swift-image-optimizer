@@ -11,24 +11,23 @@ use SwiftImageOptimizer\App\Services\Logging\Logger;
 use WP_REST_Request;
 use WP_REST_Response;
 
-if (!defined('ABSPATH')) {
+if ( ! defined('ABSPATH')) {
     exit;
 }
 
 /**
  * Reading, downloading and clearing the plugin's log file.
  */
-class LogController extends Controller
-{
+class LogController extends Controller {
+
     /**
      * Tail of the log.
      *
      * @param WP_REST_Request $request Request.
      * @return WP_REST_Response
      */
-    public function index(WP_REST_Request $request)
-    {
-        return $this->sendSuccess(Logger::tail((int) $request->get_param('lines')));
+    public function index( WP_REST_Request $request ) {
+        return $this->sendSuccess(Logger::tail( (int) $request->get_param('lines')));
     }
 
     /**
@@ -40,11 +39,10 @@ class LogController extends Controller
      *
      * @return void
      */
-    public function download()
-    {
+    public function download() {
         $file = Logger::file();
 
-        if (is_wp_error($file) || !file_exists($file)) {
+        if (is_wp_error($file) || ! file_exists($file)) {
             status_header(404);
             exit;
         }
@@ -66,8 +64,7 @@ class LogController extends Controller
      *
      * @return WP_REST_Response
      */
-    public function reset()
-    {
+    public function reset() {
         Logger::clear();
         Logger::start_run('admin');
         Logger::mark('logging', 'Log cleared from the Troubleshoot screen.');

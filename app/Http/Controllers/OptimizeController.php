@@ -16,7 +16,7 @@ use SwiftImageOptimizer\App\Services\Logging\Logger;
 use WP_REST_Request;
 use WP_REST_Response;
 
-if (!defined('ABSPATH')) {
+if ( ! defined('ABSPATH')) {
     exit;
 }
 
@@ -24,8 +24,8 @@ if (!defined('ABSPATH')) {
  * Optimizing and restoring individual attachments, plus the library scan that
  * tells the admin screen how much work is outstanding.
  */
-class OptimizeController extends Controller
-{
+class OptimizeController extends Controller {
+
     /**
      * Converter instance.
      *
@@ -41,11 +41,12 @@ class OptimizeController extends Controller
     private $runner;
 
     /**
+     * Wire the controller to the converter and the bulk runner.
+     *
      * @param AttachmentConverter $converter Converter instance.
      * @param Runner              $runner    Runner instance.
      */
-    public function __construct(AttachmentConverter $converter, Runner $runner)
-    {
+    public function __construct( AttachmentConverter $converter, Runner $runner ) {
         $this->converter = $converter;
         $this->runner    = $runner;
     }
@@ -55,8 +56,7 @@ class OptimizeController extends Controller
      *
      * @return WP_REST_Response
      */
-    public function scan()
-    {
+    public function scan() {
         $summary = Scanner::summary();
 
         $engine = EngineFactory::get();
@@ -73,8 +73,7 @@ class OptimizeController extends Controller
      *
      * @return WP_REST_Response
      */
-    public function dryRun()
-    {
+    public function dryRun() {
         return $this->sendSuccess($this->runner->dry_run());
     }
 
@@ -84,11 +83,10 @@ class OptimizeController extends Controller
      * @param WP_REST_Request $request Request.
      * @return WP_REST_Response
      */
-    public function optimize(WP_REST_Request $request)
-    {
+    public function optimize( WP_REST_Request $request ) {
         $results = [];
 
-        foreach ((array) $request->get_param('ids') as $id) {
+        foreach ( (array) $request->get_param('ids') as $id) {
             $result = $this->converter->convert($id);
 
             $results[] = is_wp_error($result)
@@ -103,12 +101,12 @@ class OptimizeController extends Controller
                     'ok'      => true,
                     'saved'   => max(0, $result['original_size'] - $result['optimized_size']),
                     'percent' => $result['original_size'] > 0
-                        ? round((1 - ($result['optimized_size'] / $result['original_size'])) * 100, 1)
+                        ? round(( 1 - ( $result['optimized_size'] / $result['original_size'] ) ) * 100, 1)
                         : 0,
                 ];
         }
 
-        return $this->sendSuccess(['results' => $results]);
+        return $this->sendSuccess([ 'results' => $results ]);
     }
 
     /**
@@ -117,11 +115,10 @@ class OptimizeController extends Controller
      * @param WP_REST_Request $request Request.
      * @return WP_REST_Response
      */
-    public function restore(WP_REST_Request $request)
-    {
+    public function restore( WP_REST_Request $request ) {
         $results = [];
 
-        foreach ((array) $request->get_param('ids') as $id) {
+        foreach ( (array) $request->get_param('ids') as $id) {
             $result = $this->converter->restore($id);
 
             $results[] = is_wp_error($result)
@@ -141,7 +138,7 @@ class OptimizeController extends Controller
                 ];
         }
 
-        return $this->sendSuccess(['results' => $results]);
+        return $this->sendSuccess([ 'results' => $results ]);
     }
 
     /**
@@ -152,8 +149,7 @@ class OptimizeController extends Controller
      *
      * @return WP_REST_Response
      */
-    public function requeue()
-    {
+    public function requeue() {
         $removed = Scanner::requeue();
 
         Logger::start_run('admin');
