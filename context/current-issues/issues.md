@@ -237,7 +237,30 @@ genuinely aged past its retention window has never been observed being collected
 
 **Severity:** ~~Unspecified~~ Resolved 2026-08-11
 
-The WordPress-looking notice was the plugin's own doing.
+**Two separate causes, and the first fix found only one of them.** Reading the attached screenshot
+properly — which happened late, during the graph rebuild — showed the notice in it was
+`aria-label="Elementor notice"`, rendered *inside* `div.sio-masthead__text`, between the plugin's
+own `<h1>` and its tagline. Not the plugin's notice at all.
+
+The mechanism is in WordPress core, `wp-admin/js/common.js:1087-1090`:
+
+```js
+if ( ! $headerEnd.length ) {
+    $headerEnd = $( '.wrap h1, .wrap h2' ).first();
+}
+$( 'div.updated, div.error, div.notice' ).not( '.inline, .below-h2' ).insertAfter( $headerEnd );
+```
+
+`.wrap h1` is a **descendant** selector. With no `.wp-header-end` marker on the page, core walked
+into the React masthead, found its `<h1>`, and inserted every notice on the page directly after
+it. Any plugin's notice would have landed there; Elementor's was simply the one present.
+
+Fixed by emitting `<hr class="wp-header-end">` in `admin_app.php`, immediately inside `.wrap` and
+before the app mount. Notices now land above the app instead of through the middle of it. This
+does **not** suppress other plugins' notices — that was settled deliberately, and hiding another
+plugin's licence warning would be its own kind of rude. It only decides where they go.
+
+**The second cause was real too**, and would have kept the plugin looking like core regardless:
 `app/Views/admin/parts/notice.php` deliberately emitted core's bare `notice` class alongside the
 `sio-*` ones, to borrow two behaviours: WordPress repositions elements carrying it, and binds
 dismissal to `is-dismissible`. Borrowing them also meant inheriting core's notice styling — which
