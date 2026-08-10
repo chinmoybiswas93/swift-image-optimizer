@@ -34,7 +34,12 @@ class Optimizer {
 	/**
 	 * Scratch directory inside uploads, for conversions in progress.
 	 */
-	const TEMP_DIRNAME = 'swift-image-optimizer-tmp';
+	/**
+	 * Scratch directory, relative to the uploads basedir.
+	 *
+	 * A subdirectory of the plugin's one folder rather than a sibling of it.
+	 */
+	const TEMP_DIRNAME = 'swift-image-optimizer/temp';
 
 	/**
 	 * Decide whether a file should be converted at all.

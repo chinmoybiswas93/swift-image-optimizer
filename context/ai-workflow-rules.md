@@ -135,7 +135,7 @@ spec says → update `progress-tracker.md`. Nothing more.
 
 - `build/**` — compiled output, regenerate with `npm run build`, never hand-edit
 - `node_modules/**`
-- Anything under `wp-content/uploads/swift-image-optimizer-backups/` — that is user data, and
+- Anything under `wp-content/uploads/swift-image-optimizer/backup/` — that is user data, and
   it is the only copy of their original images
 
 ## The destructive-path rule

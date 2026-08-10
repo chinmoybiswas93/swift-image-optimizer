@@ -30,7 +30,12 @@ class Logger {
 	/**
 	 * Directory name inside uploads.
 	 */
-	const DIRNAME = 'swift-image-optimizer-logs';
+	/**
+	 * Log directory, relative to the uploads basedir.
+	 *
+	 * A subdirectory of the plugin's one folder rather than a sibling of it.
+	 */
+	const DIRNAME = 'swift-image-optimizer/logs';
 
 	/**
 	 * Option holding the per-site filename suffix.

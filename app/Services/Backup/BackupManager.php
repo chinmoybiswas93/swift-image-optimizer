@@ -26,7 +26,16 @@ class BackupManager {
 	/**
 	 * Directory name inside uploads.
 	 */
-	const DIRNAME = 'swift-image-optimizer-backups';
+	/**
+	 * Backup directory, relative to the uploads basedir.
+	 *
+	 * One folder named for the plugin, with backups, temp files and logs as
+	 * subdirectories of it, rather than three siblings scattered through
+	 * wp-content/uploads. `wp_mkdir_p()` creates the parent, and safe_path()'s
+	 * traversal guard resolves against root() so the extra level costs it
+	 * nothing.
+	 */
+	const DIRNAME = 'swift-image-optimizer/backup';
 
 	/**
 	 * Absolute path to the backup root.

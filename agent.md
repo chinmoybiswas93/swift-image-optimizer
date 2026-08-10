@@ -162,7 +162,7 @@ longer exists.
   Every control is ours (`resources/admin/Components/`); markup uses `sio-*` classes, never core's
   `notice notice-*`, `button button-*` or `.description`. `build/admin.asset.php` is the check:
   it must list `wp-element` and `wp-api-fetch`, and must not list `wp-components`
-- Never touch `wp-content/uploads/swift-image-optimizer-backups/` — that is user data
+- Never touch `wp-content/uploads/swift-image-optimizer/backup/` — that is user data
 - Never modify a file outside the current spec's "Files changed"
 - Never add a Composer *runtime* dependency — the plugin ships dependency-free by design.
   npm packages are build-time only and still need to be named in the spec

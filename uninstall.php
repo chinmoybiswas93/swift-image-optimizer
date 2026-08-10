@@ -58,8 +58,19 @@ function swift_image_optimizer_remove_dir( $name ) {
 	@rmdir( $dir ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- A directory left behind by a failed removal is harmless.
 }
 
-swift_image_optimizer_remove_dir( 'swift-image-optimizer-logs' );
-swift_image_optimizer_remove_dir( 'swift-image-optimizer-tmp' );
+swift_image_optimizer_remove_dir( 'swift-image-optimizer/logs' );
+swift_image_optimizer_remove_dir( 'swift-image-optimizer/temp' );
+
+/*
+ * Then the parent, which only succeeds once it is empty.
+ *
+ * `swift-image-optimizer/backup` is deliberately not removed - those are the
+ * user's original images and often the only copy. rmdir() refuses a directory
+ * that still has anything in it, so this tidies up after an install that never
+ * backed anything up, and leaves the folder alone the moment it holds
+ * originals. Nothing here globs into the backup directory.
+ */
+swift_image_optimizer_remove_dir( 'swift-image-optimizer' );
 
 delete_option( 'swift_image_optimizer_settings' );
 delete_option( 'swift_image_optimizer_schema_version' );
