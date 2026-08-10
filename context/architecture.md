@@ -3,15 +3,20 @@
 ## Class map
 
 Restructured 2026-08-10 from the layered `src/` + `Providers/` + `Repositories/` arrangement to a
-FluentCart-style layout: Composer PSR-4 with an `app/` root, a small plugin-owned `Foundation`
-kernel, and a Vite-built React front end. Composer carries **no runtime dependencies** — the
+FluentCart-style layout: Composer PSR-4 with an `app/` root, a small plugin-owned kernel at its own
+`framework/` root, and a React front end built with `@wordpress/scripts`. Composer carries **no runtime dependencies** — the
 `vendor/` directory holds only the generated autoloader, committed because WordPress.org runs no
 build step on the destination server.
 
 `wpfluent/framework`, which produces this layout in FluentCart itself, is not installable: the
 whole `wpfluent` GitHub organisation is private and the package is absent from Packagist. The
-~300 lines under `app/Foundation/` reproduce the parts the plugin actually uses — container,
-config, view, router — and nothing else.
+~1,200 lines under `framework/` reproduce the parts the plugin actually uses — container, config,
+view, router — and nothing else. It sits outside `app/` for the same reason FluentCart's does:
+`app/` is application code, `framework/` is the machinery underneath it.
+
+React, `apiFetch` and `i18n` all come from WordPress's own registered scripts. `@wordpress/scripts`
+externalizes them and records the handles in `build/*.asset.php`, so the plugin ships no React of
+its own. **None of WordPress's UI components are used** — every control is the plugin's own.
 
 ```
 swift-image-optimizer.php   IIFE bootstrap: constants, then boot/app.php + vendor/autoload.php
@@ -28,18 +33,17 @@ config/                     Plain arrays, read via App::config()->get('app.slug'
 ├── optimizer.php           Settings defaults and the bounds the sanitizer enforces
 └── vite.php                Dev-server host/port, only consulted when app.env is 'dev'
 
+framework/                  namespace SwiftImageOptimizer\Framework — the kernel
+├── Application.php         Loads config, binds view/router, requires the hook manifests,
+│                           registers routes on rest_api_init
+├── Container.php           bind/singleton/instance/alias + reflection auto-wiring
+├── Config.php              Dot-notation access over config/*.php
+├── View.php                app/Views renderer, dot or slash notation, path-traversal guarded
+├── Router.php              prefix()/withPolicy()/group() DSL over register_rest_route
+└── Route.php               One declared route: method, uri, action, policy, args
+
 app/
 ├── App.php                 Static facade: make/singleton/alias/view/config/router/path/url
-├── Vite.php                Resolves a resources/ path through assets/manifest.json, enqueues it,
-│                           emits type="module", auto-enqueues the chunk's CSS
-├── Foundation/
-│   ├── Application.php     Kernel: loads config, binds view/router, requires the hook manifests,
-│   │                       registers routes on rest_api_init
-│   ├── Container.php       bind/singleton/instance/alias + reflection auto-wiring
-│   ├── Config.php          Dot-notation access over config/*.php
-│   ├── View.php            app/Views renderer, dot or slash notation, path-traversal guarded
-│   ├── Router.php          prefix()/withPolicy()/group() DSL over register_rest_route
-│   └── Route.php           One declared route: method, uri, action, policy, args
 ├── Hooks/
 │   ├── actions.php         THE registration manifest - every hook the plugin owns
 │   ├── Handlers/           ActivationHandler, DeactivationHandler, MenuHandler, NoticeHandler,
@@ -61,6 +65,10 @@ app/
 └── Views/                  Plain-PHP templates
     └── admin/              admin_app.php (SPA mount) + parts/{notice,media-column}.php
 
+api/                        namespace SwiftImageOptimizer\Api — stable data-access layer
+├── StoreSettings.php       Options: defaults, sanitize, register_setting. Singleton aliased `settings`
+└── Resource/               BaseResourceApi + StatsResource (the dashboard aggregate)
+
 database/                   namespace SwiftImageOptimizer\Database, classmap-autoloaded
 ├── DBMigrator.php          Schema version gate, migrator list, migrateUp/maybeMigrateDBChanges/dropTables
 ├── DataBackfills.php       Post-upgrade data migrations (url_map -> lookup table)
@@ -71,14 +79,14 @@ resources/                  React + SCSS source. Excluded from the shipped zip.
 ├── media/media.js          Media Library integration (wp.media Backbone, deliberately no React)
 └── styles/                 _controls.scss (the component set), admin.scss, media.scss
 
-assets/                     Vite output + manifest.json — committed, never hand-edited
+build/                      wp-scripts output + *.asset.php — committed, never hand-edited
 vendor/                     Composer's autoloader only. No packages.
 ```
 
-There is deliberately **no `src/`, no `Providers/`, no `Repositories/`, no `Http/Admin/`**. The
-eight service providers collapsed into `app/Hooks/actions.php`; `SettingsRepository` and
-`StatsRepository` remain under `app/Repositories/` pending a move to `api/`, which is the one
-part of the FluentCart layout not yet populated.
+There is deliberately **no `src/`, no `Providers/`, no `Repositories/`, no `Foundation/` inside
+`app/`, and no `Http/Admin/`**. The eight service providers collapsed into `app/Hooks/actions.php`;
+`SettingsRepository` became `api/StoreSettings` and `StatsRepository` became
+`api/Resource/StatsResource`.
 
 ## Architecture invariants
 
@@ -98,7 +106,7 @@ so treat them as non-negotiable.
 | 9 | **The log table's `status` stays `optimized` when a backup expires.** Availability is tracked by an empty `backup_path`. | Changing the status would zero that image's contribution to the savings stats. |
 | 10 | **Attachment references stored as IDs need no rewriting.** Only hardcoded URL strings are touched. | IDs resolve through metadata, which is updated separately. Rewriting them would be wrong. |
 | 11 | **Never rewrite derived caches** (`_elementor_css`, `_bricks_css*`, `_transient_*`, `_wp_attachment_metadata`). Flush them instead. | They are regenerated from source data and their formats are not ours to edit. |
-| 12 | **`assets/` and `vendor/` are committed.** | WordPress.org ships the plugin as-is; there is no npm or Composer step on the user's server. Edit `resources/`, never `assets/`. |
+| 12 | **`build/` and `vendor/` are committed.** | WordPress.org ships the plugin as-is; there is no npm or Composer step on the user's server. Edit `resources/`, never `build/`. |
 | 13 | **No external HTTP requests, ever.** | Privacy claim in the readme, and a .org review requirement. |
 | 14 | **Custom media-toolbar buttons must manage their own visibility.** Core's `SelectModeToggle` skips `.media-button` in both directions (`media-grid.js:337`, `:350`). | It never hides *or* re-shows them, so a button that does not toggle its own `hidden` class will be stuck in whichever state it started in. |
 | 15 | **Refetch the attachment model after converting it.** | Conversion changes the filename. Without `model.fetch()` every thumbnail in the grid 404s and the modal shows stale data. |

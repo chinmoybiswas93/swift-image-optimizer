@@ -19,7 +19,7 @@ ZIP_FILE="$DIST_BASE/${PLUGIN_SLUG}-${VERSION}.zip"
 
 echo "==> Building $PLUGIN_SLUG v$VERSION"
 
-# 1. Build production JS/CSS from resources/ into ./assets
+# 1. Build production JS/CSS from resources/ into ./build
 echo "==> Running npm build"
 ( cd "$PLUGIN_ROOT" && npm install --include=dev --no-audit --no-fund && npm run build )
 
@@ -41,7 +41,7 @@ rsync -a \
   --exclude='.DS_Store' \
   --exclude='node_modules/' \
   --exclude='package.json' --exclude='package-lock.json' \
-  --exclude='vite.config.js' \
+  --exclude='webpack.config.js' \
   --exclude='composer.json' --exclude='composer.lock' \
   --exclude='tests/' --exclude='test-results/' \
   --exclude='test-screenshots/' --exclude='playwright-report/' \

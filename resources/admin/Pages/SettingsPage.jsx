@@ -1,6 +1,6 @@
 /** Settings tab. */
 
-import { useState } from 'react';
+import { useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import { Button, Notice, NumberInput, Range, Section, Select, Spinner, Toggle } from '../Components';
 import { IconGear, IconLayers, IconSliders } from '../Icons';

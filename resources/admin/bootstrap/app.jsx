@@ -1,12 +1,14 @@
 /**
  * Admin bundle entry point.
  *
- * Mounts the dashboard into the element the admin_app view renders. React
- * comes from npm rather than WordPress's wp-element, so the plugin's UI does
- * not move when core changes the React version it ships.
+ * Mounts the dashboard into the element the admin_app view renders.
+ *
+ * React comes from WordPress via @wordpress/element, so the plugin ships no
+ * React of its own. The UI built on top of it is entirely the plugin's own -
+ * no @wordpress/components anywhere.
  */
 
-import { createRoot } from 'react-dom/client';
+import { createRoot } from '@wordpress/element';
 
 import App from '../App';
 

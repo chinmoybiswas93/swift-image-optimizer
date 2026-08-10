@@ -8,10 +8,10 @@
 namespace SwiftImageOptimizer\App;
 
 use RuntimeException;
-use SwiftImageOptimizer\App\Foundation\Application;
-use SwiftImageOptimizer\App\Foundation\Config;
-use SwiftImageOptimizer\App\Foundation\Router;
-use SwiftImageOptimizer\App\Foundation\View;
+use SwiftImageOptimizer\Framework\Application;
+use SwiftImageOptimizer\Framework\Config;
+use SwiftImageOptimizer\Framework\Router;
+use SwiftImageOptimizer\Framework\View;
 
 if (!defined('ABSPATH')) {
     exit;

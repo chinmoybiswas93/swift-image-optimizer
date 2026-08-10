@@ -1,6 +1,6 @@
 /** Bulk optimization tab. */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { Button, Notice, Section, Spinner, Stat } from '../Components';
 import { IconBolt, IconLayers, IconSliders } from '../Icons';

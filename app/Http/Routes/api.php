@@ -8,7 +8,7 @@
  * @package SwiftImageOptimizer
  */
 
-use SwiftImageOptimizer\App\Foundation\Router;
+use SwiftImageOptimizer\Framework\Router;
 use SwiftImageOptimizer\App\Http\Controllers\BackupController;
 use SwiftImageOptimizer\App\Http\Controllers\BulkController;
 use SwiftImageOptimizer\App\Http\Controllers\DiagnosticsController;

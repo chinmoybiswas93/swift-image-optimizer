@@ -7,7 +7,7 @@
  * plugin used to boot through - each of which existed only to hold one or two
  * of these lines.
  *
- * Required by Foundation\Application::requireCommonFiles(). $app is in scope.
+ * Required by Framework\Application::requireCommonFiles(). $app is in scope.
  *
  * @package SwiftImageOptimizer
  */
@@ -19,7 +19,7 @@ use SwiftImageOptimizer\App\Hooks\Handlers\MediaLibraryHandler;
 use SwiftImageOptimizer\App\Hooks\Handlers\MenuHandler;
 use SwiftImageOptimizer\App\Hooks\Handlers\NoticeHandler;
 use SwiftImageOptimizer\App\Hooks\Scheduler\JobRunner;
-use SwiftImageOptimizer\App\Repositories\SettingsRepository;
+use SwiftImageOptimizer\Api\StoreSettings;
 use SwiftImageOptimizer\App\Services\Engine\EngineFactory;
 use SwiftImageOptimizer\App\Services\Logging\Logger;
 use SwiftImageOptimizer\App\Services\Rewrite\Fallback404;
@@ -35,14 +35,14 @@ if (!defined('ABSPATH')) {
  * because add_action/add_filter are safe at any point before their hook fires.
  */
 add_action('init', static function () {
-    (new SettingsRepository())->register();
+    (new StoreSettings())->register();
 });
 
 // A settings change can alter which engine gets selected.
-add_action('update_option_' . SettingsRepository::OPTION, [EngineFactory::class, 'reset']);
+add_action('update_option_' . StoreSettings::OPTION, [EngineFactory::class, 'reset']);
 
 // ... and whether logging is on, which Logger caches for the request.
-add_action('update_option_' . SettingsRepository::OPTION, [Logger::class, 'settings_changed'], 10, 2);
+add_action('update_option_' . StoreSettings::OPTION, [Logger::class, 'settings_changed'], 10, 2);
 
 /*
  * Uploads. Intercepts new attachments so they are converted on the way in.

@@ -79,6 +79,6 @@ prefixed globals, `readme.txt`, i18n throughout.
 ## Tech constraints
 
 - PHP 7.4 minimum (verified: every file parses under 7.4, 8.2 and 8.4)
-- WordPress 6.0 minimum
+- WordPress 6.2 minimum (the admin bundle uses createRoot from @wordpress/element, which is React 18 / WP 6.2)
 - No Composer runtime dependency — a hand-rolled PSR-4 autoloader lives in the main plugin file
 - `@wordpress/scripts` is a **dev** dependency only; `build/` is committed for distribution

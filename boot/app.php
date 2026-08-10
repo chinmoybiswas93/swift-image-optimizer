@@ -8,7 +8,7 @@
  * @package SwiftImageOptimizer
  */
 
-use SwiftImageOptimizer\App\Foundation\Application;
+use SwiftImageOptimizer\Framework\Application;
 use SwiftImageOptimizer\App\Hooks\Handlers\ActivationHandler;
 use SwiftImageOptimizer\App\Hooks\Handlers\DeactivationHandler;
 use SwiftImageOptimizer\Database\DBMigrator;

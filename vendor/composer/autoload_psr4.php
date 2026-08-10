@@ -6,5 +6,7 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
+    'SwiftImageOptimizer\\Framework\\' => array($baseDir . '/framework'),
     'SwiftImageOptimizer\\App\\' => array($baseDir . '/app'),
+    'SwiftImageOptimizer\\Api\\' => array($baseDir . '/api'),
 );

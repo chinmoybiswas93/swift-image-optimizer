@@ -13,26 +13,33 @@ class ComposerStaticInitf98a835886381a800bd6f6301847f25d
     public static $prefixLengthsPsr4 = array (
         'S' => 
         array (
+            'SwiftImageOptimizer\\Framework\\' => 30,
             'SwiftImageOptimizer\\App\\' => 24,
+            'SwiftImageOptimizer\\Api\\' => 24,
         ),
     );
 
     public static $prefixDirsPsr4 = array (
+        'SwiftImageOptimizer\\Framework\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/framework',
+        ),
         'SwiftImageOptimizer\\App\\' => 
         array (
             0 => __DIR__ . '/../..' . '/app',
+        ),
+        'SwiftImageOptimizer\\Api\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/api',
         ),
     );
 
     public static $classMap = array (
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
+        'SwiftImageOptimizer\\Api\\Resource\\BaseResourceApi' => __DIR__ . '/../..' . '/api/Resource/BaseResourceApi.php',
+        'SwiftImageOptimizer\\Api\\Resource\\StatsResource' => __DIR__ . '/../..' . '/api/Resource/StatsResource.php',
+        'SwiftImageOptimizer\\Api\\StoreSettings' => __DIR__ . '/../..' . '/api/StoreSettings.php',
         'SwiftImageOptimizer\\App\\App' => __DIR__ . '/../..' . '/app/App.php',
-        'SwiftImageOptimizer\\App\\Foundation\\Application' => __DIR__ . '/../..' . '/app/Foundation/Application.php',
-        'SwiftImageOptimizer\\App\\Foundation\\Config' => __DIR__ . '/../..' . '/app/Foundation/Config.php',
-        'SwiftImageOptimizer\\App\\Foundation\\Container' => __DIR__ . '/../..' . '/app/Foundation/Container.php',
-        'SwiftImageOptimizer\\App\\Foundation\\Route' => __DIR__ . '/../..' . '/app/Foundation/Route.php',
-        'SwiftImageOptimizer\\App\\Foundation\\Router' => __DIR__ . '/../..' . '/app/Foundation/Router.php',
-        'SwiftImageOptimizer\\App\\Foundation\\View' => __DIR__ . '/../..' . '/app/Foundation/View.php',
         'SwiftImageOptimizer\\App\\Hooks\\CLI\\Commands' => __DIR__ . '/../..' . '/app/Hooks/CLI/Commands.php',
         'SwiftImageOptimizer\\App\\Hooks\\Handlers\\ActivationHandler' => __DIR__ . '/../..' . '/app/Hooks/Handlers/ActivationHandler.php',
         'SwiftImageOptimizer\\App\\Hooks\\Handlers\\AssetHandler' => __DIR__ . '/../..' . '/app/Hooks/Handlers/AssetHandler.php',
@@ -56,8 +63,6 @@ class ComposerStaticInitf98a835886381a800bd6f6301847f25d
         'SwiftImageOptimizer\\App\\Models\\Model' => __DIR__ . '/../..' . '/app/Models/Model.php',
         'SwiftImageOptimizer\\App\\Models\\OptimizationLog' => __DIR__ . '/../..' . '/app/Models/OptimizationLog.php',
         'SwiftImageOptimizer\\App\\Models\\UrlLookup' => __DIR__ . '/../..' . '/app/Models/UrlLookup.php',
-        'SwiftImageOptimizer\\App\\Repositories\\SettingsRepository' => __DIR__ . '/../..' . '/app/Repositories/SettingsRepository.php',
-        'SwiftImageOptimizer\\App\\Repositories\\StatsRepository' => __DIR__ . '/../..' . '/app/Repositories/StatsRepository.php',
         'SwiftImageOptimizer\\App\\Services\\AttachmentConverter' => __DIR__ . '/../..' . '/app/Services/AttachmentConverter.php',
         'SwiftImageOptimizer\\App\\Services\\Backup\\BackupManager' => __DIR__ . '/../..' . '/app/Services/Backup/BackupManager.php',
         'SwiftImageOptimizer\\App\\Services\\Bulk\\Runner' => __DIR__ . '/../..' . '/app/Services/Bulk/Runner.php',
@@ -76,11 +81,16 @@ class ComposerStaticInitf98a835886381a800bd6f6301847f25d
         'SwiftImageOptimizer\\App\\Services\\Rewrite\\Fallback404' => __DIR__ . '/../..' . '/app/Services/Rewrite/Fallback404.php',
         'SwiftImageOptimizer\\App\\Services\\Rewrite\\UrlMap' => __DIR__ . '/../..' . '/app/Services/Rewrite/UrlMap.php',
         'SwiftImageOptimizer\\App\\Services\\Upload\\Interceptor' => __DIR__ . '/../..' . '/app/Services/Upload/Interceptor.php',
-        'SwiftImageOptimizer\\App\\Vite' => __DIR__ . '/../..' . '/app/Vite.php',
         'SwiftImageOptimizer\\Database\\DBMigrator' => __DIR__ . '/../..' . '/database/DBMigrator.php',
         'SwiftImageOptimizer\\Database\\DataBackfills' => __DIR__ . '/../..' . '/database/DataBackfills.php',
         'SwiftImageOptimizer\\Database\\Migrations\\LogMigrator' => __DIR__ . '/../..' . '/database/Migrations/LogMigrator.php',
         'SwiftImageOptimizer\\Database\\Migrations\\UrlMigrator' => __DIR__ . '/../..' . '/database/Migrations/UrlMigrator.php',
+        'SwiftImageOptimizer\\Framework\\Application' => __DIR__ . '/../..' . '/framework/Application.php',
+        'SwiftImageOptimizer\\Framework\\Config' => __DIR__ . '/../..' . '/framework/Config.php',
+        'SwiftImageOptimizer\\Framework\\Container' => __DIR__ . '/../..' . '/framework/Container.php',
+        'SwiftImageOptimizer\\Framework\\Route' => __DIR__ . '/../..' . '/framework/Route.php',
+        'SwiftImageOptimizer\\Framework\\Router' => __DIR__ . '/../..' . '/framework/Router.php',
+        'SwiftImageOptimizer\\Framework\\View' => __DIR__ . '/../..' . '/framework/View.php',
     );
 
     public static function getInitializer(ClassLoader $loader)

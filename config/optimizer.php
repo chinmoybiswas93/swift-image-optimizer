@@ -2,7 +2,7 @@
 /**
  * Optimizer defaults and constraints.
  *
- * These were previously hardcoded in SettingsRepository::defaults() and
+ * These were previously hardcoded in StoreSettings::defaults() and
  * ::sanitize(). Keeping the bounds here as data means the sanitizer and the
  * admin UI can be driven from one source rather than drifting apart.
  *

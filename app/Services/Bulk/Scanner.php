@@ -8,7 +8,7 @@
 namespace SwiftImageOptimizer\App\Services\Bulk;
 
 use SwiftImageOptimizer\App\Models\OptimizationLog;
-use SwiftImageOptimizer\App\Repositories\SettingsRepository;
+use SwiftImageOptimizer\Api\StoreSettings;
 use SwiftImageOptimizer\App\Services\AttachmentConverter;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -32,7 +32,7 @@ class Scanner {
 	public static function mime_types() {
 		$types = array( 'image/jpeg' );
 
-		if ( SettingsRepository::get( 'convert_png' ) ) {
+		if ( StoreSettings::get( 'convert_png' ) ) {
 			$types[] = 'image/png';
 		}
 

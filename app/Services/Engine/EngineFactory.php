@@ -7,7 +7,7 @@
 
 namespace SwiftImageOptimizer\App\Services\Engine;
 
-use SwiftImageOptimizer\App\Repositories\SettingsRepository;
+use SwiftImageOptimizer\Api\StoreSettings;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -62,7 +62,7 @@ class EngineFactory {
 			}
 		}
 
-		$preferred = SettingsRepository::get( 'engine', 'auto' );
+		$preferred = StoreSettings::get( 'engine', 'auto' );
 
 		// An explicit preference moves that engine to the front of the chain
 		// rather than replacing it, so the fallbacks still apply to files it

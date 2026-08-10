@@ -5,7 +5,7 @@
  * @package SwiftImageOptimizer
  */
 
-namespace SwiftImageOptimizer\App\Foundation;
+namespace SwiftImageOptimizer\Framework;
 
 use SwiftImageOptimizer\App\App;
 

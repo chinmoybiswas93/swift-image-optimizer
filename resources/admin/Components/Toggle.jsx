@@ -8,10 +8,10 @@
  * focusable, space-togglable and announced correctly without extra ARIA.
  */
 
-import { useId } from 'react';
+import useFieldId from './useFieldId';
 
 const Toggle = ( { label, help, checked = false, onChange, disabled = false } ) => {
-	const id     = useId();
+	const id     = useFieldId( 'sio-toggle' );
 	const helpId = help ? `${ id }-help` : undefined;
 
 	return (

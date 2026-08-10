@@ -1,10 +1,11 @@
 /**
  * Form controls, buttons, notices and the spinner.
  *
- * These replace @wordpress/components. Sizing follows WordPress admin
- * conventions closely enough that the screen does not look foreign next to
- * core, but nothing here inherits from core's stylesheet - a change to
- * wp-components cannot move this UI.
+ * These replace @wordpress/components. React itself comes from WordPress, but
+ * none of its UI does: sizing follows WordPress admin conventions closely
+ * enough that the screen does not look foreign next to core, while nothing
+ * here inherits from core's stylesheet - a change to wp-components cannot
+ * move this UI.
  *
  * Every interactive control keeps a visible :focus-visible ring. Core supplies
  * one for its own controls; owning the controls means owning that too.

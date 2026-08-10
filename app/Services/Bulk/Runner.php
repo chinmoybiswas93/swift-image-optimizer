@@ -7,7 +7,7 @@
 
 namespace SwiftImageOptimizer\App\Services\Bulk;
 
-use SwiftImageOptimizer\App\Repositories\SettingsRepository;
+use SwiftImageOptimizer\Api\StoreSettings;
 use SwiftImageOptimizer\App\Services\AttachmentConverter;
 use SwiftImageOptimizer\App\Services\Logging\Logger;
 use SwiftImageOptimizer\App\Services\Rewrite\DatabaseRewriter;
@@ -173,7 +173,7 @@ class Runner {
 			$combined_map += $result['url_map'];
 		}
 
-		if ( ! empty( $combined_map ) && SettingsRepository::get( 'rewrite_urls' ) ) {
+		if ( ! empty( $combined_map ) && StoreSettings::get( 'rewrite_urls' ) ) {
 			$this->rewriter->replace( $combined_map );
 		}
 

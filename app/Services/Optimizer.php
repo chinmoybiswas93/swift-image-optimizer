@@ -7,7 +7,7 @@
 
 namespace SwiftImageOptimizer\App\Services;
 
-use SwiftImageOptimizer\App\Repositories\SettingsRepository;
+use SwiftImageOptimizer\Api\StoreSettings;
 use SwiftImageOptimizer\App\Services\Engine\EngineFactory;
 use SwiftImageOptimizer\App\Services\Logging\Logger;
 use WP_Error;
@@ -56,7 +56,7 @@ class Optimizer {
 			return new WP_Error( 'unsupported-format', __( 'This image format is not converted.', 'swift-image-optimizer' ) );
 		}
 
-		if ( 'image/png' === $mime && ! SettingsRepository::get( 'convert_png' ) ) {
+		if ( 'image/png' === $mime && ! StoreSettings::get( 'convert_png' ) ) {
 			return new WP_Error( 'png-disabled', __( 'PNG conversion is disabled in settings.', 'swift-image-optimizer' ) );
 		}
 
@@ -115,7 +115,7 @@ class Optimizer {
 		$options = wp_parse_args(
 			$args,
 			array(
-				'quality'       => (int) SettingsRepository::get( 'quality', 82 ),
+				'quality'       => (int) StoreSettings::get( 'quality', 82 ),
 				'max_dimension' => $this->effective_max_dimension(),
 			)
 		);
@@ -176,7 +176,7 @@ class Optimizer {
 		$original_size  = (int) filesize( $file );
 		$optimized_size = (int) filesize( $temp );
 
-		if ( SettingsRepository::get( 'skip_if_larger' ) && $optimized_size >= $original_size ) {
+		if ( StoreSettings::get( 'skip_if_larger' ) && $optimized_size >= $original_size ) {
 			$this->cleanup( $temp );
 
 			$larger = new WP_Error(
@@ -251,9 +251,9 @@ class Optimizer {
 	 * @return int Longest allowed edge, or 0 when unconstrained.
 	 */
 	private function effective_max_dimension() {
-		$configured = (int) SettingsRepository::get( 'max_dimension', 0 );
+		$configured = (int) StoreSettings::get( 'max_dimension', 0 );
 
-		if ( SettingsRepository::get( 'disable_wp_scaling' ) ) {
+		if ( StoreSettings::get( 'disable_wp_scaling' ) ) {
 			return $configured;
 		}
 

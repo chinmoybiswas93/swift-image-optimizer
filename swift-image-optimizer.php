@@ -4,7 +4,7 @@
  * Plugin URI:        https://wpswift.com/swift-image-optimizer
  * Description:       Automatically convert and compress images to WebP on upload, plus individual and bulk optimization for your existing Media Library.
  * Version:           1.1.0
- * Requires at least: 6.0
+ * Requires at least: 6.2
  * Requires PHP:      7.4
  * Author:            crocodevs
  * Author URI:        https://crocodevs.com
@@ -38,7 +38,7 @@ define( 'SWIFT_IMAGE_OPTIMIZER_BASENAME', plugin_basename( __FILE__ ) );
  * generated autoloader, committed so the plugin ships without needing a build
  * step on the destination server.
  *
- * @return \SwiftImageOptimizer\App\Foundation\Application
+ * @return \SwiftImageOptimizer\Framework\Application
  */
 return ( function ( $boot ) {
 	return $boot( __FILE__ );

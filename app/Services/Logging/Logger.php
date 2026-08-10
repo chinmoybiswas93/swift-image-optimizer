@@ -7,7 +7,7 @@
 
 namespace SwiftImageOptimizer\App\Services\Logging;
 
-use SwiftImageOptimizer\App\Repositories\SettingsRepository;
+use SwiftImageOptimizer\Api\StoreSettings;
 use WP_Error;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -123,7 +123,7 @@ class Logger {
 	 */
 	public static function is_enabled() {
 		if ( null === self::$verbose ) {
-			self::$verbose = (bool) SettingsRepository::get( 'enable_log' );
+			self::$verbose = (bool) StoreSettings::get( 'enable_log' );
 		}
 
 		return self::$verbose;

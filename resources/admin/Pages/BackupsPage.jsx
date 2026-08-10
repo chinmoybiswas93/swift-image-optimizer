@@ -1,6 +1,6 @@
 /** Backups tab. */
 
-import { useState } from 'react';
+import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { Button, Notice, Section, Spinner, Stat } from '../Components';
 import { IconArchive } from '../Icons';

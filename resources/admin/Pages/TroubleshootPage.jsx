@@ -1,6 +1,6 @@
 /** Troubleshoot tab: what this server can do, and what the plugin just did. */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { Button, Notice, Section, Spinner, Stat, Toggle } from '../Components';
 import { IconDocument, IconLayers, IconStethoscope } from '../Icons';

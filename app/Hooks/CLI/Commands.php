@@ -8,7 +8,7 @@
 namespace SwiftImageOptimizer\App\Hooks\CLI;
 
 use SwiftImageOptimizer\App\Models\OptimizationLog;
-use SwiftImageOptimizer\App\Repositories\StatsRepository;
+use SwiftImageOptimizer\Api\Resource\StatsResource;
 use SwiftImageOptimizer\App\Services\AttachmentConverter;
 use SwiftImageOptimizer\App\Services\Backup\BackupManager;
 use SwiftImageOptimizer\App\Services\Bulk\Runner;
@@ -304,7 +304,7 @@ class Commands {
 	 * @return void
 	 */
 	public function stats() {
-		$stats   = StatsRepository::get( true );
+		$stats   = StatsResource::get( true );
 		$summary = Scanner::summary();
 
 		WP_CLI::log( sprintf( 'Images in library : %d', $summary['total'] ) );

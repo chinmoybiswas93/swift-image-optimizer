@@ -9,7 +9,6 @@ namespace SwiftImageOptimizer\App\Hooks\Handlers;
 
 use SwiftImageOptimizer\App\App;
 use SwiftImageOptimizer\App\Services\Bulk\Scanner;
-use SwiftImageOptimizer\App\Vite;
 use SwiftImageOptimizer\App\Services\Engine\EngineFactory;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -57,17 +56,29 @@ class AssetHandler {
 			return;
 		}
 
-		if ( ! Vite::isBuilt() ) {
+		$asset_file = SWIFT_IMAGE_OPTIMIZER_DIR . 'build/media.asset.php';
+
+		if ( ! file_exists( $asset_file ) ) {
 			return;
 		}
 
-		// media-views is what this extends; wp-i18n supplies the translation
-		// functions the bundle imports. Its own markup uses plugin classes, so
-		// there is no dependency on wp-components.
-		Vite::enqueueScript(
+		$asset = include $asset_file;
+
+		// media-views is what this bundle extends; the generated dependencies
+		// carry whatever WordPress scripts it imports (wp-i18n).
+		wp_enqueue_script(
 			self::HANDLE,
-			'media/media.js',
-			array( 'media-views', 'wp-i18n' )
+			SWIFT_IMAGE_OPTIMIZER_URL . 'build/media.js',
+			array_merge( $asset['dependencies'], array( 'media-views' ) ),
+			$asset['version'],
+			true
+		);
+
+		wp_enqueue_style(
+			self::HANDLE,
+			SWIFT_IMAGE_OPTIMIZER_URL . 'build/media.css',
+			array(),
+			$asset['version']
 		);
 
 		wp_set_script_translations( self::HANDLE, 'swift-image-optimizer' );

@@ -14,7 +14,9 @@
 	},
 	"autoload": {
 		"psr-4": {
-			"SwiftImageOptimizer\\App\\": "app/"
+			"SwiftImageOptimizer\\App\\": "app/",
+			"SwiftImageOptimizer\\Api\\": "api/",
+			"SwiftImageOptimizer\\Framework\\": "framework/"
 		},
 		"classmap": [
 			"database/"

@@ -9,7 +9,7 @@
  * Implements the WAI-ARIA tabs pattern: roving tabindex, arrow/Home/End keys.
  */
 
-import { useState, useRef } from 'react';
+import { useState, useRef } from '@wordpress/element';
 
 const Tabs = ( { tabs, initial, children } ) => {
 	const [ active, setActive ] = useState( initial || tabs[ 0 ].name );

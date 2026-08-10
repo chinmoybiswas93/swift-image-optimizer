@@ -5,7 +5,7 @@
  * @package SwiftImageOptimizer
  */
 
-namespace SwiftImageOptimizer\App\Foundation;
+namespace SwiftImageOptimizer\Framework;
 
 if (!defined('ABSPATH')) {
     exit;

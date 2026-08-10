@@ -23,6 +23,5 @@ return [
     'rest_namespace' => 'swift-image-optimizer',
     'rest_version'   => 'v1',
 
-    // 'dev' makes Vite serve assets from the dev server instead of assets/.
     'env'            => 'production',
 ];

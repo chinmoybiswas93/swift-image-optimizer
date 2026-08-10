@@ -5,7 +5,7 @@
  * @package SwiftImageOptimizer
  */
 
-namespace SwiftImageOptimizer\App\Repositories;
+namespace SwiftImageOptimizer\Api;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -13,8 +13,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Single source of truth for plugin options.
+ *
+ * Bound in boot/bindings.php as a singleton aliased `settings`, so callers can
+ * reach it as App::make('settings') as well as statically.
  */
-class SettingsRepository {
+class StoreSettings {
 
 	/**
 	 * Option name holding the settings array.

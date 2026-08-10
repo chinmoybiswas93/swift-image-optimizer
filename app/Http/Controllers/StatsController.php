@@ -7,7 +7,7 @@
 
 namespace SwiftImageOptimizer\App\Http\Controllers;
 
-use SwiftImageOptimizer\App\Repositories\StatsRepository;
+use SwiftImageOptimizer\Api\Resource\StatsResource;
 use SwiftImageOptimizer\App\Services\Backup\BackupManager;
 use WP_REST_Response;
 
@@ -31,7 +31,7 @@ class StatsController extends Controller
      */
     public function index()
     {
-        $stats                 = StatsRepository::get(true);
+        $stats                 = StatsResource::get(true);
         $stats['backup_bytes'] = BackupManager::disk_usage();
 
         return $this->sendSuccess($stats);

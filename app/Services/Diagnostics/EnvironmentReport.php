@@ -9,7 +9,7 @@ namespace SwiftImageOptimizer\App\Services\Diagnostics;
 
 use SwiftImageOptimizer\App\Models\OptimizationLog;
 use SwiftImageOptimizer\Database\DBMigrator;
-use SwiftImageOptimizer\App\Repositories\SettingsRepository;
+use SwiftImageOptimizer\Api\StoreSettings;
 use SwiftImageOptimizer\App\Services\Backup\BackupManager;
 use SwiftImageOptimizer\App\Services\Bulk\Scanner;
 use SwiftImageOptimizer\App\Services\Engine\EngineFactory;
@@ -61,7 +61,7 @@ class EnvironmentReport {
 	private static function engines() {
 		$available = EngineFactory::availability();
 		$active    = EngineFactory::get();
-		$preferred = SettingsRepository::get( 'engine', 'auto' );
+		$preferred = StoreSettings::get( 'engine', 'auto' );
 
 		$rows = array();
 

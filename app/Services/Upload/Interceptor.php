@@ -8,7 +8,7 @@
 namespace SwiftImageOptimizer\App\Services\Upload;
 
 use SwiftImageOptimizer\App\Models\OptimizationLog;
-use SwiftImageOptimizer\App\Repositories\SettingsRepository;
+use SwiftImageOptimizer\Api\StoreSettings;
 use SwiftImageOptimizer\App\Services\Backup\BackupManager;
 use SwiftImageOptimizer\App\Services\Logging\Logger;
 use SwiftImageOptimizer\App\Services\Optimizer;
@@ -86,7 +86,7 @@ class Interceptor {
 	 * @return int|false
 	 */
 	public function maybe_disable_scaling( $threshold ) {
-		return SettingsRepository::get( 'disable_wp_scaling' ) ? false : $threshold;
+		return StoreSettings::get( 'disable_wp_scaling' ) ? false : $threshold;
 	}
 
 	/**
@@ -99,7 +99,7 @@ class Interceptor {
 	public function handle_upload( $upload, $context = 'upload' ) {
 		unset( $context );
 
-		if ( ! SettingsRepository::get( 'auto_optimize' ) ) {
+		if ( ! StoreSettings::get( 'auto_optimize' ) ) {
 			return $upload;
 		}
 
@@ -132,7 +132,7 @@ class Interceptor {
 		// lossy, possibly downscaled WebP with nothing to go back to.
 		$backup = array();
 
-		if ( SettingsRepository::get( 'backup_uploads' ) ) {
+		if ( StoreSettings::get( 'backup_uploads' ) ) {
 			$backup = BackupManager::backup_file( $upload['file'] );
 
 			if ( is_wp_error( $backup ) ) {

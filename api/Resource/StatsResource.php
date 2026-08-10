@@ -5,7 +5,7 @@
  * @package SwiftImageOptimizer
  */
 
-namespace SwiftImageOptimizer\App\Repositories;
+namespace SwiftImageOptimizer\Api\Resource;
 
 use SwiftImageOptimizer\App\Models\OptimizationLog;
 
@@ -14,14 +14,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Reads the log table to produce dashboard numbers.
+ * Reads the log table to produce the dashboard numbers.
  */
-class StatsRepository {
+class StatsResource extends BaseResourceApi {
 
 	/**
 	 * Transient caching the aggregate.
+	 *
+	 * Defined by the model that invalidates it, so the writer and the reader
+	 * cannot drift onto different keys.
 	 */
-	const CACHE_KEY = 'swift_image_optimizer_stats';
+	const CACHE_KEY = OptimizationLog::STATS_CACHE_KEY;
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @var string
+	 */
+	protected static $cacheKey = self::CACHE_KEY;
 
 	/**
 	 * Compute the aggregate savings.

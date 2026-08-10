@@ -1,6 +1,6 @@
 /** Root component: masthead, hero stats and the tab shell. */
 
-import { useState } from 'react';
+import { useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import { Tabs } from './Components';
 import Masthead from './Partials/Masthead';

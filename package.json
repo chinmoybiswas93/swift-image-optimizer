@@ -4,22 +4,15 @@
 	"description": "Admin interface for the Swift Image Optimizer WordPress plugin.",
 	"license": "GPL-2.0-or-later",
 	"private": true,
-	"type": "module",
 	"scripts": {
-		"build": "vite build",
-		"dev": "vite",
-		"lint:js": "eslint resources",
+		"build": "wp-scripts build",
+		"start": "wp-scripts start",
+		"lint:js": "wp-scripts lint-js",
 		"lint:php": "phpcs --standard=phpcs.xml.dist -s",
 		"test:e2e": "playwright test"
 	},
-	"dependencies": {
-		"react": "^18.3.1",
-		"react-dom": "^18.3.1"
-	},
 	"devDependencies": {
 		"@playwright/test": "^1.62.1",
-		"@vitejs/plugin-react": "^4.3.4",
-		"sass": "^1.83.0",
-		"vite": "^6.0.7"
+		"@wordpress/scripts": "^30.0.0"
 	}
 }

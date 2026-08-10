@@ -8,12 +8,11 @@
 namespace SwiftImageOptimizer\App\Hooks\Handlers;
 
 use SwiftImageOptimizer\App\App;
-use SwiftImageOptimizer\App\Vite;
 use SwiftImageOptimizer\App\Services\Backup\BackupManager;
 use SwiftImageOptimizer\App\Services\Bulk\Scanner;
 use SwiftImageOptimizer\App\Services\Engine\EngineFactory;
-use SwiftImageOptimizer\App\Repositories\SettingsRepository;
-use SwiftImageOptimizer\App\Repositories\StatsRepository;
+use SwiftImageOptimizer\Api\StoreSettings;
+use SwiftImageOptimizer\Api\Resource\StatsResource;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -106,37 +105,53 @@ class MenuHandler {
 			return;
 		}
 
-		if ( ! Vite::isBuilt() ) {
+		$asset_file = SWIFT_IMAGE_OPTIMIZER_DIR . 'build/admin.asset.php';
+
+		if ( ! file_exists( $asset_file ) ) {
 			add_action( 'admin_notices', array( $this, 'missing_build_notice' ) );
 			return;
 		}
 
-		// wp-i18n is the only WordPress script the bundle depends on: the app
-		// imports its translation functions from the global that this handle
-		// defines. No wp-components, no wp-element - React is bundled.
-		$handle = Vite::enqueueScript(
+		// The generated dependency list is what ties the bundle to WordPress's
+		// own React, apiFetch and i18n scripts. It will contain wp-element,
+		// wp-api-fetch and wp-i18n - and deliberately not wp-components, since
+		// every control on this screen is the plugin's own.
+		$asset = include $asset_file;
+
+		wp_enqueue_script(
 			'swift-image-optimizer-admin',
-			'admin/bootstrap/app.jsx',
-			array( 'wp-i18n' )
+			SWIFT_IMAGE_OPTIMIZER_URL . 'build/admin.js',
+			$asset['dependencies'],
+			$asset['version'],
+			true
 		);
 
-		wp_set_script_translations( $handle, 'swift-image-optimizer' );
+		// The generated version hash tracks the JavaScript only, so a CSS-only
+		// rebuild would keep shipping the old stylesheet from the browser cache.
+		// Version the stylesheet by its own mtime instead.
+		$style_path = SWIFT_IMAGE_OPTIMIZER_DIR . 'build/admin.css';
+
+		wp_enqueue_style(
+			'swift-image-optimizer-admin',
+			SWIFT_IMAGE_OPTIMIZER_URL . 'build/admin.css',
+			array(),
+			file_exists( $style_path ) ? (string) filemtime( $style_path ) : $asset['version']
+		);
+
+		wp_set_script_translations( 'swift-image-optimizer-admin', 'swift-image-optimizer' );
 
 		$engine = EngineFactory::get();
 
 		wp_localize_script(
-			$handle,
+			'swift-image-optimizer-admin',
 			'swiftImageOptimizer',
 			array(
 				'restUrl'     => esc_url_raw( rest_url( App::router()->getNamespace() . '/' ) ),
-				// Settings are saved through core's own settings endpoint, which
-				// lives outside the plugin namespace.
-				'wpRestUrl'   => esc_url_raw( rest_url() ),
 				'nonce'       => wp_create_nonce( 'wp_rest' ),
-				'settings'    => SettingsRepository::all(),
-				'optionName'  => SettingsRepository::OPTION,
+				'settings'    => StoreSettings::all(),
+				'optionName'  => StoreSettings::OPTION,
 				'summary'     => Scanner::summary(),
-				'stats'       => StatsRepository::get(),
+				'stats'       => StatsResource::get(),
 				'engine'      => $engine ? $engine->name() : '',
 				'engines'     => EngineFactory::availability(),
 				'backupBytes' => BackupManager::disk_usage(),

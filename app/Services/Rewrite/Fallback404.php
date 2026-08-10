@@ -8,7 +8,7 @@
 namespace SwiftImageOptimizer\App\Services\Rewrite;
 
 use SwiftImageOptimizer\App\Models\UrlLookup;
-use SwiftImageOptimizer\App\Repositories\SettingsRepository;
+use SwiftImageOptimizer\Api\StoreSettings;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -31,7 +31,7 @@ class Fallback404 {
 	 * @return void
 	 */
 	public function register() {
-		if ( ! SettingsRepository::get( 'enable_404_fallback' ) ) {
+		if ( ! StoreSettings::get( 'enable_404_fallback' ) ) {
 			return;
 		}
 

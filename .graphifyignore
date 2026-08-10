@@ -1,0 +1,13 @@
+# Paths kept out of the knowledge graph.
+#
+# graphify already skips node_modules/, build/ and dist/ by default. These are
+# the plugin-specific additions.
+
+# Composer's generated autoloader. It is committed so the plugin ships without
+# a build step on the user's server, but it is machine-generated third-party
+# plumbing with no architectural meaning - graphing it buries the real classes.
+vendor/
+
+# Test artefacts and reports, regenerated on every run.
+test-results/
+playwright-report/

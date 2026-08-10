@@ -7,7 +7,7 @@
 
 namespace SwiftImageOptimizer\App\Services\Backup;
 
-use SwiftImageOptimizer\App\Repositories\SettingsRepository;
+use SwiftImageOptimizer\Api\StoreSettings;
 use SwiftImageOptimizer\App\Services\Logging\Logger;
 use WP_Error;
 
@@ -465,7 +465,7 @@ class BackupManager {
 	 * @return int Unix timestamp, or 0 when backups are kept forever.
 	 */
 	public static function expiry() {
-		$days = (int) SettingsRepository::get( 'backup_retention', 30 );
+		$days = (int) StoreSettings::get( 'backup_retention', 30 );
 
 		if ( $days <= 0 ) {
 			return 0;

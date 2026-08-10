@@ -4,7 +4,7 @@ node_modules/
 # vendor/ IS committed. The plugin has no Composer dependencies - vendor/ holds
 # nothing but the generated PSR-4 autoloader (~84K, 12 files). WordPress.org
 # distributes the plugin as-is with no build step on the destination server, so
-# the autoloader has to ship with it, for the same reason assets/ does.
+# the autoloader has to ship with it, for the same reason build/ does.
 
 # OS / editor
 .DS_Store
@@ -20,7 +20,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# assets/ is committed deliberately: WordPress.org distributes the plugin as-is,
+# build/ is committed deliberately: WordPress.org distributes the plugin as-is,
 # so the built admin bundle has to ship with it. resources/ holds the source.
 
 # Zip artifacts from bin/build-dist.sh

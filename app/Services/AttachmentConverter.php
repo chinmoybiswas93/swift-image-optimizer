@@ -9,7 +9,7 @@ namespace SwiftImageOptimizer\App\Services;
 
 use SwiftImageOptimizer\App\Models\OptimizationLog;
 use SwiftImageOptimizer\App\Models\UrlLookup;
-use SwiftImageOptimizer\App\Repositories\SettingsRepository;
+use SwiftImageOptimizer\Api\StoreSettings;
 use SwiftImageOptimizer\App\Services\Backup\BackupManager;
 use SwiftImageOptimizer\App\Services\Logging\Logger;
 use SwiftImageOptimizer\App\Services\Rewrite\DatabaseRewriter;
@@ -282,7 +282,7 @@ class AttachmentConverter {
 		$url_map = UrlMap::build( $before, $after, $base_url );
 		$url_map = $this->drop_foreign_filenames( $url_map, $attachment_id );
 
-		if ( ! $defer_rewrite && SettingsRepository::get( 'rewrite_urls' ) ) {
+		if ( ! $defer_rewrite && StoreSettings::get( 'rewrite_urls' ) ) {
 			$report = $this->rewriter->replace( $url_map );
 
 			Logger::info(
@@ -409,7 +409,7 @@ class AttachmentConverter {
 				);
 			}
 
-			if ( $reverse && SettingsRepository::get( 'rewrite_urls' ) ) {
+			if ( $reverse && StoreSettings::get( 'rewrite_urls' ) ) {
 				$this->rewriter->replace( $reverse );
 			}
 		}

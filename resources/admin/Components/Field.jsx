@@ -6,10 +6,10 @@
  * Keeping that in one place is what stops the controls drifting apart.
  */
 
-import { useId } from 'react';
+import useFieldId from './useFieldId';
 
 const Field = ( { label, help, className = '', children } ) => {
-	const id     = useId();
+	const id     = useFieldId( 'sio-field' );
 	const helpId = help ? `${ id }-help` : undefined;
 
 	return (
