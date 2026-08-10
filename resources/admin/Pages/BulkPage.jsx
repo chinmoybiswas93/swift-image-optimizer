@@ -32,15 +32,66 @@ const BulkPage = ( { summary, setSummary, setStats } ) => {
 		}
 	}, [ setSummary, setStats ] );
 
+	/*
+	 * Reconcile with the server on mount.
+	 *
+	 * This used to set progress but never `running`, so a run that was already
+	 * going rendered the Start button as though nothing was happening. Clicking
+	 * it then reset a live run - which is what produced "bulk already running"
+	 * from a button that looked available. The server is the authority now.
+	 */
 	useEffect( () => {
+		let cancelledEffect = false;
+
 		request( 'bulk/status', { method: 'POST' } )
 			.then( ( state ) => {
-				if ( state && state.running ) {
-					setProgress( state );
+				if ( cancelledEffect || ! state ) {
+					return;
 				}
+
+				setProgress( state );
+				setRunning( !! state.running );
 			} )
 			.catch( () => {} );
+
+		return () => {
+			cancelledEffect = true;
+		};
 	}, [] );
+
+	/*
+	 * Poll while a run is active, independently of who is driving it.
+	 *
+	 * Batches can now be advanced by cron or by another tab, so this tab has to
+	 * be able to see progress it did not cause. Without this the numbers only
+	 * moved when this tab's own loop happened to be the one running.
+	 */
+	useEffect( () => {
+		if ( ! running ) {
+			return undefined;
+		}
+
+		const timer = setInterval( async () => {
+			try {
+				const state = await request( 'bulk/status', { method: 'POST' } );
+
+				if ( ! state ) {
+					return;
+				}
+
+				setProgress( state );
+
+				if ( ! state.running ) {
+					setRunning( false );
+					refresh();
+				}
+			} catch ( e ) {
+				// A failed poll is not a failed run; the next tick retries.
+			}
+		}, 4000 );
+
+		return () => clearInterval( timer );
+	}, [ running, refresh ] );
 
 	const runDryRun = async () => {
 		setBusy( true );
@@ -53,6 +104,14 @@ const BulkPage = ( { summary, setSummary, setStats } ) => {
 		setBusy( false );
 	};
 
+	/*
+	 * Foreground pump.
+	 *
+	 * Cron keeps a run moving on its own, but only as fast as site traffic and
+	 * WP_CRON_LOCK_TIMEOUT allow. While someone is watching this page, driving
+	 * batches directly is far quicker, so both paths exist and the server-side
+	 * lock keeps them from overlapping.
+	 */
 	const loop = async () => {
 		let state = null;
 
@@ -64,6 +123,16 @@ const BulkPage = ( { summary, setSummary, setStats } ) => {
 			try {
 				state = await request( 'bulk/batch', { method: 'POST' } );
 			} catch ( e ) {
+				/*
+				 * `bulk-locked` means cron or another tab got this batch first,
+				 * which is ordinary now rather than a failure. Hand over and let
+				 * the status poll keep the display current instead of showing
+				 * the operator an error for something working as intended.
+				 */
+				if ( e && e.code === 'bulk-locked' ) {
+					return;
+				}
+
 				setError( e.message );
 				break;
 			}
@@ -71,12 +140,19 @@ const BulkPage = ( { summary, setSummary, setStats } ) => {
 			setProgress( state );
 		} while ( state && state.running );
 
-		setRunning( false );
-		await refresh();
+		if ( ! state || ! state.running ) {
+			setRunning( false );
+			await refresh();
+		}
 	};
 
 	const start = async () => {
+		/*
+		 * Resuming continues work the operator already agreed to, so it does not
+		 * ask again. Only a genuinely new run gets the warning.
+		 */
 		if (
+			! resumable &&
 			! window.confirm( // eslint-disable-line no-alert
 				__(
 					'This converts your existing images to WebP and updates every reference to them. Originals are backed up first. Continue?',
@@ -112,7 +188,15 @@ const BulkPage = ( { summary, setSummary, setStats } ) => {
 
 	const total = progress ? progress.total : summary.pending;
 	const done = progress ? progress.done : 0;
-	const percent = total > 0 ? Math.min( 100, Math.round( ( done / total ) * 100 ) ) : 0;
+
+	/*
+	 * The server computes the percentage now. Two clients each doing their own
+	 * arithmetic over different snapshots is what made the figures disagree
+	 * with one another mid-run.
+	 */
+	const percent = progress ? progress.percent ?? 0 : 0;
+	const resumable = !! ( progress && progress.resumable );
+	const stalled = !! ( progress && progress.stalled );
 
 	return (
 		<>
@@ -252,9 +336,14 @@ const BulkPage = ( { summary, setSummary, setStats } ) => {
 						<Button
 							variant="primary"
 							onClick={ start }
-							disabled={ ! config.engine || ( summary.pending ?? 0 ) === 0 }
+							disabled={
+								! config.engine ||
+								( ( summary.pending ?? 0 ) === 0 && ! resumable )
+							}
 						>
-							{ __( 'Start bulk optimization', 'swift-image-optimizer' ) }
+							{ resumable
+								? __( 'Resume bulk optimization', 'swift-image-optimizer' )
+								: __( 'Start bulk optimization', 'swift-image-optimizer' ) }
 						</Button>
 					) : (
 						<Button variant="secondary" isDestructive onClick={ cancel }>
@@ -263,6 +352,29 @@ const BulkPage = ( { summary, setSummary, setStats } ) => {
 					) }
 					{ running && <Spinner /> }
 				</div>
+
+				{ resumable && ! running && (
+					<Notice status="info" isDismissible={ false }>
+						{ sprintf(
+							/* translators: 1: images already done, 2: total images in the run. */
+							__(
+								'This run was stopped after %1$d of %2$d images. Resuming continues from there rather than starting again.',
+								'swift-image-optimizer'
+							),
+							done,
+							total
+						) }
+					</Notice>
+				) }
+
+				{ stalled && (
+					<Notice status="warning" isDismissible={ false }>
+						{ __(
+							'This run is still active but no batch has completed recently. Background processing relies on WP-Cron, which only runs when someone visits the site. Leave this page open to keep it moving, or set up a real system cron.',
+							'swift-image-optimizer'
+						) }
+					</Notice>
+				) }
 
 				{ progress && progress.errors && progress.errors.length > 0 && (
 					<div className="sio-errors">

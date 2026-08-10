@@ -16,6 +16,7 @@
 require __DIR__ . '/bootstrap.php';
 require __DIR__ . '/wp.php';
 
+use SwiftImageOptimizer\App\Hooks\Scheduler\BulkJobRunner;
 use SwiftImageOptimizer\App\Models\OptimizationLog;
 use SwiftImageOptimizer\App\Services\Bulk\Runner;
 use SwiftImageOptimizer\App\Services\Bulk\Scanner;
@@ -46,6 +47,7 @@ register_shutdown_function(
 		// the real admin screen do not inherit a half-finished run.
 		delete_option( Runner::PROGRESS_OPTION );
 		Lock::release( Runner::LOCK );
+		BulkJobRunner::unschedule();
 
 		harness_cleanup( $created );
 
@@ -167,6 +169,137 @@ $cancelled = $runner->cancel();
 Harness::ok( ! $cancelled['running'], 'cancel() clears the running flag' );
 
 /* ================================================================ */
+Harness::suite( 'Server is the authority on whether a run is active' );
+
+/*
+ * The reported bug: a second tab could call start() on a live run and reset
+ * run_id, cursor and every counter out from under the batch in flight.
+ */
+$live      = $runner->start();
+$live_run  = $live['run_id'];
+$again     = $runner->start();
+
+Harness::ok( $again['running'], 'start() on a live run still reports running' );
+Harness::same( $live_run, $again['run_id'], 'start() on a live run does NOT re-issue the run id' );
+
+$runner->cancel();
+
+/* ================================================================ */
+Harness::suite( 'Stop means pause, not restart' );
+
+/*
+ * Resuming is only meaningful with work left over, so this section needs more
+ * images than a single batch will take. Three more fixtures and a batch size
+ * of one guarantees the run stops part-finished.
+ */
+for ( $i = 0; $i < 3; $i++ ) {
+	$created[] = harness_import_attachment( harness_make_jpeg( 420, 320 ) );
+}
+
+$runner->start( true );
+
+$forced               = get_option( Runner::PROGRESS_OPTION );
+$forced['batch_size'] = 1;
+update_option( Runner::PROGRESS_OPTION, $forced, false );
+
+$runner->process_batch();
+
+Harness::ok( Scanner::count_pending() > 0, 'work remains after the first batch' );
+
+$mid = $runner->state();
+Harness::ok( (int) $mid['cursor'] > 0, 'a batch advanced the cursor' );
+
+$paused = $runner->cancel();
+Harness::same( (int) $mid['cursor'], (int) $paused['cursor'], 'cancel() keeps the cursor' );
+Harness::same( (int) $mid['done'], (int) $paused['done'], 'cancel() keeps the done count' );
+Harness::ok( $paused['resumable'], 'a stopped run with progress reports resumable' );
+
+$resumed = $runner->start();
+Harness::ok( $resumed['running'], 'start() resumes a stopped run' );
+Harness::same( (int) $mid['cursor'], (int) $resumed['cursor'], 'resume continues from the cursor, not from zero' );
+Harness::same( (int) $mid['done'], (int) $resumed['done'], 'resume keeps the done count' );
+Harness::same( $mid['run_id'], $resumed['run_id'], 'resume keeps the same run id' );
+
+/*
+ * fresh=true is ignored while a run is live - the running guard wins, because
+ * a batch in flight would overwrite the reset when it saves. Restarting is
+ * therefore Stop, then Start(fresh).
+ */
+$ignored = $runner->start( true );
+Harness::same( $mid['run_id'], $ignored['run_id'], 'start(fresh) does not restart a LIVE run' );
+
+$runner->cancel();
+
+$restarted = $runner->start( true );
+Harness::same( 0, (int) $restarted['cursor'], 'start(fresh) after stopping resets the cursor' );
+Harness::same( 0, (int) $restarted['done'], 'start(fresh) after stopping resets the done count' );
+Harness::ok( $restarted['run_id'] !== $mid['run_id'], 'start(fresh) after stopping issues a new run id' );
+
+$runner->cancel();
+
+/* ================================================================ */
+Harness::suite( 'Derived state is computed server-side' );
+
+$runner->start( true );
+$derived = $runner->state();
+
+Harness::ok( array_key_exists( 'percent', $derived ), 'state exposes a server-computed percent' );
+Harness::ok( array_key_exists( 'resumable', $derived ), 'state exposes resumable' );
+Harness::ok( array_key_exists( 'stalled', $derived ), 'state exposes stalled' );
+Harness::ok( array_key_exists( 'cron_next', $derived ), 'state exposes cron_next' );
+Harness::ok( ! array_key_exists( 'pending_rewrite', $derived ), 'internal pending_rewrite is not exposed to clients' );
+Harness::ok( $derived['percent'] >= 0 && $derived['percent'] <= 100, 'percent is within 0-100' );
+Harness::ok( ! $derived['stalled'], 'a run that just started is not stalled' );
+
+// The derived fields must never be written back into the stored option.
+$stored = get_option( Runner::PROGRESS_OPTION );
+Harness::ok( is_array( $stored ) && ! array_key_exists( 'percent', $stored ), 'percent is not persisted into the option' );
+Harness::ok( is_array( $stored ) && ! array_key_exists( 'stalled', $stored ), 'stalled is not persisted into the option' );
+Harness::ok( is_array( $stored ) && array_key_exists( 'pending_rewrite', $stored ), 'pending_rewrite IS kept in the stored option' );
+
+/* ================================================================ */
+Harness::suite( 'Cron drives the run' );
+
+Harness::ok(
+	(bool) wp_next_scheduled( BulkJobRunner::HOOK ),
+	'an active run has a batch queued on cron'
+);
+
+$runner->cancel();
+
+Harness::ok(
+	! wp_next_scheduled( BulkJobRunner::HOOK ),
+	'cancelling clears the queued cron batch'
+);
+
+/*
+ * The orphan window: a batch renames files and writes terminal log rows, then
+ * repoints references in one pass. A crash in between leaves those references
+ * broken forever, because Scanner treats a terminal row as finished. The map is
+ * parked before the rewrite so the next batch can finish the job.
+ */
+Harness::suite( 'Interrupted rewrite is recoverable' );
+
+$runner->start( true );
+
+$parked          = $runner->state();
+$stored          = get_option( Runner::PROGRESS_OPTION );
+$stored['pending_rewrite'] = array( 'https://example.com/never-used-by-this-site.jpg' => 'https://example.com/never-used-by-this-site.webp' );
+update_option( Runner::PROGRESS_OPTION, $stored, false );
+
+$after = $runner->process_batch();
+
+Harness::ok( ! is_wp_error( $after ), 'a batch runs with a parked rewrite map' );
+
+$stored_after = get_option( Runner::PROGRESS_OPTION );
+Harness::ok(
+	empty( $stored_after['pending_rewrite'] ),
+	'the parked rewrite map is flushed and cleared by the next batch'
+);
+
+$runner->cancel();
+
+/* ================================================================ */
 Harness::suite( 'Dry run is non-destructive' );
 
 $files_before = array();
@@ -175,7 +308,8 @@ foreach ( $created as $id ) {
 	$files_before[ $id ] = get_attached_file( $id );
 }
 
-$report = $runner->dry_run( 5 );
+$done_before = (int) $runner->state()['done'];
+$report      = $runner->dry_run( 5 );
 
 Harness::ok( is_array( $report ), 'dry_run returns a report' );
 Harness::ok( isset( $report['estimated_total'] ), 'dry run reports an estimate' );
@@ -189,7 +323,7 @@ foreach ( $files_before as $id => $path ) {
 }
 
 Harness::ok( $unchanged, 'dry run changed no files on disk' );
-Harness::same( 0, (int) $runner->state()['done'], 'dry run did not advance the run counter' );
+Harness::same( $done_before, (int) $runner->state()['done'], 'dry run did not advance the run counter' );
 
 /* ================================================================ */
 Harness::suite( 'Batch processing' );
@@ -197,7 +331,12 @@ Harness::suite( 'Batch processing' );
 if ( ! $safe_to_run_bulk ) {
 	echo "  SKIP  bulk run - {$pre_existing_pending} real image(s) are pending and would be converted\n";
 } else {
-	$runner->start();
+	// Earlier sections consumed the fixtures; this one needs its own.
+	for ( $i = 0; $i < 2; $i++ ) {
+		$created[] = harness_import_attachment( harness_make_jpeg( 480, 360 ) );
+	}
+
+	$runner->start( true );
 	$after_batch = $runner->process_batch();
 
 	Harness::ok( ! is_wp_error( $after_batch ), 'process_batch() ran' );

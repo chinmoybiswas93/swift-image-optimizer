@@ -15,6 +15,7 @@ use SwiftImageOptimizer\App\Http\Controllers\DiagnosticsController;
 use SwiftImageOptimizer\App\Http\Controllers\LogController;
 use SwiftImageOptimizer\App\Http\Controllers\OptimizeController;
 use SwiftImageOptimizer\App\Http\Controllers\StatsController;
+use SwiftImageOptimizer\App\Http\Requests\BulkStartRequest;
 use SwiftImageOptimizer\App\Http\Requests\LogQueryRequest;
 use SwiftImageOptimizer\App\Http\Requests\OptimizeRequest;
 
@@ -55,7 +56,7 @@ $router->withPolicy('AdminPolicy')->group(function ( Router $router ) {
     // GET semantically, but the shipped admin bundle POSTs to it, and a cached
     // build must not start 404ing the moment this deploys.
     $router->prefix('bulk')->group(function ( Router $router ) {
-        $router->post('start', [ BulkController::class, 'start' ]);
+        $router->post('start', [ BulkController::class, 'start' ])->args(BulkStartRequest::args());
         $router->match([ 'GET', 'POST' ], 'status', [ BulkController::class, 'status' ]);
         $router->post('batch', [ BulkController::class, 'batch' ]);
         $router->post('cancel', [ BulkController::class, 'cancel' ]);

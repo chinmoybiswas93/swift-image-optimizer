@@ -7,6 +7,7 @@
 
 namespace SwiftImageOptimizer\App\Hooks\Handlers;
 
+use SwiftImageOptimizer\App\Hooks\Scheduler\BulkJobRunner;
 use SwiftImageOptimizer\App\Hooks\Scheduler\JobRunner;
 
 if ( ! defined('ABSPATH')) {
@@ -27,6 +28,10 @@ class DeactivationHandler {
      */
     public function handle() {
         JobRunner::unschedule();
+
+        // A run left active would otherwise keep re-arming its own cron event
+        // on the next activation and resume converting unannounced.
+        BulkJobRunner::unschedule();
 
         do_action('swift_image_optimizer/deactivated');
     }

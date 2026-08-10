@@ -9,6 +9,7 @@ namespace SwiftImageOptimizer\App\Http\Controllers;
 
 use SwiftImageOptimizer\App\Services\Bulk\Runner;
 use WP_Error;
+use WP_REST_Request;
 use WP_REST_Response;
 
 if ( ! defined('ABSPATH')) {
@@ -41,12 +42,20 @@ class BulkController extends Controller {
     }
 
     /**
-     * Begin a run.
+     * Begin a run, resume a stopped one, or report the one already going.
      *
+     * `fresh` discards existing progress and starts from the first image.
+     * Without it, a stopped run continues from its cursor and a live run is
+     * returned untouched - start() is idempotent, so a second tab clicking
+     * Start can no longer reset a run that is mid-flight.
+     *
+     * @param WP_REST_Request $request Request.
      * @return WP_REST_Response
      */
-    public function start() {
-        return $this->sendSuccess($this->runner->start());
+    public function start( $request ) {
+        $fresh = $request instanceof WP_REST_Request ? (bool) $request->get_param('fresh') : false;
+
+        return $this->sendSuccess($this->runner->start($fresh));
     }
 
     /**

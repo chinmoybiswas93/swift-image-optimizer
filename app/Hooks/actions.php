@@ -18,6 +18,7 @@ use SwiftImageOptimizer\App\Hooks\Handlers\AssetHandler;
 use SwiftImageOptimizer\App\Hooks\Handlers\MediaLibraryHandler;
 use SwiftImageOptimizer\App\Hooks\Handlers\MenuHandler;
 use SwiftImageOptimizer\App\Hooks\Handlers\NoticeHandler;
+use SwiftImageOptimizer\App\Hooks\Scheduler\BulkJobRunner;
 use SwiftImageOptimizer\App\Hooks\Scheduler\JobRunner;
 use SwiftImageOptimizer\Api\StoreSettings;
 use SwiftImageOptimizer\App\Services\Engine\EngineFactory;
@@ -53,6 +54,11 @@ add_action('update_option_' . StoreSettings::OPTION, [ Logger::class, 'settings_
  * Backups. Daily retention sweep.
  */
 ( new JobRunner() )->register();
+
+/*
+ * Bulk. Advances an active run from cron, so it survives the tab closing.
+ */
+( new BulkJobRunner() )->register();
 
 /*
  * URL rewriting. Serves the converted file when a pre-conversion URL is hit.
