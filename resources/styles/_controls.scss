@@ -346,6 +346,106 @@ $sio-radius-sm: 4px;
 	&--info {
 		border-left-color: $sio-brand;
 	}
+
+	/*
+	 * Server-rendered notices printed on WordPress's own screens through the
+	 * admin_notices hook. Core repositions elements carrying its `.notice`
+	 * class; this plugin no longer uses that class, so it owns the spacing
+	 * that made a notice sit correctly under the page heading.
+	 */
+	&--standalone {
+		margin: $sio-space-md 0 $sio-space-md 2px;
+		max-width: 100%;
+	}
+}
+
+/* Toasts ----------------------------------------------------------------- */
+
+.sio-toasts {
+	position: fixed;
+	right: $sio-space-md;
+	bottom: $sio-space-md;
+	z-index: 100000; // Above WordPress's own admin chrome, including the menu.
+	display: flex;
+	flex-direction: column;
+	gap: $sio-space-sm;
+	width: min(360px, calc(100vw - #{$sio-space-md * 2}));
+	pointer-events: none; // The stack never blocks the page; each toast opts in.
+}
+
+.sio-toast {
+	display: flex;
+	align-items: flex-start;
+	gap: $sio-space-sm;
+	padding: 12px $sio-space-md;
+	background: #fff;
+	border: 1px solid $sio-border;
+	border-left-width: 4px;
+	border-radius: $sio-radius-sm;
+	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+	font-size: 13px;
+	line-height: 1.5;
+	pointer-events: auto;
+	animation: sio-toast-in 160ms ease-out;
+
+	&__body {
+		flex: 1 1 auto;
+		min-width: 0;
+	}
+
+	&__dismiss {
+		flex: 0 0 auto;
+		padding: 0 4px;
+		background: none;
+		border: 0;
+		font-size: 18px;
+		line-height: 1;
+		color: $sio-text-muted;
+		cursor: pointer;
+
+		&:hover {
+			color: $sio-text;
+		}
+
+		&:focus-visible {
+			@include sio-focus-ring;
+		}
+	}
+
+	&--error {
+		border-left-color: $sio-danger;
+	}
+
+	&--warning {
+		border-left-color: $sio-warning;
+	}
+
+	&--success {
+		border-left-color: $sio-success;
+	}
+
+	&--info {
+		border-left-color: $sio-brand;
+	}
+}
+
+@keyframes sio-toast-in {
+	from {
+		opacity: 0;
+		transform: translateY(6px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+// Respect a reduced-motion preference rather than animating regardless.
+@media (prefers-reduced-motion: reduce) {
+	.sio-toast {
+		animation: none;
+	}
 }
 
 /* Media Library cells and row actions ------------------------------------ */

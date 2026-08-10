@@ -2,7 +2,7 @@
 
 import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
-import { Button, Notice, Section, Spinner, Stat } from '../Components';
+import { Button, Notice, Section, Spinner, Stat, useToast } from '../Components';
 import { IconArchive } from '../Icons';
 import { request } from '../Services/http';
 import config from '../Services/config';
@@ -11,7 +11,8 @@ import { formatBytes } from '../Services/format';
 const BackupsPage = () => {
 	const [ bytes, setBytes ] = useState( config.backupBytes || 0 );
 	const [ busy, setBusy ] = useState( false );
-	const [ message, setMessage ] = useState( '' );
+	const [ error, setError ] = useState( '' );
+	const toast = useToast();
 
 	const purge = async () => {
 		if (
@@ -26,10 +27,11 @@ const BackupsPage = () => {
 		}
 
 		setBusy( true );
+		setError( '' );
 		try {
 			const result = await request( 'backups/purge', { method: 'POST' } );
 			setBytes( result.backup_bytes );
-			setMessage(
+			toast.push(
 				sprintf(
 					/* translators: %d: number of backups. */
 					__( '%d backups removed.', 'swift-image-optimizer' ),
@@ -37,14 +39,16 @@ const BackupsPage = () => {
 				)
 			);
 		} catch ( e ) {
-			setMessage( e.message );
+			// Previously shown as an info notice alongside successes, so a
+			// failed purge read like a completed one.
+			setError( e.message );
 		}
 		setBusy( false );
 	};
 
 	return (
 		<>
-			{ message && <Notice status="info" onRemove={ () => setMessage( '' ) }>{ message }</Notice> }
+			{ error && <Notice status="error" onRemove={ () => setError( '' ) }>{ error }</Notice> }
 
 			<Section
 				icon={ <IconArchive /> }

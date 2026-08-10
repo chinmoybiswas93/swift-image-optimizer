@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
-import { Button, Notice, Section, Spinner, Stat, Toggle } from '../Components';
+import { Button, Notice, Section, Spinner, Stat, Toggle, useToast } from '../Components';
 import { IconDocument, IconLayers, IconStethoscope } from '../Icons';
 import DiagnosticRow from '../Partials/DiagnosticRow';
 import { request, saveSettings } from '../Services/http';
@@ -14,9 +14,9 @@ const TroubleshootPage = ( { values, setValues } ) => {
 	const [ log, setLog ] = useState( { lines: [], size: 0, rotated: false } );
 	const [ filter, setFilter ] = useState( '' );
 	const [ busy, setBusy ] = useState( '' );
-	const [ message, setMessage ] = useState( '' );
 	const [ error, setError ] = useState( '' );
 	const viewer = useRef( null );
+	const toast = useToast();
 
 	const enabled = !! Number( values.enable_log );
 
@@ -81,7 +81,7 @@ const TroubleshootPage = ( { values, setValues } ) => {
 		try {
 			const result = await request( 'logs/reset', { method: 'POST' } );
 			setLog( result.log );
-			setMessage( __( 'Log cleared.', 'swift-image-optimizer' ) );
+			toast.push( __( 'Log cleared.', 'swift-image-optimizer' ) );
 		} catch ( e ) {
 			setError( e.message );
 		}
@@ -92,7 +92,7 @@ const TroubleshootPage = ( { values, setValues } ) => {
 		setBusy( 'requeue' );
 		try {
 			const result = await request( 'requeue', { method: 'POST' } );
-			setMessage(
+			toast.push(
 				sprintf(
 					/* translators: %d: number of images returned to the queue. */
 					__( '%d image(s) will be tried again on the next bulk run.', 'swift-image-optimizer' ),
@@ -110,7 +110,7 @@ const TroubleshootPage = ( { values, setValues } ) => {
 		setBusy( 'rescan' );
 		try {
 			const result = await request( 'rescan', { method: 'POST' } );
-			setMessage(
+			toast.push(
 				0 === result.cleared
 					? sprintf(
 							/* translators: %d: number of records checked. */
@@ -141,7 +141,7 @@ const TroubleshootPage = ( { values, setValues } ) => {
 		setBusy( 'cleanup' );
 		try {
 			const result = await request( 'cleanup', { method: 'POST' } );
-			setMessage(
+			toast.push(
 				sprintf(
 					/* translators: %d: number of leftover files deleted. */
 					__( '%d leftover file(s) removed.', 'swift-image-optimizer' ),
@@ -162,7 +162,7 @@ const TroubleshootPage = ( { values, setValues } ) => {
 
 		try {
 			await window.navigator.clipboard.writeText( report.text );
-			setMessage( __( 'Diagnostics copied to the clipboard.', 'swift-image-optimizer' ) );
+			toast.push( __( 'Diagnostics copied to the clipboard.', 'swift-image-optimizer' ) );
 		} catch ( e ) {
 			setError( __( 'Could not copy. Select the text and copy it manually.', 'swift-image-optimizer' ) );
 		}
@@ -176,8 +176,8 @@ const TroubleshootPage = ( { values, setValues } ) => {
 
 	return (
 		<>
+			{ /* Errors stay put: they describe something still wrong. */ }
 			{ error && <Notice status="error" onRemove={ () => setError( '' ) }>{ error }</Notice> }
-			{ message && <Notice status="success" onRemove={ () => setMessage( '' ) }>{ message }</Notice> }
 
 			<Section
 				icon={ <IconStethoscope /> }

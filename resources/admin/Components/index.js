@@ -12,4 +12,5 @@ export { default as Select } from './Select';
 export { default as Spinner } from './Spinner';
 export { default as Stat } from './Stat';
 export { default as Tabs } from './Tabs';
+export { ToastProvider, useToast } from './Toast';
 export { default as Toggle } from './Toggle';

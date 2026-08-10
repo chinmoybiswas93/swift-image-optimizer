@@ -2,18 +2,25 @@
 /**
  * Admin notice.
  *
- * Rendered with the plugin's own classes rather than WordPress's
- * notice notice-error markup, so notices match the rest of the plugin's UI
- * instead of inheriting core admin styling that can change under us.
+ * Entirely the plugin's own markup. It previously carried core's bare `notice`
+ * class as well, to borrow two behaviours: WordPress repositions elements with
+ * that class below the page heading, and binds dismissal to `is-dismissible`.
  *
- * The .notice class is kept alongside ours for one reason only: WordPress
- * moves elements carrying it into the correct position below the page heading,
- * and dismissible behaviour is bound to it.
+ * Borrowing them also meant inheriting core's notice styling, which is what put
+ * a WordPress-looking notice on the plugin's own screen and left the plugin's
+ * appearance dependent on admin CSS that changes between releases. Position is
+ * ours now, via `.sio-notice--standalone`.
+ *
+ * There is deliberately no dismiss button. The two bootstrap notices - no
+ * engine available, assets not built - describe conditions that are still true
+ * after being dismissed, and the Media Library result notice is gone on the
+ * next page load regardless. Adding one would mean either inline JavaScript or
+ * a script that is not guaranteed to have loaded, to hide a message that
+ * should not be hidden. Transient in-app feedback is a toast instead.
  *
  * @var string $type        One of error, warning, success, info.
  * @var string $message     Notice body. Pre-escaped by the caller.
  * @var string $heading     Optional bold lead-in.
- * @var bool   $dismissible Whether to render the core dismiss button.
  *
  * @package SwiftImageOptimizer
  */
@@ -30,22 +37,20 @@ if ( ! defined('ABSPATH')) {
  */
 // phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound, WordPress.WP.GlobalVariablesOverride.Prohibited
 
-$type        = isset($type) ? $type : 'info';
-$heading     = isset($heading) ? $heading : '';
-$dismissible = ! empty($dismissible);
+$type    = isset($type) ? $type : 'info';
+$heading = isset($heading) ? $heading : '';
 
 $classes = [
-    'notice',
     'sio-notice',
     'sio-notice--' . sanitize_html_class($type),
+    'sio-notice--standalone',
 ];
 
-if ($dismissible) {
-    $classes[] = 'is-dismissible';
-}
-
 ?>
-<div class="<?php echo esc_attr(implode(' ', $classes)); ?>">
+<div
+	class="<?php echo esc_attr(implode(' ', $classes)); ?>"
+	role="<?php echo 'error' === $type ? 'alert' : 'status'; ?>"
+>
 	<p class="sio-notice__body">
 		<?php if ('' !== $heading) : ?>
 			<strong class="sio-notice__heading"><?php echo esc_html($heading); ?></strong>

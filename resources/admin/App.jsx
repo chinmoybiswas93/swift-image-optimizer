@@ -2,7 +2,7 @@
 
 import { useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
-import { Tabs } from './Components';
+import { Tabs, ToastProvider } from './Components';
 import Masthead from './Partials/Masthead';
 import HeroStats from './Partials/HeroStats';
 import BulkPage from './Pages/BulkPage';
@@ -20,6 +20,7 @@ const App = () => {
 	const [ settings, setSettings ] = useState( config.settings || {} );
 
 	return (
+		<ToastProvider>
 		<div className="sio-app">
 			<Masthead />
 			<HeroStats stats={ stats } />
@@ -50,6 +51,7 @@ const App = () => {
 				} }
 			</Tabs>
 		</div>
+		</ToastProvider>
 	);
 };
 

@@ -298,9 +298,8 @@ class MediaLibraryHandler {
 		App::view()->render(
 			'admin.parts.notice',
 			array(
-				'type'        => $type,
-				'message'     => $message,
-				'dismissible' => true,
+				'type'    => $type,
+				'message' => $message,
 			)
 		);
 	}

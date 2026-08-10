@@ -2,26 +2,30 @@
 
 import { useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
-import { Button, Notice, NumberInput, Range, Section, Select, Spinner, Toggle } from '../Components';
+import { Button, Notice, NumberInput, Range, Section, Select, Spinner, Toggle, useToast } from '../Components';
 import { IconGear, IconLayers, IconSliders } from '../Icons';
 import { saveSettings } from '../Services/http';
 
 const SettingsPage = ( { values, setValues } ) => {
 	const [ saving, setSaving ] = useState( false );
-	const [ saved, setSaved ] = useState( false );
 	const [ error, setError ] = useState( '' );
+	const toast = useToast();
 
 	const set = ( key, value ) => {
 		setValues( ( prev ) => ( { ...prev, [ key ]: value } ) );
-		setSaved( false );
 	};
 
+	/*
+	 * "Saved" is a toast rather than a notice: it is true for a moment and
+	 * needs no response, so it should not add a block to the top of the form
+	 * and push every field down while the operator is still working.
+	 */
 	const save = async () => {
 		setSaving( true );
 		setError( '' );
 		try {
 			await saveSettings( values );
-			setSaved( true );
+			toast.push( __( 'Settings saved.', 'swift-image-optimizer' ) );
 		} catch ( e ) {
 			setError( e.message );
 		}
@@ -32,8 +36,8 @@ const SettingsPage = ( { values, setValues } ) => {
 
 	return (
 		<>
+			{ /* Errors stay put: they describe something still wrong. */ }
 			{ error && <Notice status="error" onRemove={ () => setError( '' ) }>{ error }</Notice> }
-			{ saved && <Notice status="success" onRemove={ () => setSaved( false ) }>{ __( 'Settings saved.', 'swift-image-optimizer' ) }</Notice> }
 
 			<Section
 				icon={ <IconSliders /> }
