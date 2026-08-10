@@ -91,4 +91,5 @@ if (defined('WP_CLI') && WP_CLI) {
     WP_CLI::add_command('swift-image-optimizer diagnostics', [ $swift_image_optimizer_commands, 'diagnostics' ]);
     WP_CLI::add_command('swift-image-optimizer logs', [ $swift_image_optimizer_commands, 'logs' ]);
     WP_CLI::add_command('swift-image-optimizer requeue', [ $swift_image_optimizer_commands, 'requeue' ]);
+    WP_CLI::add_command('swift-image-optimizer rescan', [ $swift_image_optimizer_commands, 'rescan' ]);
 }

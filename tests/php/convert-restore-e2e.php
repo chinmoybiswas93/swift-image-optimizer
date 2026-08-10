@@ -24,6 +24,7 @@ use SwiftImageOptimizer\Api\StoreSettings;
 use SwiftImageOptimizer\App\Models\OptimizationLog;
 use SwiftImageOptimizer\App\Services\AttachmentConverter;
 use SwiftImageOptimizer\App\Services\Backup\BackupManager;
+use SwiftImageOptimizer\App\Services\Bulk\Scanner;
 use SwiftImageOptimizer\App\Services\Engine\EngineFactory;
 
 harness_require_site();
@@ -224,5 +225,107 @@ if ( ! is_wp_error( $again ) ) {
 	Harness::ok( true, 'convert after restore refused: ' . $again->get_error_code() );
 	Harness::ok( true, 'guard fired without needing a second pass' );
 }
+
+/* ================================================================ */
+Harness::suite( 'A record whose file is gone does not block re-optimizing' );
+
+/*
+ * The reported scenario: a site restored from a plugin backup where the
+ * database says every image is optimized but the uploads directory holds the
+ * untouched originals. The library showed "all processed" with no way to
+ * optimize anything.
+ *
+ * Reproduced by converting an image and then deleting the WebP its own log row
+ * names, which reaches the same end state.
+ */
+$stale_id  = harness_import_attachment( harness_make_jpeg( 500, 380 ) );
+$created[] = $stale_id;
+
+$stale_result = $converter->convert( $stale_id );
+Harness::ok( ! is_wp_error( $stale_result ), 'fixture converted' );
+
+clean_post_cache( $stale_id );
+$stale_file = get_attached_file( $stale_id );
+
+Harness::ok(
+	AttachmentConverter::optimized_output_exists( $stale_id ),
+	'a healthy record reports its output as present'
+);
+
+// Remove exactly the one file this attachment's own row names.
+unlink( $stale_file );
+
+Harness::ok(
+	! AttachmentConverter::optimized_output_exists( $stale_id ),
+	'a record whose file is gone is detected as stale'
+);
+
+$row_before = OptimizationLog::find( $stale_id );
+Harness::same(
+	OptimizationLog::STATUS_OPTIMIZED,
+	is_array( $row_before ) ? $row_before['status'] : null,
+	'the row still claims optimized - the column alone would lie'
+);
+
+/*
+ * The user-facing symptom was that Optimize was refused outright. Before the
+ * disk check, this returned `already-optimized` on the strength of the column
+ * alone and there was no way past it.
+ */
+$blocked = $converter->convert( $stale_id );
+Harness::ok(
+	! is_wp_error( $blocked ) || 'already-optimized' !== $blocked->get_error_code(),
+	'a stale record no longer refuses the image as already-optimized'
+);
+
+$rescan = Scanner::rescan();
+
+Harness::ok( $rescan['checked'] > 0, 'rescan inspected records' );
+Harness::ok( $rescan['cleared'] >= 0, 'rescan reports how many it cleared' );
+
+/*
+ * The stale claim is gone. There may well be a row here - the convert attempt
+ * above wrote its own outcome - but nothing now asserts an optimized result
+ * for a file that is not there.
+ */
+$row_now = OptimizationLog::find( $stale_id );
+Harness::ok(
+	! is_array( $row_now )
+		|| OptimizationLog::STATUS_OPTIMIZED !== $row_now['status']
+		|| AttachmentConverter::optimized_output_exists( $stale_id, $row_now ),
+	'no record claims optimized for a file that is missing'
+);
+
+/*
+ * Note what clearing the row does and does not do. It stops the library
+ * claiming a result that no longer exists, and it unblocks Optimize. It does
+ * not put this attachment back in the *bulk* queue, because bulk selects on
+ * mime and this attachment's recorded mime is already image/webp. Bulk
+ * converts JPEG and PNG; an attachment recorded as WebP is not a candidate no
+ * matter what its log row says.
+ */
+Harness::ok(
+	! in_array( get_post_mime_type( $stale_id ), Scanner::mime_types(), true ),
+	'a converted attachment is not a bulk candidate regardless of its row'
+);
+
+/*
+ * Healthy records must survive a rescan untouched, or this would be a way to
+ * silently discard real results.
+ */
+$healthy_id = harness_import_attachment( harness_make_jpeg( 500, 380 ) );
+$created[]  = $healthy_id;
+$converter->convert( $healthy_id );
+
+$before_rescan = OptimizationLog::find( $healthy_id );
+Scanner::rescan();
+$after_rescan = OptimizationLog::find( $healthy_id );
+
+Harness::ok( is_array( $after_rescan ), 'a healthy record survives a rescan' );
+Harness::same(
+	is_array( $before_rescan ) ? $before_rescan['optimized_file'] : null,
+	is_array( $after_rescan ) ? $after_rescan['optimized_file'] : null,
+	'a healthy record is left alone by a rescan'
+);
 
 Harness::summary();

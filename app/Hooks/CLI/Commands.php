@@ -419,4 +419,46 @@ class Commands {
 
 		WP_CLI::success( sprintf( '%d image(s) will be tried again on the next run.', $removed ) );
 	}
+
+	/**
+	 * Reconcile recorded results against the files on disk.
+	 *
+	 * Use after restoring a site, when the database and the uploads directory
+	 * may have come from different points in time. Records claiming an image
+	 * was optimized are checked against the file they name; those whose file is
+	 * missing are cleared, which returns the image to the queue. Records whose
+	 * file is intact are left untouched.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp swift-image-optimizer rescan
+	 *
+	 * @return void
+	 */
+	public function rescan() {
+		$result = Scanner::rescan();
+
+		Logger::start_run( 'cli' );
+		Logger::mark(
+			'rescan',
+			sprintf(
+				'Checked %d optimized record(s); cleared %d whose file was missing.',
+				$result['checked'],
+				$result['cleared']
+			)
+		);
+
+		if ( 0 === $result['cleared'] ) {
+			WP_CLI::success( sprintf( 'Checked %d record(s). Every optimized file is present.', $result['checked'] ) );
+			return;
+		}
+
+		WP_CLI::success(
+			sprintf(
+				'Checked %d record(s) and cleared %d whose file was missing. Those images are pending again.',
+				$result['checked'],
+				$result['cleared']
+			)
+		);
+	}
 }

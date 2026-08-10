@@ -106,6 +106,37 @@ const TroubleshootPage = ( { values, setValues } ) => {
 		setBusy( '' );
 	};
 
+	const rescan = async () => {
+		setBusy( 'rescan' );
+		try {
+			const result = await request( 'rescan', { method: 'POST' } );
+			setMessage(
+				0 === result.cleared
+					? sprintf(
+							/* translators: %d: number of records checked. */
+							__(
+								'Checked %d record(s). Every optimized file is present.',
+								'swift-image-optimizer'
+							),
+							result.checked
+					  )
+					: sprintf(
+							/* translators: 1: records checked, 2: records cleared. */
+							__(
+								'Checked %1$d record(s) and cleared %2$d whose file was missing. Those images are pending again.',
+								'swift-image-optimizer'
+							),
+							result.checked,
+							result.cleared
+					  )
+			);
+			await loadReport();
+		} catch ( e ) {
+			setError( e.message );
+		}
+		setBusy( '' );
+	};
+
 	const cleanup = async () => {
 		setBusy( 'cleanup' );
 		try {
@@ -285,6 +316,12 @@ const TroubleshootPage = ( { values, setValues } ) => {
 						'swift-image-optimizer'
 					) }
 				</p>
+				<p className="sio-lede">
+					{ __(
+						'After restoring a site, the database and the uploads folder can come from different points in time, leaving images recorded as optimized whose files are no longer there. Rescanning checks every recorded result against the disk and returns any that no longer exist to the queue. Results whose files are intact are left untouched.',
+						'swift-image-optimizer'
+					) }
+				</p>
 				<div className="sio-actions">
 					<Button
 						variant="secondary"
@@ -292,6 +329,9 @@ const TroubleshootPage = ( { values, setValues } ) => {
 						disabled={ 'requeue' === busy || ! report?.retryable }
 					>
 						{ 'requeue' === busy ? <Spinner /> : __( 'Requeue for another attempt', 'swift-image-optimizer' ) }
+					</Button>
+					<Button variant="secondary" onClick={ rescan } disabled={ 'rescan' === busy }>
+						{ 'rescan' === busy ? <Spinner /> : __( 'Rescan library against disk', 'swift-image-optimizer' ) }
 					</Button>
 					<Button
 						variant="secondary"

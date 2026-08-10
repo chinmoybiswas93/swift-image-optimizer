@@ -8,6 +8,7 @@
 namespace SwiftImageOptimizer\App\Hooks\Handlers;
 
 use SwiftImageOptimizer\App\App;
+use SwiftImageOptimizer\App\Services\AttachmentConverter;
 use SwiftImageOptimizer\App\Services\Backup\BackupManager;
 use SwiftImageOptimizer\App\Services\Bulk\Scanner;
 use SwiftImageOptimizer\App\Models\OptimizationLog;
@@ -86,6 +87,20 @@ class MediaLibraryHandler {
 				'state'   => 'pending',
 				'primary' => __( 'Not optimized', 'swift-image-optimizer' ),
 				'detail'  => '',
+			);
+		}
+
+		/*
+		 * Verified against the disk rather than taken from the column. A row
+		 * outliving the file it describes is what showed a whole library as
+		 * processed after a restore, with nothing left to click.
+		 */
+		if ( OptimizationLog::STATUS_OPTIMIZED === $row['status']
+			&& ! AttachmentConverter::optimized_output_exists( $attachment_id, $row ) ) {
+			return array(
+				'state'   => 'pending',
+				'primary' => __( 'Not optimized', 'swift-image-optimizer' ),
+				'detail'  => __( 'A previous result was recorded but its file is missing.', 'swift-image-optimizer' ),
 			);
 		}
 
@@ -173,7 +188,8 @@ class MediaLibraryHandler {
 		$row  = OptimizationLog::find( $post->ID );
 		$mime = get_post_mime_type( $post->ID );
 
-		if ( $row && OptimizationLog::STATUS_OPTIMIZED === $row['status'] ) {
+		if ( $row && OptimizationLog::STATUS_OPTIMIZED === $row['status']
+			&& AttachmentConverter::optimized_output_exists( $post->ID, $row ) ) {
 			if ( BackupManager::manifest_is_intact( $row['backup_path'] ) ) {
 				$actions['swift_restore'] = sprintf(
 					'<a href="%s" class="sio-row-action sio-row-action--restore" data-action="restore" data-id="%d">%s</a>',
@@ -388,6 +404,23 @@ class MediaLibraryHandler {
 
 		$editable = current_user_can( 'edit_post', $attachment->ID ) && current_user_can( 'upload_files' );
 		$status   = $row ? $row['status'] : '';
+
+		/*
+		 * A row can claim `optimized` while the file it describes is gone -
+		 * typically after the database and the uploads directory were restored
+		 * from different points in time. Treat that as not optimized, so the
+		 * modal offers Optimize instead of reporting a result that no longer
+		 * exists.
+		 */
+		$stale = $row
+			&& OptimizationLog::STATUS_OPTIMIZED === $status
+			&& ! AttachmentConverter::optimized_output_exists( $attachment->ID, $row );
+
+		if ( $stale ) {
+			$status   = '';
+			$original = 0;
+			$current  = 0;
+		}
 		$original = $row ? (int) $row['original_size'] : 0;
 		$current  = $row ? (int) $row['optimized_size'] : 0;
 		$saved    = max( 0, $original - $current );

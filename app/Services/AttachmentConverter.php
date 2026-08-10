@@ -104,6 +104,52 @@ class AttachmentConverter {
 	}
 
 	/**
+	 * Whether a row claiming `optimized` still describes a file on disk.
+	 *
+	 * The column saying an image was optimized and that image actually being
+	 * optimized are two different facts, and they come apart whenever the
+	 * database and the uploads directory are restored from different points in
+	 * time - which is exactly what a plugin backup restore does. The reported
+	 * case was a library showing every image as processed, with no way to
+	 * optimize any of them, while the files on disk were the untouched
+	 * originals.
+	 *
+	 * Same reasoning as BackupManager::manifest_is_intact(), applied to the
+	 * other end of the pipeline: ask the disk rather than trust the column.
+	 *
+	 * @param int        $attachment_id Attachment ID.
+	 * @param array|null $log           Row, if already loaded.
+	 * @return bool
+	 */
+	public static function optimized_output_exists( $attachment_id, $log = null ) {
+		if ( null === $log ) {
+			$log = OptimizationLog::find( $attachment_id );
+		}
+
+		if ( ! is_array( $log ) || OptimizationLog::STATUS_OPTIMIZED !== $log['status'] ) {
+			return false;
+		}
+
+		$file = get_attached_file( $attachment_id );
+
+		if ( ! $file || ! file_exists( $file ) ) {
+			return false;
+		}
+
+		/*
+		 * The attached file existing is not enough on its own: after a restore
+		 * of the uploads directory the original may be back in place under its
+		 * old name while the row still describes the WebP. If the row names an
+		 * output, the file actually attached has to be that output.
+		 */
+		if ( ! empty( $log['optimized_file'] ) && wp_basename( $file ) !== $log['optimized_file'] ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
 	 * Optimizer instance.
 	 *
 	 * @var Optimizer
@@ -186,7 +232,31 @@ class AttachmentConverter {
 		$existing = OptimizationLog::find( $attachment_id );
 
 		if ( $existing && OptimizationLog::STATUS_OPTIMIZED === $existing['status'] ) {
-			return new WP_Error( 'already-optimized', __( 'This image has already been optimized.', 'swift-image-optimizer' ) );
+			if ( self::optimized_output_exists( $attachment_id, $existing ) ) {
+				return new WP_Error( 'already-optimized', __( 'This image has already been optimized.', 'swift-image-optimizer' ) );
+			}
+
+			/*
+			 * The row says optimized but the output is gone, so the row is
+			 * describing a file that no longer exists - typically because the
+			 * database and the uploads directory were restored from different
+			 * points in time. Refusing here is what left a library reporting
+			 * every image as processed with no way to optimize any of them.
+			 *
+			 * Drop the stale row and carry on. The conversion below writes a
+			 * fresh one. This does not touch a row whose file is intact, so it
+			 * cannot discard a real result.
+			 */
+			OptimizationLog::delete( $attachment_id );
+			OptimizationLog::flushStatsCache();
+
+			Logger::info(
+				'convert',
+				'Discarded a stale optimized record: the file it described is missing.',
+				$attachment_id
+			);
+
+			$existing = null;
 		}
 
 		$file = get_attached_file( $attachment_id );

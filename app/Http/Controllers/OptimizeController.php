@@ -160,4 +160,34 @@ class OptimizeController extends Controller {
             'summary'  => Scanner::summary(),
         ]);
     }
+
+    /**
+     * Reconcile recorded results against the files actually on disk.
+     *
+     * For a library whose database and uploads directory were restored from
+     * different points in time: rows claiming `optimized` for files that are
+     * no longer there are dropped, which returns those images to the queue.
+     * Rows whose file is intact are left alone.
+     *
+     * @return WP_REST_Response
+     */
+    public function rescan() {
+        $result = Scanner::rescan();
+
+        Logger::start_run('admin');
+        Logger::mark(
+            'rescan',
+            sprintf(
+                'Checked %d optimized record(s); cleared %d whose file was missing.',
+                $result['checked'],
+                $result['cleared']
+            )
+        );
+
+        return $this->sendSuccess([
+            'checked' => $result['checked'],
+            'cleared' => $result['cleared'],
+            'summary' => Scanner::summary(),
+        ]);
+    }
 }

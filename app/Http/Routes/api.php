@@ -48,6 +48,7 @@ $router->withPolicy('AdminPolicy')->group(function ( Router $router ) {
     $router->get('stats', [ StatsController::class, 'index' ]);
     $router->post('dry-run', [ OptimizeController::class, 'dryRun' ]);
     $router->post('requeue', [ OptimizeController::class, 'requeue' ]);
+    $router->post('rescan', [ OptimizeController::class, 'rescan' ]);
     $router->post('cleanup', [ BackupController::class, 'cleanup' ]);
     $router->get('diagnostics', [ DiagnosticsController::class, 'index' ]);
 
