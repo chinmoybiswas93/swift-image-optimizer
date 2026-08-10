@@ -9,6 +9,12 @@
 	<exclude-pattern>/build/*</exclude-pattern>
 	<exclude-pattern>/resources/*</exclude-pattern>
 	<exclude-pattern>/dist/*</exclude-pattern>
+	<!--
+		Harnesses are CLI scripts that never ship (see bin/build-dist.sh). They
+		deliberately do the things the shipped code may not: raw counting
+		queries, direct filesystem calls, and reflection into private methods.
+	-->
+	<exclude-pattern>/tests/*</exclude-pattern>
 
 	<arg name="extensions" value="php"/>
 	<arg name="colors"/>

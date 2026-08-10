@@ -153,15 +153,29 @@ can permanently destroy a user's media library and content. For those files spec
 ## Testing
 
 There is no PHPUnit setup. Tests are standalone PHP harnesses run against the real Local
-install, kept in the session scratchpad rather than committed. Five exist, 143 assertions:
+install, and they are **committed under `tests/php/`**. Three exist, 110 assertions:
 
-| Harness | Needs WP? | Asserts |
-|---|---|---|
-| `rewriter-test.php` | No — stubs `is_serialized` etc. | 21 |
-| `upload-e2e.php` | Yes | 22 |
-| `convert-restore-e2e.php` | Yes | 35 |
-| `bulk-e2e.php` | Yes | 29 |
-| `media-ui-e2e.php` | Yes | 36 |
+| Harness | Needs WP? | Asserts | Guards |
+|---|---|---|---|
+| `rewriter-test.php` | No — stubs `is_serialized` etc. | 33 | Invariants 1, 2, 3, 10 — serialization safety |
+| `convert-restore-e2e.php` | Yes | 38 | Round trip byte-identical, backup manifest, orientation |
+| `bulk-e2e.php` | Yes | 39 | Pending definition, cursor paging, lock, cancel, dry run |
+
+```bash
+npm run test:php                  # all three, socket pinned by the runner
+tests/php/run.sh rewriter-test    # just one
+SIO_TEST_ENGINE=gd npm run test:php
+```
+
+> **They were previously kept in the session scratchpad rather than committed, and were lost** —
+> taking 143 assertions of regression cover with them, on a plugin that deletes user media. That
+> is why they now live in the repository. An earlier set covered the upload interceptor and the
+> media-library UI; those two have not been rewritten yet, which is the gap between 110 and the
+> old 143.
+
+Every WordPress-backed harness calls `harness_require_site()` first and **exits rather than run**
+if `siteurl` is not `https://cb-test.local`. Shared fixtures and the narrow cleanup live in
+`tests/php/wp.php`; assertions and the site guard in `tests/php/bootstrap.php`.
 
 ### Confirm the database before trusting any result
 
