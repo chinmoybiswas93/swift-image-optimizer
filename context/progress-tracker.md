@@ -14,11 +14,17 @@ Units 01–08 built both features. **Unit 10 closed fourteen defects** found in 
 conversion path — three of which destroyed user data silently — and added the Troubleshoot tab,
 file-based logging and server diagnostics. Version bumped to **1.1.0**.
 
-What still stands between here and a .org submission is Unit 09 — `phpcs` has never actually
-been run, because WPCS is not installed here. The code is *written* to standard but that claim
-is unverified by a linter. Unit 10 added roughly a thousand lines to lint, so Unit 09 has grown.
+**Unit 09 and Unit 11 are done.** `phpcs` has now actually been run (784 → 0), Imagick is
+exercised by the suite for the first time, and the four user-reported issues (I-10…I-13) are
+fixed. Both release blockers are closed.
 
-Next up: Unit 09, then the `future-specs/` backlog.
+What stands between here and a .org submission now is **I-3: nobody has clicked the dashboard.**
+Every change in Unit 11 touched that UI. The build is verified, the endpoints are verified, the
+PHP is covered by 150 assertions — but the Bulk, Settings, Backups and Troubleshoot tabs have
+still never been used in a browser, and Unit 11 added more unclicked surface to them (Resume, the
+stalled warning, toasts, Rescan).
+
+Next up: a browser pass over the admin UI, then the `future-specs/` backlog.
 
 ## Completed
 
@@ -35,12 +41,15 @@ Next up: Unit 09, then the `future-specs/` backlog.
 | 07 | React admin — Bulk / Settings / Backups tabs, `@wordpress/scripts` build, custom webpack entry | [07-react-admin.md](specs/done/07-react-admin.md) |
 | 08 | Media Library UI — grid-view Bulk Optimize button, selection runner with progress, modal panel; schema v2 (`conversion_ms`) | [08-media-library-ui.md](specs/done/08-media-library-ui.md) |
 | 10 | Hardening — 14 defects closed, `Logging\Logger`, `Diagnostics\EnvironmentReport`, `Support\Lock`, Troubleshoot tab, engine chain, schema v3 (URL lookup table) | [10-hardening-troubleshoot.md](specs/done/10-hardening-troubleshoot.md) |
+| 09 | PHPCS actually run for the first time: 784 violations → 0. Dead `safe_mode` check removed, `imagedestroy()` version-gated, SQL annotations fixed (they had never been in effect) | [09-phpcs-compliance.md](specs/done/09-phpcs-compliance.md) |
+| 11 | The four user reports: toasts + no core notice markup (I-10), one storage folder (I-11), resumable cron-driven bulk (I-12), optimized state verified against disk (I-13). Harnesses rebuilt and **committed**, Imagick covered (I-2) | — |
 
 ## Next Up
 
-| Unit | Spec | What |
-|---|---|---|
-| 09 | [09-phpcs-compliance.md](specs/09-phpcs-compliance.md) | Install WPCS, run it, fix what it finds. **Blocks .org submission.** |
+| What | Why |
+|---|---|
+| **Browser pass over the admin UI (I-3)** | The last thing between here and .org. Unit 11 changed every tab and added Resume, the stalled warning, toasts and Rescan — none of it clicked. |
+| Rebuild the upload and media-UI harnesses | Two of the original five were lost and not rewritten; that is the gap between 150 assertions and the old 143 plus what those covered. |
 
 ## Verified behaviour
 
@@ -189,12 +198,27 @@ so they are not repeated:
 A test harness also **destroyed 54 real backups** with a glob-based cleanup. See the incident
 note in [current-issues/fix-plan.md](current-issues/fix-plan.md).
 
+## Unit 11 — the four user reports, and what they turned up
+
+Each report had a cause that was one line of misplaced trust, and two of them exposed something
+worse than what was reported:
+
+| Reported | Actual cause | Also found |
+|---|---|---|
+| WP notice on the plugin's page | The plugin emitted core's `notice` class itself, and hooked `admin_notices` on **every** admin screen | `BackupsPage` showed failures in a success-styled notice |
+| Three folders in uploads | Three sibling constants, never one parent | — |
+| Bulk stops on tab change, restarts from scratch | `start()` overwrote live run state; the UI never reconciled `running` on mount | **A crash between "files renamed" and "references repointed" broke those references permanently** — the batch marks images done before rewriting |
+| Restored site shows all processed | `already-optimized` trusted the status column with no disk check | Clearing the row does not re-queue for bulk: mime is already `image/webp` |
+
+The pattern in three of the four is the same one `manifest_is_intact()` was written for in Unit
+10: **a database column and the thing it describes are two different facts.** Worth looking for
+wherever else the plugin trusts a column.
+
 ## Open Questions
 
-1. **The suite never exercises Imagick** — the engine the site actually uses. Force the engine
-   per-run and repeat the suite across all three. (**I-2**) Unit 10 sharpened this: the engine
-   chain was verified live on `cwebp` and `gd` only, and the cwebp rotation bug is exactly the
-   class of defect this gap hides.
+1. ~~**The suite never exercises Imagick.**~~ Closed. `tests/php/run.sh --web` runs the harnesses
+   under the site's php-fpm, where Imagick exists; `SIO_TEST_ENGINE` forces one per run and the
+   harness asserts on the engine actually recorded, so "used" is proven rather than assumed.
 2. ~~**Should uploads be backed up?**~~ Settled in Unit 10: yes, behind `backup_uploads`,
    default on.
 3. **Dry-run extrapolation is a sample.** `Runner::dry_run()` inspects 25 attachments and

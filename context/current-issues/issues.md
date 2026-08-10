@@ -3,7 +3,10 @@
 Known gaps. Nothing here is a live bug in shipped behaviour — these are unverified paths,
 environment limits and untested surfaces.
 
-Last reviewed: 2026-08-10, after Unit 10 (Hardening + Troubleshoot).
+Last reviewed: 2026-08-11, after Unit 11 (the I-10…I-13 user reports, plus Unit 09).
+
+**Closed in Unit 11:** I-1 (phpcs finally run, 784 → 0), I-2 (Imagick exercised at last),
+I-10, I-11, I-12, I-13. Open: I-3, I-4, I-6, I-7, I-8, I-9.
 
 Unit 10 is a caution about this file. It closed fourteen defects that were **not** listed here,
 three of which destroyed user data, and all of which were found by reading the conversion path
@@ -12,17 +15,39 @@ recently, not that nothing is wrong.
 
 ---
 
-## I-1 — PHPCS has never been run · **blocks release**
+## I-1 — PHPCS has never been run · **CLOSED**
 
-**Severity:** High (blocks WordPress.org submission)
+**Severity:** ~~High~~ Resolved 2026-08-11
 
-WPCS is not installed in this environment, so `phpcs.xml.dist` has never executed. Every file is
-*written* to WordPress standards, with justification comments on all direct queries and silenced
-errors, but no linter has confirmed it.
+WPCS is now installed **outside the plugin tree** — the committed `vendor/` must hold nothing but
+the generated autoloader (invariant 12), so a `require-dev` would have shipped seven dev packages
+unless every future build remembered `--no-dev`. `npm run lint:php` uses `phpcs` from `PATH` and
+prints a pointer to the spec when it is missing.
 
-Calling the plugin ".org compliant" today is an intention, not a verified fact.
+First run: **784 violations. Now 0.** 576 were pure formatting (phpcbf, every file re-parsed).
 
-**Fix:** [specs/09-phpcs-compliance.md](../specs/09-phpcs-compliance.md)
+Real defects it caught:
+
+- `CwebpEngine` tested `ini_get('safe_mode')`, removed from PHP in 5.4 — dead code on a 7.4 floor.
+- `imagedestroy()` is deprecated as of PHP 8.4, so 8.4+ users were accumulating deprecation
+  notices; it is also the only thing that frees the resource on 7.4. Centralised in
+  `GdEngine::free_image()` and version-gated so neither end of the range regresses.
+- Two `count()` calls hoisted out of loop conditions.
+
+**The interesting one:** every direct query already carried a justification comment, but
+`phpcs:ignore` only covers the *next* line and the violations sit inside multi-line statements —
+so not one of them was in effect. They were written correctly and never verified, because the
+linter had never run. Now `disable`/`enable` blocks.
+
+Justified exclusions, each with its reasoning in `phpcs.xml.dist`: PSR-4 file naming (renaming
+breaks the autoloader at runtime), direct filesystem calls (WP_Filesystem is wrong for binary
+image data and a tailable log), hook names owned by core and Elementor, framework exception
+messages, and `tests/` (never shipped).
+
+**Spec corrected too** — [specs/09-phpcs-compliance.md](../specs/done/09-phpcs-compliance.md) said to
+add `vendor/` to `.gitignore` "(already done)". Both halves were wrong and would have broken the
+shipped autoloader. It also claimed 107 assertions across four harnesses and referenced a `src/`
+directory that no longer exists.
 
 ---
 
@@ -208,48 +233,127 @@ genuinely aged past its retention window has never been observed being collected
 
 
 
-## I-10 — WordPress default admin notices leak into the plugin's custom page
+## I-10 — WordPress default admin notices leak into the plugin's page · **CLOSED**
 
-**Severity:** Unspecified (untriaged)
+**Severity:** ~~Unspecified~~ Resolved 2026-08-11
 
-WP core notice markup appears on the plugin's own admin page ![alt text](image.png). Needs all
-native WordPress UI elements stripped from the plugin's admin screens so it stays visually and
-functionally isolated from WP core and other plugins — swap the WP notice element for a toast.
+The WordPress-looking notice was the plugin's own doing.
+`app/Views/admin/parts/notice.php` deliberately emitted core's bare `notice` class alongside the
+`sio-*` ones, to borrow two behaviours: WordPress repositions elements carrying it, and binds
+dismissal to `is-dismissible`. Borrowing them also meant inheriting core's notice styling — which
+is precisely what the hard rule against `notice notice-*` exists to prevent.
 
----
+Both classes dropped. Position is now `.sio-notice--standalone`. There is deliberately **no
+dismiss button**: the two bootstrap notices (no engine, assets not built) describe conditions
+that are still true after being dismissed, and the Media Library result notice is gone on the
+next page load. Adding one meant inline JavaScript, or a script not guaranteed to have loaded, to
+hide a message that should not be hidden.
 
-## I-11 — Confirm single storage folder structure
+`NoticeHandler` also hooked `admin_notices` on **every** admin screen with no guard, so the
+plugin was interrupting people doing unrelated work — the behaviour it objects to in other
+plugins. Scoped to its own page, the Media Library, and the plugins list.
 
-**Severity:** Unspecified (untriaged)
+New `Toast` component and provider (`resources/admin/Components/Toast.jsx`) for transient
+feedback, which is what a notice was being misused for. No `@wordpress/components`, no toast
+library. Errors do not auto-dismiss. Converted: settings saved, log cleared, requeue, rescan,
+cleanup, diagnostics copied, backups purged.
 
-Only one folder should be created, named `swift-image-optimizer`, containing `temp`, `backup` and
-`logs` as subfolders ![alt text](image-1.png). Needs verification against actual on-disk layout.
+Bug found in passing: `BackupsPage` reported failures through the same info-styled notice as
+successes, so a failed purge read like a completed one.
 
----
-
-## I-12 — Bulk optimize is not resumable or asynchronous
-
-**Severity:** Unspecified (untriaged)
-
-Changing page or tab while bulk processing is running stops it; restarting begins from scratch
-instead of resuming. Sometimes the UI reports "bulk already running" while the start button
-remains active (state desync). Needs to become asynchronous and resumable, so an interruption
-stops the process where it is and allows resuming later rather than restarting.
-
-Also: if the page is closed after starting bulk optimization, should the process keep running
-server-side? Worth determining feasibility.
-
-Progress numbers also render inconsistently during a bulk run ![alt text](image-2.png),
-![alt text](image-3.png).
+**Still unverified in a browser** — that is I-3.
 
 ---
 
-## I-13 — Restored backup on an old site shows false "already optimized" state
+## I-11 — Three storage folders, not one · **CLOSED**
 
-**Severity:** Unspecified (untriaged)
+**Severity:** ~~Unspecified~~ Resolved 2026-08-11
 
-On a site where the plugin was used previously, restoring the plugin's own backup left media
-files actually unoptimized, but the UI reports them ![alt text](image-4.png) and "all processed"
-![alt text](image-5.png), with no option to optimize. Reproducible on the local site
-tuflamenco.dev in LocalWP.
+Confirmed as a real defect, not just something to check: the plugin created three siblings under
+`wp-content/uploads/` — `swift-image-optimizer-backups`, `-tmp` and `-logs`, each from its own
+constant. Now one `swift-image-optimizer/` folder with `backup`, `temp` and `logs` inside it.
 
+Three constants, no new machinery. `wp_mkdir_p()` already creates intermediate directories, and
+`BackupManager::safe_path()` resolves through `realpath()` against `root()`, so the traversal
+guard works unchanged at the extra depth — it was **not** relaxed to make a path resolve.
+
+No migration: the plugin is not in production anywhere, confirmed before the change. The legacy
+directories are left exactly where they are. Nothing here deletes by glob over a shared uploads
+directory.
+
+`uninstall.php` follows the new paths and still spares backups — it removes logs and temp, then
+attempts the parent, which `rmdir()` refuses while anything remains.
+
+---
+
+## I-12 — Bulk optimize was not resumable or asynchronous · **CLOSED**
+
+**Severity:** ~~Unspecified~~ Resolved 2026-08-11
+
+Three reported symptoms, one cause: nothing on the server owned the run.
+
+`start()` overwrote the progress option unconditionally, so a second tab — or the same tab after
+a reload — could reset `run_id`, cursor and every counter out from under a batch in flight. The
+frontend made it reachable: the mount effect set progress but never `running`, so a live run
+rendered the **Start** button as though nothing were happening. Clicking it reset the run, the
+in-flight batch still held the lock, and the next call returned "already running". The button and
+the error were both telling the truth about different pieces of state.
+
+- `start()` is idempotent. Live run → handed back untouched. Stopped run with progress → resumes
+  at its cursor. Only `fresh` starts over, and it is ignored while a run is live, because a batch
+  in flight would overwrite the reset when it saves. Restarting is Stop, then Start.
+- `cancel()` keeps the cursor and counters. **Stop means pause.**
+- `BulkJobRunner` advances the run from WP-Cron, so it survives the tab closing. It re-arms a
+  single event per batch (batch size is adaptive) and calls `process_batch()` in-process — never
+  over HTTP, which invariant 13 forbids.
+- `state()` computes `percent`, `resumable`, `stalled`, `cron_next`. The client used to do its
+  own arithmetic; two clients over different snapshots is why the figures disagreed mid-run.
+- `raw_state()` splits stored from presented state, so derived fields are never persisted.
+
+**Latent data bug found while designing this, fixed here.** A batch renames files and writes
+terminal log rows per image, then repoints references once at the end. Die in between and those
+images are marked done forever with references pointing at filenames that no longer exist —
+`Scanner` treats a terminal row as finished, so nothing revisits them. Survivable when a batch
+was one foreground request; not once batches run unattended from cron. The map is now parked
+before the rewrite and flushed by whichever worker arrives next.
+
+**Verified live:** a run left at done=1/pending=3 with no browser attached advanced to
+done=4/pending=0 from a single `wp-cron.php` hit, then unscheduled itself.
+
+**The honest limit, surfaced rather than hidden:** WP-Cron only fires on an incoming request, so
+on a quiet site with the tab closed a run does stall. That is what `stalled` and the warning
+notice say. A real system cron is the answer for large libraries.
+
+---
+
+## I-13 — A restored site reported every image as optimized · **CLOSED**
+
+**Severity:** ~~Unspecified~~ Resolved 2026-08-11
+
+`do_convert()` refused with `already-optimized` purely on the log row's status column, and the
+Media Library read the same column. A backup restore can put the database and the uploads
+directory at different points in time, so rows survive while the WebP files they describe do not.
+The column and reality disagreed, and the column was winning.
+
+Same class of bug as the one `manifest_is_intact()` was written for, at the other end of the
+pipeline — so, the same treatment. `AttachmentConverter::optimized_output_exists()` asks the
+disk: the attached file must exist, and where the row names an output, the attached file has to
+*be* that output. The second check matters, because after a restore the original can be back
+under its old name while the row still describes the WebP.
+
+Applied at the four places trusting the column: the convert gate, the Media Library column, the
+row actions, and `canOptimize`/`canRestore`. A stale row found during convert is dropped and the
+conversion proceeds; a row whose file is intact is never touched.
+
+Library-wide counts stay one SQL join — file existence cannot be expressed in SQL, and a stat per
+attachment would punish exactly the large libraries bulk exists to serve. Reconciliation is
+explicit: `Scanner::rescan()`, as `POST rescan`, `wp swift-image-optimizer rescan`, and a
+Troubleshoot button. It deletes rather than restatuses, following `requeue()` and keeping
+invariant 9.
+
+**Worth knowing, and asserted rather than left implicit:** clearing the row stops the false claim
+and unblocks Optimize, but does **not** return the attachment to the *bulk* queue. Bulk selects
+on mime, and a converted attachment is recorded as `image/webp`.
+
+Reproduced in `convert-restore-e2e`. Not yet re-checked against the user's own tuflamenco.dev
+install — worth doing, with the socket confirmed first.

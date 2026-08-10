@@ -8,7 +8,7 @@
 		"build": "wp-scripts build",
 		"start": "wp-scripts start",
 		"lint:js": "wp-scripts lint-js",
-		"lint:php": "command -v phpcs >/dev/null || { echo 'phpcs not found on PATH. WPCS is installed outside this plugin so the committed vendor/ stays autoloader-only - see context/specs/09-phpcs-compliance.md.'; exit 1; }; phpcs --standard=phpcs.xml.dist -s",
+		"lint:php": "command -v phpcs >/dev/null || { echo 'phpcs not found on PATH. WPCS is installed outside this plugin so the committed vendor/ stays autoloader-only - see context/specs/done/09-phpcs-compliance.md.'; exit 1; }; phpcs --standard=phpcs.xml.dist -s",
 		"test:e2e": "playwright test",
 		"test:php": "tests/php/run.sh"
 	},

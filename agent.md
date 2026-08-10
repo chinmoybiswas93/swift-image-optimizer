@@ -131,7 +131,7 @@ longer exists.
 | Current unit, what's done, open questions | `context/progress-tracker.md` — **read directly**, it's small and always current |
 | The unit you're implementing | `context/specs/NN-*.md` — **read directly**, always required |
 | Class map, data model, engine selection | `graphify query`, not `architecture.md` in full |
-| The 13 **Architecture invariants** | `context/architecture.md` — **read directly**, they're short and several encode data-loss failure modes |
+| The 24 **Architecture invariants** | `context/architecture.md` — **read directly**, they're short and several encode data-loss failure modes |
 | Security, DB access, filesystem, i18n rules | `context/code-standards.md` |
 | Known bugs and the backup-deletion incident | `context/current-issues/` |
 | Not-yet-scoped work (AVIF, resize, scheduling) | `context/future-specs/` — do not implement unspecced |
@@ -190,15 +190,20 @@ environment first.
 
 ## A unit is not complete until
 
-1. `npm run lint:php` clean (and `npm run lint:js` if JS changed)
+1. `npm run lint:php` clean (and `npm run lint:js` if JS changed). WPCS lives **outside** the
+   plugin — see `context/specs/done/09-phpcs-compliance.md`; never `require-dev` it here, because the
+   committed `vendor/` must stay autoloader-only (invariant 12)
 2. `composer dump-autoload -o` clean, and every moved class still resolves — a namespace/path
    mismatch is a fatal at call time, not at load
-3. `npm run build` succeeds, `build/admin.asset.php` still excludes `wp-components`, and the admin
+3. `npm run test:php` clean. Add `--web` (`tests/php/run.sh --web`) whenever the change touches an
+   engine: CLI PHP here has no Imagick, so a CLI-only run silently proves nothing about the
+   engine the site actually uses
+4. `npm run build` succeeds, `build/admin.asset.php` still excludes `wp-components`, and the admin
    screen still mounts; `npm run test:e2e` if the UI changed
-4. `/security-review` on the diff — plus `owasp-security-review` on the files if the unit touched
+5. `/security-review` on the diff — plus `owasp-security-review` on the files if the unit touched
    REST, upload, shell-out, or backup/restore
-5. `/graphify --update`
-6. `progress-tracker.md` updated: spec moved to `specs/done/`, row added to Completed, next unit
+6. `/graphify --update`
+7. `progress-tracker.md` updated: spec moved to `specs/done/`, row added to Completed, next unit
    set In Progress, any architectural decision recorded in `architecture.md`
 
 If tests fail, say so and show the output. Never describe partial work as complete, and
