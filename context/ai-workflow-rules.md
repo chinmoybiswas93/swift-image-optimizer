@@ -10,8 +10,37 @@ They are project-scoped: they load when working from `app/public`, not globally.
 | `graphify` | Any "where is X / how does X work / what calls X" question. **Always first.** | Editing. It reads, it does not write. |
 | `owasp-security-review` | Auditing a whole file or subsystem — REST routes, upload handling, the `engine` shell-out, backup paths. | The pending diff — the built-in `/security-review` covers that and is cheaper. |
 | `wp-plugin-directory-guidelines` | Anything touching `readme.txt`, the plugin header, the slug, licensing, or premium/upsell UI. Run the full 18-guideline pass before any .org submission. | Runtime security. It is a submission-compliance reference, not a vulnerability scanner. |
-| `php-pro` | Modern PHP 8.x language questions — enums, readonly, typed properties, attributes, generics in docblocks. | **Its workflow.** See the constraint below. |
+| `wordpress-pro` | The WordPress **API surface**: which sanitize/escape function fits which input, nonce and capability patterns, hook signatures and priorities, i18n, transients and object caching. | **Architecture.** It assumes a conventional plugin. See the constraint below. |
+| `php-pro` | PHP language questions — typed properties, attributes, generics in docblocks. | **Its workflow**, and any syntax above PHP 7.4. See the constraint below. |
 | `playwright-cli` | Driving a real browser against the admin UI. | Anything the PHP harnesses already assert. |
+
+### `wordpress-pro` is scoped to the WordPress API, not to architecture
+
+Use it to answer *which WordPress function to call and how to call it safely*. It is the best
+reference installed for the four-part input rule this plugin already mandates — capability check,
+nonce, sanitize on input, escape on output — and for picking `sanitize_text_field` vs
+`wp_kses_post` vs `esc_url_raw`, or `esc_html` vs `esc_attr`. Load `references/hooks-filters.md`
+and `references/performance-security.md` when that is the question.
+
+Do not take architecture from it. It describes a conventional single-file plugin; this one is a
+FluentCart-style kernel. Where they disagree, `agent.md` and this file win:
+
+| It says | Here |
+|---|---|
+| `global $wpdb` + `$wpdb->prepare()` as the DB pattern | `app/Models/` (`OptimizationLog`, `UrlLookup`). `prepare()` still applies *inside* the two documented exceptions, `Services/Rewrite/DatabaseRewriter` and `database/DataBackfills` |
+| Validate with `phpcs --standard=WordPress` | `npm run lint:php`. `phpcs.xml.dist` is WordPress-Extra + WordPress-Docs, `minimum_wp_version 6.0`, `testVersion 7.4-` |
+| Baseline "WordPress 6.4+, PHP 8.1+" | **PHP 7.4+ / WP 6.2+.** No enums, readonly, constructor promotion, or `never`. `PHPCompatibilityWP` fails the build, so this is a lint error, not a preference |
+| `register_rest_route()` with an inline `permission_callback` | `app/Http/Routes/api.php` fluent DSL. The permission callback *is* the Policy, and a route without one is refused |
+| Settings API, `WP_List_Table`, `add_menu_page` scaffolding | Deliberately absent. `boot/`, `App::`, `Router`, `App::view()`. Several of these names still haunt the stale graph — do not resurrect them |
+| `wp_enqueue_script()` with a directory URI and a literal version | `app/Hooks/Handlers/AssetHandler.php`; deps and version come from generated `build/*.asset.php` |
+| "Don't bundle libraries when WordPress APIs suffice" | Correct for the runtime — that is why `@wordpress/element`, `@wordpress/api-fetch` and `@wordpress/i18n` are externalized and `react` is not a dependency. **Not** correct for UI: `@wordpress/components` is banned |
+| "Run a security audit checklist" | Implementation-time hygiene only. It does not replace step 2 or 3 of the order of operations below |
+
+Never load `references/theme-development.md` or `references/gutenberg-blocks.md` — no theme, no
+blocks, no FSE here. WooCommerce and ACF are not installed. `references/plugin-architecture.md`
+is useful only for plugin-header and uninstall semantics.
+
+It knows nothing about this plugin's backups, and nothing in it relaxes the data-loss rules.
 
 ### `php-pro` is scoped to language questions only
 
@@ -21,6 +50,11 @@ play, no PHPStan, no PHPUnit — lint is `npm run lint:php` (phpcs against `phpc
 are the standalone harnesses below. Take its PHP-language guidance; ignore its tooling and framework
 sections entirely. If it suggests installing a package, that collides with the scoping rules below —
 don't.
+
+It also assumes PHP 8.3+. **The floor here is 7.4** — `swift-image-optimizer.php`, `composer.json`
+and `phpcs.xml.dist` (`testVersion 7.4-`) all say so, and `PHPCompatibilityWP` enforces it. Enums,
+readonly properties, constructor promotion, `never`, and first-class callable syntax are lint
+errors, not style choices. The same cap applies to `wordpress-pro`.
 
 ### The security order of operations
 

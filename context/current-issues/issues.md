@@ -172,14 +172,49 @@ genuinely aged past its retention window has never been observed being collected
 | **I-8, the half that had actually bitten us** | `canRestore` now verifies the files exist instead of trusting the column. The remaining half — an unreachable manifest with no repair path — is still open under I-8 |
 
 
-** this notice should not come ![alt text](image.png)
-need to replace all the wordpress elements form the admin UI from the plugin so that it remains safe form broken ro chages with wordrpess and conflict with other plugins
 
-** Only one folder will be created with the plugin name 'swift-image-optimizer' and inside that folder the temp, backup and logs will be ![alt text](image-1.png)
+## I-10 — WordPress default admin notices leak into the plugin's custom page
 
-** after bulk start processing can't cange the page or tab, it stops. if start again the start from the frist. sometimes it shows bulk alray running the but the button is active
-need to make this asyncronus and resume abe so if anything happens it will stop the process there and can resume later from
+**Severity:** Unspecified (untriaged)
 
-alo after started the bulk optimzation if the page is closed the process should not terminate. is it possible?
+WP core notice markup appears on the plugin's own admin page ![alt text](image.png). Needs all
+native WordPress UI elements stripped from the plugin's admin screens so it stays visually and
+functionally isolated from WP core and other plugins — swap the WP notice element for a toast.
 
-the number are not showing consistently ![alt text](image-2.png), ![alt text](image-3.png)
+---
+
+## I-11 — Confirm single storage folder structure
+
+**Severity:** Unspecified (untriaged)
+
+Only one folder should be created, named `swift-image-optimizer`, containing `temp`, `backup` and
+`logs` as subfolders ![alt text](image-1.png). Needs verification against actual on-disk layout.
+
+---
+
+## I-12 — Bulk optimize is not resumable or asynchronous
+
+**Severity:** Unspecified (untriaged)
+
+Changing page or tab while bulk processing is running stops it; restarting begins from scratch
+instead of resuming. Sometimes the UI reports "bulk already running" while the start button
+remains active (state desync). Needs to become asynchronous and resumable, so an interruption
+stops the process where it is and allows resuming later rather than restarting.
+
+Also: if the page is closed after starting bulk optimization, should the process keep running
+server-side? Worth determining feasibility.
+
+Progress numbers also render inconsistently during a bulk run ![alt text](image-2.png),
+![alt text](image-3.png).
+
+---
+
+## I-13 — Restored backup on an old site shows false "already optimized" state
+
+**Severity:** Unspecified (untriaged)
+
+On a site where the plugin was used previously, restoring the plugin's own backup left media
+files actually unoptimized, but the UI reports them ![alt text](image-4.png) and "all processed"
+![alt text](image-5.png), with no option to optimize. Reproducible on the local site
+tuflamenco.dev in LocalWP.
+

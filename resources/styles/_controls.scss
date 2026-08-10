@@ -1,0 +1,383 @@
+/**
+ * Form controls, buttons, notices and the spinner.
+ *
+ * These replace @wordpress/components. React itself comes from WordPress, but
+ * none of its UI does: sizing follows WordPress admin conventions closely
+ * enough that the screen does not look foreign next to core, while nothing
+ * here inherits from core's stylesheet - a change to wp-components cannot
+ * move this UI.
+ *
+ * Every interactive control keeps a visible :focus-visible ring. Core supplies
+ * one for its own controls; owning the controls means owning that too.
+ */
+
+$sio-space-xs: 4px;
+$sio-space-sm: 8px;
+$sio-space-md: 16px;
+$sio-space-lg: 24px;
+
+$sio-brand: #3858e9;
+$sio-brand-dark: #2c3fc0;
+$sio-danger: #d63638;
+$sio-danger-dark: #b32d2e;
+$sio-success: #008a20;
+$sio-warning: #bd8600;
+
+$sio-text: #1e1e1e;
+$sio-text-muted: #646970;
+$sio-border: #dcdcde;
+$sio-border-strong: #8c8f94;
+$sio-radius-sm: 4px;
+
+@mixin sio-focus-ring( $color: $sio-brand ) {
+	outline: 2px solid $color;
+	outline-offset: 1px;
+}
+
+/* Buttons ---------------------------------------------------------------- */
+
+.sio-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: $sio-space-sm;
+	min-height: 32px;
+	padding: 0 12px;
+	border: 1px solid transparent;
+	border-radius: $sio-radius-sm;
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 1;
+	text-decoration: none;
+	cursor: pointer;
+	transition: background-color 0.1s ease, border-color 0.1s ease, color 0.1s ease;
+
+	&:focus-visible {
+		@include sio-focus-ring;
+	}
+
+	&[disabled],
+	&:disabled {
+		cursor: not-allowed;
+		opacity: 0.55;
+	}
+
+	&--primary {
+		background: $sio-brand;
+		border-color: $sio-brand;
+		color: #fff;
+
+		&:hover:not( [disabled] ) {
+			background: $sio-brand-dark;
+			border-color: $sio-brand-dark;
+			color: #fff;
+		}
+	}
+
+	&--secondary {
+		background: #fff;
+		border-color: $sio-brand;
+		color: $sio-brand;
+
+		&:hover:not( [disabled] ) {
+			background: rgba( 56, 88, 233, 0.06 );
+			color: $sio-brand-dark;
+		}
+	}
+
+	&--tertiary {
+		background: transparent;
+		border-color: transparent;
+		color: $sio-brand;
+
+		&:hover:not( [disabled] ) {
+			background: rgba( 56, 88, 233, 0.08 );
+		}
+	}
+
+	// Destructive modifies whichever variant it is applied to, so it comes last.
+	&.is-destructive {
+		border-color: $sio-danger;
+		color: $sio-danger;
+
+		&:hover:not( [disabled] ) {
+			background: rgba( 214, 54, 56, 0.06 );
+			color: $sio-danger-dark;
+		}
+	}
+
+	&--primary.is-destructive {
+		background: $sio-danger;
+		color: #fff;
+
+		&:hover:not( [disabled] ) {
+			background: $sio-danger-dark;
+			color: #fff;
+		}
+	}
+}
+
+/* Spinner ---------------------------------------------------------------- */
+
+.sio-spinner {
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	border: 2px solid currentColor;
+	border-right-color: transparent;
+	border-radius: 50%;
+	opacity: 0.7;
+	animation: sio-spin 0.7s linear infinite;
+	vertical-align: middle;
+}
+
+@keyframes sio-spin {
+	to {
+		transform: rotate( 360deg );
+	}
+}
+
+// Respect a user who has asked for less motion: show the ring, stop the spin.
+@media ( prefers-reduced-motion: reduce ) {
+	.sio-spinner {
+		animation-duration: 3s;
+	}
+}
+
+/* Fields ----------------------------------------------------------------- */
+
+.sio-field {
+	&__label {
+		display: block;
+		margin-bottom: $sio-space-xs;
+		font-size: 13px;
+		font-weight: 500;
+		color: $sio-text;
+	}
+
+	&__help {
+		margin: $sio-space-xs 0 0;
+		font-size: 12px;
+		line-height: 1.5;
+		color: $sio-text-muted;
+	}
+}
+
+.sio-select__input,
+.sio-number__input {
+	width: 100%;
+	max-width: 360px;
+	min-height: 32px;
+	padding: 0 $sio-space-sm;
+	background: #fff;
+	border: 1px solid $sio-border-strong;
+	border-radius: $sio-radius-sm;
+	font-size: 13px;
+	color: $sio-text;
+
+	&:focus {
+		border-color: $sio-brand;
+		@include sio-focus-ring;
+	}
+}
+
+.sio-number__input {
+	max-width: 140px;
+}
+
+/* Range ------------------------------------------------------------------ */
+
+.sio-range {
+	&__row {
+		display: flex;
+		align-items: center;
+		gap: $sio-space-md;
+		max-width: 360px;
+	}
+
+	&__input {
+		flex: 1 1 auto;
+		accent-color: $sio-brand;
+
+		&:focus-visible {
+			@include sio-focus-ring;
+		}
+	}
+
+	&__value {
+		flex: 0 0 auto;
+		min-width: 40px;
+		padding: 2px 8px;
+		background: rgba( 56, 88, 233, 0.08 );
+		border-radius: $sio-radius-sm;
+		font-size: 12px;
+		font-weight: 600;
+		font-variant-numeric: tabular-nums;
+		text-align: center;
+		color: $sio-brand;
+	}
+}
+
+/* Toggle ----------------------------------------------------------------- */
+
+.sio-toggle {
+	&__row {
+		display: flex;
+		align-items: flex-start;
+		gap: $sio-space-sm;
+		cursor: pointer;
+	}
+
+	// Visually hidden, but still focusable and hit-testable: the track below
+	// is decoration, the checkbox is the real control.
+	&__input {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: -1px;
+		padding: 0;
+		overflow: hidden;
+		white-space: nowrap;
+		clip: rect( 0 0 0 0 );
+		clip-path: inset( 50% );
+	}
+
+	&__track {
+		position: relative;
+		flex: 0 0 auto;
+		width: 36px;
+		height: 20px;
+		margin-top: 1px;
+		background: #b0b3b8;
+		border-radius: 10px;
+		transition: background-color 0.15s ease;
+	}
+
+	&__thumb {
+		position: absolute;
+		top: 2px;
+		left: 2px;
+		width: 16px;
+		height: 16px;
+		background: #fff;
+		border-radius: 50%;
+		box-shadow: 0 1px 2px rgba( 0, 0, 0, 0.2 );
+		transition: transform 0.15s ease;
+	}
+
+	&__label {
+		font-size: 13px;
+		line-height: 1.5;
+		color: $sio-text;
+	}
+
+	&__input:checked + &__track {
+		background: $sio-brand;
+	}
+
+	&__input:checked + &__track &__thumb {
+		transform: translateX( 16px );
+	}
+
+	&__input:focus-visible + &__track {
+		@include sio-focus-ring;
+	}
+
+	&.is-disabled {
+		opacity: 0.55;
+
+		.sio-toggle__row {
+			cursor: not-allowed;
+		}
+	}
+}
+
+/* Notices ---------------------------------------------------------------- */
+
+.sio-notice {
+	display: flex;
+	align-items: flex-start;
+	gap: $sio-space-sm;
+	margin: 0 0 $sio-space-md;
+	padding: 12px $sio-space-md;
+	background: #fff;
+	border: 1px solid $sio-border;
+	border-left-width: 4px;
+	border-radius: $sio-radius-sm;
+	font-size: 13px;
+	line-height: 1.5;
+
+	&__body {
+		flex: 1 1 auto;
+		min-width: 0;
+	}
+
+	&__dismiss {
+		flex: 0 0 auto;
+		padding: 0 4px;
+		background: none;
+		border: 0;
+		font-size: 18px;
+		line-height: 1;
+		color: $sio-text-muted;
+		cursor: pointer;
+
+		&:hover {
+			color: $sio-text;
+		}
+
+		&:focus-visible {
+			@include sio-focus-ring;
+		}
+	}
+
+	&--error {
+		border-left-color: $sio-danger;
+	}
+
+	&--warning {
+		border-left-color: $sio-warning;
+	}
+
+	&--success {
+		border-left-color: $sio-success;
+	}
+
+	&--info {
+		border-left-color: $sio-brand;
+	}
+}
+
+/* Media Library cells and row actions ------------------------------------ */
+
+.sio-cell {
+	display: block;
+	font-size: 13px;
+	line-height: 1.4;
+
+	&__primary {
+		display: block;
+	}
+
+	&__detail {
+		display: block;
+		margin-top: 2px;
+		font-size: 12px;
+		color: $sio-text-muted;
+	}
+
+	&--optimized .sio-cell__primary {
+		font-weight: 600;
+		color: $sio-success;
+	}
+
+	&--failed .sio-cell__primary {
+		color: $sio-danger;
+	}
+
+	&--pending .sio-cell__primary,
+	&--skipped .sio-cell__primary,
+	&--restored .sio-cell__primary {
+		color: $sio-text-muted;
+	}
+}

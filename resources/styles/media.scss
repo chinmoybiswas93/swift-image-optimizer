@@ -1,0 +1,181 @@
+/**
+ * Media Library integration styles.
+ *
+ * Pulls in the shared control styles so the buttons this injects into the
+ * media modal and grid toolbar match the plugin's own design rather than
+ * core's, and so the optimization column renders correctly on upload.php.
+ */
+
+@use 'controls';
+
+/* -------------------------------------------------------------------------- */
+/* Attachment modal panel                                                      */
+/* -------------------------------------------------------------------------- */
+
+.sio-panel {
+	margin: 12px 0;
+	padding: 12px 14px;
+	border: 1px solid #e0e0e0;
+	border-radius: 4px;
+	background: #fff;
+	font-size: 12px;
+	line-height: 1.6;
+
+	&__head {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		margin-bottom: 8px;
+	}
+
+	&__dot {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		background: #008a20;
+		flex: 0 0 auto;
+	}
+
+	&__saved {
+		display: flex;
+		align-items: baseline;
+		gap: 6px;
+		margin-bottom: 10px;
+	}
+
+	&__percent {
+		font-size: 18px;
+		font-weight: 600;
+		color: #008a20;
+	}
+
+	&__bytes {
+		color: #757575;
+	}
+
+	&__rows {
+		margin: 0 0 10px;
+		padding: 0 0 10px;
+		border-bottom: 1px solid #f0f0f0;
+		list-style: none;
+
+		li {
+			display: flex;
+			justify-content: space-between;
+			margin: 0;
+			padding: 2px 0;
+		}
+	}
+
+	&__label {
+		color: #757575;
+	}
+
+	&__value {
+		font-weight: 600;
+	}
+
+	&__meta {
+		margin: 0;
+		list-style: none;
+		color: #757575;
+
+		li {
+			margin: 0;
+			padding: 1px 0;
+		}
+	}
+
+	&__reason {
+		margin: 0 0 8px;
+		color: #757575;
+	}
+
+	&__error {
+		margin: 8px 0 0;
+		color: #d63638;
+	}
+
+	&__note {
+		margin: 10px 0 0;
+		color: #757575;
+		font-style: italic;
+	}
+
+	&__restore {
+		margin-top: 10px;
+		padding-left: 0;
+		color: #d63638;
+
+		&:hover,
+		&:focus {
+			color: #d63638;
+		}
+	}
+
+	&__optimize {
+		margin-top: 2px;
+	}
+}
+
+/* -------------------------------------------------------------------------- */
+/* Grid toolbar                                                                */
+/* -------------------------------------------------------------------------- */
+
+.swift-optimize-mode-button.hidden,
+.swift-optimize-selected-button.hidden {
+	display: none;
+}
+
+/*
+ * Appended straight to .media-toolbar, outside the primary/secondary priority
+ * lists, so core's select-mode show/hide never touches it.
+ */
+.sio-bulk {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	width: 100%;
+	padding: 8px 0;
+	font-size: 12px;
+	color: #757575;
+
+	&__bar {
+		flex: 1 1 auto;
+		min-width: 120px;
+		height: 8px;
+		border-radius: 4px;
+		background: #e0e0e0;
+		overflow: hidden;
+	}
+
+	&__fill {
+		width: 0;
+		height: 100%;
+		background: #2271b1;
+		transition: width 200ms ease;
+	}
+
+	&__label {
+		flex: 0 0 auto;
+		font-weight: 600;
+		color: #1e1e1e;
+	}
+
+	&__saved {
+		flex: 0 0 auto;
+		color: #008a20;
+	}
+
+	&__stop {
+		flex: 0 0 auto;
+	}
+}
+
+/* Hide the ordinary toolbar controls while a run is in progress. */
+.media-toolbar.sio-running {
+	.media-toolbar-primary > *,
+	.media-toolbar-secondary > * {
+		display: none !important;
+	}
+}
