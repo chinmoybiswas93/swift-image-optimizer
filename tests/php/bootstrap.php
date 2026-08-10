@@ -11,8 +11,13 @@
 
 // phpcs:disable WordPress.WP.AlternativeFunctions, WordPress.PHP.DevelopmentFunctions, WordPress.Security.EscapeOutput, WordPress.NamingConventions.PrefixAllGlobals, WordPress.DB.DirectDatabaseQuery, Squiz.Commenting, Generic.Commenting, WordPress.WP.GlobalVariablesOverride
 
-if ( PHP_SAPI !== 'cli' ) {
-	exit( 'Harnesses are CLI-only.' );
+if ( PHP_SAPI !== 'cli' && ! defined( 'SIO_HARNESS_WEB' ) ) {
+	exit( 'Harnesses are CLI-only unless invoked through tests/php/web-runner.php.' );
+}
+
+if ( ! defined( 'STDERR' ) ) {
+	// Running under php-fpm via the web runner, where STDERR does not exist.
+	define( 'STDERR', fopen( 'php://output', 'w' ) );
 }
 
 final class Harness {

@@ -29,6 +29,12 @@ if [ ! -S "$SITE_SOCKET" ]; then
   exit 2
 fi
 
+WEB_MODE=0
+if [ "${1:-}" = "--web" ]; then
+  WEB_MODE=1
+  shift
+fi
+
 if [ $# -gt 0 ]; then
   SUITES=("$@")
 else
@@ -38,6 +44,60 @@ else
 fi
 
 failed=0
+
+# ---------------------------------------------------------------------------
+# Web mode: run each suite through php-fpm instead of CLI PHP.
+#
+# CLI PHP here has no Imagick, so a CLI run exercises cwebp whatever engine is
+# requested - the whole of issue I-2. The token is created immediately before
+# the request and removed immediately after, in every exit path.
+# ---------------------------------------------------------------------------
+if [ "$WEB_MODE" -eq 1 ]; then
+  BASE_URL="${SIO_BASE_URL:-https://cb-test.local}"
+  TOKEN_FILE="tests/php/.web-token"
+
+  cleanup_token() { rm -f "$TOKEN_FILE"; }
+  trap cleanup_token EXIT INT TERM
+
+  for suite in "${SUITES[@]}"; do
+    suite="${suite%.php}"
+
+    if [ ! -f "tests/php/${suite}.php" ]; then
+      echo "No such harness: tests/php/${suite}.php" >&2
+      failed=1
+      continue
+    fi
+
+    TOKEN="$(openssl rand -hex 24)"
+    printf '%s' "$TOKEN" > "$TOKEN_FILE"
+
+    echo
+    echo "########## $suite (web / php-fpm${SIO_TEST_ENGINE:+, engine=$SIO_TEST_ENGINE}) ##########"
+
+    url="${BASE_URL}/wp-content/plugins/swift-image-optimizer/tests/php/web-runner.php?token=${TOKEN}&suite=${suite}"
+    [ -n "${SIO_TEST_ENGINE:-}" ] && url="${url}&engine=${SIO_TEST_ENGINE}"
+
+    body="$(curl -sk --max-time 600 "$url")"
+    echo "$body"
+
+    # The harness exits non-zero on failure, but curl cannot see that, so the
+    # summary line is the contract.
+    if ! printf '%s' "$body" | grep -q '^OK: '; then
+      failed=1
+    fi
+
+    cleanup_token
+  done
+
+  echo
+  if [ "$failed" -ne 0 ]; then
+    echo "SUITE FAILED"
+    exit 1
+  fi
+
+  echo "ALL SUITES PASSED"
+  exit 0
+fi
 
 for suite in "${SUITES[@]}"; do
   file="tests/php/${suite%.php}.php"

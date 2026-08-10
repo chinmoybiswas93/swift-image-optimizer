@@ -26,7 +26,40 @@ Calling the plugin ".org compliant" today is an intention, not a verified fact.
 
 ---
 
-## I-2 — The test suite exercises a different engine than the site runs
+## I-2 — The test suite exercises a different engine than the site runs · **CLOSED**
+
+**Severity:** ~~High~~ Resolved 2026-08-11
+
+**Closed.** The harnesses can now run under the site's own php-fpm via
+`tests/php/run.sh --web`, where Imagick is present, and the engine is forced per run with
+`SIO_TEST_ENGINE`. All three engines are exercised and each is confirmed *used* rather than
+merely first in the chain — the harness asserts on the `engine` recorded in the log row:
+
+| Run | Chain | Engine recorded | Result |
+|---|---|---|---|
+| `SIO_TEST_ENGINE=imagick` | imagick → cwebp → gd | `imagick` | 38/38 |
+| `SIO_TEST_ENGINE=cwebp` | cwebp → imagick → gd | `cwebp` | 38/38 |
+| `SIO_TEST_ENGINE=gd` | gd → imagick → cwebp | `gd` | 38/38 |
+
+Crucially the assertions are on **produced output**, not return values: the portrait fixture is
+re-decoded from disk and its real dimensions checked, and the restored file is compared
+byte-for-byte against the source. Checking only the return value is exactly how the cwebp
+rotation bug survived.
+
+The environment split itself is unchanged and still worth knowing about — it is a property of
+Local, not a defect:
+
+| Context | Imagick | Engine actually used |
+|---|---|---|
+| Local's **CLI** PHP (all builds 7.4 → 8.5) | absent | `cwebp` |
+| The site's **web/php-fpm** request | **present** | `imagick` |
+
+So a plain `npm run test:php` still exercises cwebp. Use `--web` when the change touches an
+engine. Verified directly rather than assumed: a probe served through php-fpm reported
+`{"sapi":"fpm-fcgi","imagick":true}` while the same file under CLI reported `imagick:false`.
+
+<details>
+<summary>Original entry, for the record</summary>
 
 **Severity:** High
 
@@ -56,6 +89,8 @@ fixed (the engine now declines rotated JPEGs and the chain falls through), and i
 and verified live on cb-test — but the lesson stands: exercising an engine is not the same as
 checking what it produced. Unit 10's live verification covered `cwebp` and `gd`. **Imagick is
 still uncovered.**
+
+</details>
 
 ---
 
