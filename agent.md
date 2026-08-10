@@ -107,11 +107,16 @@ backups.
 The knowledge graph at `graphify-out/` indexes the source and doc files. One query costs a
 fraction of what reading files costs.
 
-> **The graph is stale.** It was built against the old `src/` + `Providers/` + `Repositories/`
-> layout and still names classes that no longer exist (`Plugin`, `*ServiceProvider`,
-> `SettingsPage`, `ListTable`, `RetentionCron`, `Database`, `Services\Bulk\Cli`,
-> `SettingsRepository`, `StatsRepository`, `App\Foundation\*`, `App\Vite`). Run
-> `/graphify --update` before trusting it.
+> **Rebuilt 2026-08-11 after Unit 11** — 1335 nodes, 1780 edges, 179 communities. It indexes the
+> current layout, the committed `tests/php/` harnesses, all 24 architecture invariants and the
+> closed issues. The classes an earlier warning here listed as phantoms (`Plugin`,
+> `*ServiceProvider`, `SettingsPage`, `ListTable`, `RetentionCron`, `SettingsRepository`,
+> `App\Foundation\*`) are gone from it. Still run `/graphify --update` after any unit that adds
+> or changes files.
+
+It is worth querying even for questions that feel like documentation rather than code. Reading
+the graph is what caught that the notice in the I-10 screenshot belonged to Elementor rather than
+to this plugin, after the first fix had already been written and committed.
 
 ```bash
 graphify query "how does BackupManager expire backups"
