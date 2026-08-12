@@ -77,6 +77,10 @@ delete_option( 'swift_image_optimizer_schema_version' );
 delete_option( 'swift_image_optimizer_bulk_progress' );
 delete_option( 'swift_image_optimizer_log_suffix' );
 delete_option( 'swift_image_optimizer_bulk_lock' );
+delete_option( 'swift_image_optimizer_bulk_phase' );
+delete_option( 'swift_image_optimizer_library_scan' );
+delete_option( 'swift_image_optimizer_scan_progress' );
+delete_option( 'swift_image_optimizer_scan_lock' );
 
 // Per-attachment conversion locks are options rather than transients, so they
 // need clearing explicitly. Normally released as each conversion ends; a
@@ -92,3 +96,5 @@ $wpdb->query(
 delete_transient( 'swift_image_optimizer_stats' );
 
 wp_clear_scheduled_hook( 'swift_image_optimizer_purge_backups' );
+wp_clear_scheduled_hook( 'swift_image_optimizer_scan_batch' );
+wp_clear_scheduled_hook( 'swift_image_optimizer_scheduled_scan' );

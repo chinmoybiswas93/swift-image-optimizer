@@ -15,13 +15,11 @@
 
 import { __, _n, sprintf } from '@wordpress/i18n';
 
+import sioConfirm from './confirm';
+
 import '../styles/media.scss';
 
 const config = window.swiftImageOptimizerMedia || {};
-
-/* -------------------------------------------------------------------------- */
-/* Helpers                                                                     */
-/* -------------------------------------------------------------------------- */
 
 /**
  * POST to one of the plugin's REST routes.
@@ -120,10 +118,6 @@ const el = ( tag, className, text ) => {
 
 	return node;
 };
-
-/* -------------------------------------------------------------------------- */
-/* Attachment modal panel                                                      */
-/* -------------------------------------------------------------------------- */
 
 /**
  * Build the optimization panel for an attachment.
@@ -308,17 +302,20 @@ function renderPanel( model, container ) {
 
 	const data = model.get( 'swiftImageOptimizer' );
 
-	const onAction = ( action, button ) => {
-		if (
-			'restore' === action &&
-			! window.confirm( // eslint-disable-line no-alert
-				__(
-					'Restore the original image? The optimized file will be removed and every reference updated back.',
+	const onAction = async ( action, button ) => {
+		if ( 'restore' === action ) {
+			const ok = await sioConfirm( {
+				title: __( 'Restore the original image?', 'swift-image-optimizer' ),
+				message: __(
+					'The optimized file will be removed and every reference to it updated back to the original.',
 					'swift-image-optimizer'
-				)
-			)
-		) {
-			return;
+				),
+				confirm: __( 'Restore original', 'swift-image-optimizer' ),
+			} );
+
+			if ( ! ok ) {
+				return;
+			}
 		}
 
 		button.disabled = true;
@@ -396,10 +393,6 @@ function registerModalPanel() {
 		views.Attachment.Details.TwoColumn = patch( TwoColumn );
 	}
 }
-
-/* -------------------------------------------------------------------------- */
-/* Grid toolbar                                                                */
-/* -------------------------------------------------------------------------- */
 
 /**
  * Progress bar shown in place of the toolbar buttons during a run.
@@ -484,7 +477,7 @@ class OptimizeProgress {
  * @param {Object} toolbar    The toolbar view.
  * @return {void}
  */
-function runSelection( controller, toolbar ) {
+async function runSelection( controller, toolbar ) {
 	const selection = controller.state().get( 'selection' );
 	const models = selection.models.slice();
 
@@ -492,20 +485,27 @@ function runSelection( controller, toolbar ) {
 		return;
 	}
 
-	if (
-		! window.confirm( // eslint-disable-line no-alert
-			sprintf(
-				/* translators: %d: number of images. */
-				_n(
-					'Optimize %d image? The original is backed up first, and every reference to it is updated.',
-					'Optimize %d images? Originals are backed up first, and every reference to them is updated.',
-					models.length,
-					'swift-image-optimizer'
-				),
-				models.length
-			)
-		)
-	) {
+	const ok = await sioConfirm( {
+		title: sprintf(
+			/* translators: %d: number of images. */
+			_n(
+				'Optimize %d image?',
+				'Optimize %d images?',
+				models.length,
+				'swift-image-optimizer'
+			),
+			models.length
+		),
+		message: _n(
+			'The original is backed up first, and every reference to it is updated.',
+			'Originals are backed up first, and every reference to them is updated.',
+			models.length,
+			'swift-image-optimizer'
+		),
+		confirm: __( 'Optimize', 'swift-image-optimizer' ),
+	} );
+
+	if ( ! ok ) {
 		return;
 	}
 
@@ -720,8 +720,6 @@ function registerToolbar() {
 		);
 	};
 }
-
-/* -------------------------------------------------------------------------- */
 
 if ( window.wp && window.wp.media ) {
 	registerModalPanel();

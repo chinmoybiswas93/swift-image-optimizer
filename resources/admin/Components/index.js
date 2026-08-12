@@ -2,10 +2,13 @@
 
 export { default as Button } from './Button';
 export { Card, CardBody, CardHeader } from './Card';
+export { default as ConfirmDialog } from './ConfirmDialog';
 export { default as Field } from './Field';
+export { default as Modal } from './Modal';
 export { default as Metric } from './Metric';
 export { default as Notice } from './Notice';
 export { default as NumberInput } from './NumberInput';
+export { default as ProgressRing } from './ProgressRing';
 export { default as Range } from './Range';
 export { default as Section } from './Section';
 export { default as Select } from './Select';

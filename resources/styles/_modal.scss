@@ -1,0 +1,164 @@
+/**
+ * Modal dialog.
+ *
+ * Shared by both surfaces on purpose: the React admin renders it through
+ * Components/Modal.jsx, the Media Library through the hand-built DOM in
+ * media/confirm.js. One stylesheet is what stops the two drifting into
+ * different-looking dialogs for the same kind of decision.
+ */
+
+@use 'controls' as ctl;
+
+.sio-modal__backdrop {
+	position: fixed;
+	inset: 0;
+	// Core's media modal sits at 160000 and the admin menu below that. This
+	// has to clear both, because it is opened from inside the media modal.
+	z-index: 300000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: ctl.$sio-space-md;
+	background: rgba(0, 0, 0, 0.5);
+	animation: sio-modal-fade 120ms ease-out;
+}
+
+.sio-modal {
+	display: flex;
+	flex-direction: column;
+	width: min(460px, 100%);
+	max-height: calc(100vh - #{ctl.$sio-space-lg * 2});
+	background: #fff;
+	border-radius: 6px;
+	box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+	color: ctl.$sio-text;
+	font-size: 13px;
+	line-height: 1.6;
+	animation: sio-modal-in 140ms ease-out;
+
+	&:focus {
+		outline: none;
+	}
+
+	&__head {
+		display: flex;
+		align-items: flex-start;
+		gap: ctl.$sio-space-sm;
+		padding: ctl.$sio-space-md ctl.$sio-space-md ctl.$sio-space-sm;
+	}
+
+	&__title {
+		flex: 1 1 auto;
+		margin: 0;
+		font-size: 16px;
+		font-weight: 600;
+		line-height: 1.4;
+		color: ctl.$sio-text;
+	}
+
+	&__dismiss {
+		flex: 0 0 auto;
+		padding: 0 4px;
+		background: none;
+		border: 0;
+		font-size: 20px;
+		line-height: 1;
+		color: ctl.$sio-text-muted;
+		cursor: pointer;
+
+		&:hover {
+			color: ctl.$sio-text;
+		}
+
+		&:focus-visible {
+			@include ctl.sio-focus-ring;
+		}
+	}
+
+	&__body {
+		flex: 1 1 auto;
+		overflow-y: auto;
+		padding: 0 ctl.$sio-space-md ctl.$sio-space-md;
+
+		p {
+			margin: 0 0 ctl.$sio-space-sm;
+			font-size: 13px;
+			line-height: 1.6;
+
+			&:last-child {
+				margin-bottom: 0;
+			}
+		}
+
+		strong {
+			font-weight: 600;
+		}
+	}
+
+	&__foot {
+		display: flex;
+		justify-content: flex-end;
+		gap: ctl.$sio-space-sm;
+		padding: ctl.$sio-space-sm ctl.$sio-space-md ctl.$sio-space-md;
+		border-top: 1px solid ctl.$sio-border;
+	}
+
+	// The typed-confirmation input, matching the other text controls.
+	&__confirm-field {
+		margin-top: ctl.$sio-space-md;
+	}
+
+	&__input {
+		width: 100%;
+		max-width: 220px;
+		min-height: 32px;
+		padding: 0 ctl.$sio-space-sm;
+		background: #fff;
+		border: 1px solid ctl.$sio-border-strong;
+		border-radius: ctl.$sio-radius-sm;
+		font-size: 13px;
+		font-family: monospace;
+		letter-spacing: 0.04em;
+		color: ctl.$sio-text;
+
+		&:focus {
+			border-color: ctl.$sio-brand;
+			@include ctl.sio-focus-ring;
+		}
+	}
+
+	// A destructive dialog says so before the operator reaches the buttons.
+	&--destructive &__title {
+		color: ctl.$sio-danger-dark;
+	}
+}
+
+@keyframes sio-modal-fade {
+	from {
+		opacity: 0;
+	}
+
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes sio-modal-in {
+	from {
+		opacity: 0;
+		transform: translateY(8px) scale(0.98);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+}
+
+// Respect a reduced-motion preference rather than animating regardless.
+@media (prefers-reduced-motion: reduce) {
+	.sio-modal,
+	.sio-modal__backdrop {
+		animation: none;
+	}
+}
