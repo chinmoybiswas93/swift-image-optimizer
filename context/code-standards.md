@@ -106,7 +106,10 @@ returned to the queue by `Scanner::requeue()`.
 
 - `@wordpress/*` packages only — no external runtime libraries
 - `@wordpress/element` (not bare `react`)
-- `@wordpress/components` for UI so it matches core admin
+- **Never `@wordpress/components`.** Every control is the plugin's own, in `resources/admin/Components/`.
+  This reverses an earlier version of this line — see `agent.md` and `architecture.md`'s invariants,
+  which govern where the two disagree. `build/admin.asset.php` is the check: it must list
+  `wp-element` and `wp-api-fetch`, and must never list `wp-components`.
 - All CSS classes prefixed `sio-`
 - All strings through `__()` / `sprintf()` from `@wordpress/i18n`
 
@@ -136,7 +139,15 @@ Explain **why**, never what. The codebase's own examples:
 // guarantee when one filename is a prefix of another.
 ```
 
-Do not add comments that restate the code.
+Do not add comments that restate the code. Applies to PHP, JS/JSX and SCSS alike:
+
+- No decorative banner/divider comments (`/* ---- Section ---- */`) — a named function, component
+  or section heading already does that job.
+- No placeholder docblock summaries (`Constructor.`, `Getter.`, `Returns the value.`) — the summary
+  line must say something the method/class name doesn't already say, or should describe the *why*
+  instead of restating the signature.
+- No commented-out code and no `TODO`/`FIXME`/`XXX`/`HACK` markers left in source — record the open
+  item in `progress-tracker.md` under Open Questions instead.
 
 ## Verification before calling anything done
 
