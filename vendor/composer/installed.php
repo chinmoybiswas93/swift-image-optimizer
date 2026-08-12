@@ -3,7 +3,7 @@
         'name' => 'crocodevs/swift-image-optimizer',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'bc45bebf2938991a80390757f268e2f933bd15db',
+        'reference' => 'ed2bd7132c48a1a7df35f991af926a1f4656142c',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'crocodevs/swift-image-optimizer' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'bc45bebf2938991a80390757f268e2f933bd15db',
+            'reference' => 'ed2bd7132c48a1a7df35f991af926a1f4656142c',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

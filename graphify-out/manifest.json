@@ -10,14 +10,14 @@
     "semantic_hash": "45d511752a732e571ddb6c2749b9a7d5"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/uninstall.php": {
-    "mtime": 1786394660.936791,
-    "ast_hash": "45b50a30189204b33e8968898784bb63",
-    "semantic_hash": "45b50a30189204b33e8968898784bb63"
+    "mtime": 1786467645.6526475,
+    "ast_hash": "35faf47abf92f3ae2a47a2d2d9cb6b7e",
+    "semantic_hash": "35faf47abf92f3ae2a47a2d2d9cb6b7e"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/package.json": {
-    "mtime": 1786396362.3213067,
-    "ast_hash": "27496fcb0fc09fcd0005f40024164561",
-    "semantic_hash": "27496fcb0fc09fcd0005f40024164561"
+    "mtime": 1786469121.466837,
+    "ast_hash": "80f590e30ad2385b2c8e6f47c65b4315",
+    "semantic_hash": "80f590e30ad2385b2c8e6f47c65b4315"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/swift-image-optimizer.php": {
     "mtime": 1786344232.131601,
@@ -30,9 +30,9 @@
     "semantic_hash": "1e8648083e50ab98dcf156ee28b399c5"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/context/architecture.md": {
-    "mtime": 1786396327.1537797,
-    "ast_hash": "cfdc7029cbd8d86d62654956d9bb1b09",
-    "semantic_hash": "cfdc7029cbd8d86d62654956d9bb1b09"
+    "mtime": 1786468808.7561374,
+    "ast_hash": "26ff7db65b3061e20ff54b2aa0adf770",
+    "semantic_hash": "26ff7db65b3061e20ff54b2aa0adf770"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/context/competitor-features.md": {
     "mtime": 1786304916.7157347,
@@ -40,14 +40,14 @@
     "semantic_hash": "34a882939423edb7bb9bd22b43a9dd57"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/context/code-standards.md": {
-    "mtime": 1786304710.5939257,
-    "ast_hash": "ba16eb138b8a8aa1a9f9f0d300a92efa",
-    "semantic_hash": "ba16eb138b8a8aa1a9f9f0d300a92efa"
+    "mtime": 1786468823.4911351,
+    "ast_hash": "061dac238aa35bfc5e7f3489b66e5de2",
+    "semantic_hash": "061dac238aa35bfc5e7f3489b66e5de2"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/context/progress-tracker.md": {
-    "mtime": 1786396362.3112023,
-    "ast_hash": "63c1c3a79e90ff82e634f36bce50a253",
-    "semantic_hash": "63c1c3a79e90ff82e634f36bce50a253"
+    "mtime": 1786558913.0006683,
+    "ast_hash": "e03fefc6e5fad6e2b909957f3bc34aed",
+    "semantic_hash": "e03fefc6e5fad6e2b909957f3bc34aed"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/context/ai-workflow-rules.md": {
     "mtime": 1786395232.3829265,
@@ -60,9 +60,9 @@
     "semantic_hash": "71945b9139940d889b16ebac15ac3499"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/context/ui-context.md": {
-    "mtime": 1786304695.0022252,
-    "ast_hash": "37ade06a0f1669f86bddfae9b4d20032",
-    "semantic_hash": "37ade06a0f1669f86bddfae9b4d20032"
+    "mtime": 1786468869.4828353,
+    "ast_hash": "f517e183891ad3efd62ee1f864d69b74",
+    "semantic_hash": "f517e183891ad3efd62ee1f864d69b74"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/context/future-specs/before-after-preview.md": {
     "mtime": 1786125733.1204796,
@@ -80,9 +80,9 @@
     "semantic_hash": "b15e7066d9be60a47ceb8691f59c3596"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/context/future-specs/scheduled-optimization.md": {
-    "mtime": 1786125705.1185904,
-    "ast_hash": "613e9a2424e0afe53199b0ba7cbc8958",
-    "semantic_hash": "613e9a2424e0afe53199b0ba7cbc8958"
+    "mtime": 1786468911.6752396,
+    "ast_hash": "d51877420a887ddf3ff041a8fcc02045",
+    "semantic_hash": "d51877420a887ddf3ff041a8fcc02045"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/context/future-specs/resize-existing-images.md": {
     "mtime": 1786125713.8586204,
@@ -135,9 +135,9 @@
     "semantic_hash": "6f4a8ab779fda59f4fbcbe303cd1ed0d"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/context/current-issues/issues.md": {
-    "mtime": 1786396362.3162823,
-    "ast_hash": "590587c3ec7949bf2cb58b15cf25e217",
-    "semantic_hash": "590587c3ec7949bf2cb58b15cf25e217"
+    "mtime": 1786560875.7001064,
+    "ast_hash": "0934e4ec2514137e74bbcfee3b262611",
+    "semantic_hash": "0934e4ec2514137e74bbcfee3b262611"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/bin/build-dist.sh": {
     "mtime": 1786342834.405348,
@@ -160,9 +160,9 @@
     "semantic_hash": "573da514aac8b0d41c67a69f8edf8e45"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/agent.md": {
-    "mtime": 1786396362.320115,
-    "ast_hash": "8c5d1ae6fe4b084d54136dc60bdca714",
-    "semantic_hash": "8c5d1ae6fe4b084d54136dc60bdca714"
+    "mtime": 1786397023.5360134,
+    "ast_hash": "e5708d0e2a12c47c24f147e172ca73a0",
+    "semantic_hash": "e5708d0e2a12c47c24f147e172ca73a0"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/context/specs/done/10-hardening-troubleshoot.md": {
     "mtime": 1786304141.6611295,
@@ -210,9 +210,9 @@
     "semantic_hash": "2391e325d935b2a06172c3c6a58b9eb0"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/app/Models/OptimizationLog.php": {
-    "mtime": 1786376063.9100893,
-    "ast_hash": "ca3d1bfb2efc26f87df50841c3404a75",
-    "semantic_hash": "ca3d1bfb2efc26f87df50841c3404a75"
+    "mtime": 1786467247.8599498,
+    "ast_hash": "da400b14d184b8e1eadd2a985e0a40eb",
+    "semantic_hash": "da400b14d184b8e1eadd2a985e0a40eb"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/app/Http/Policies/AdminPolicy.php": {
     "mtime": 1786376064.1509655,
@@ -245,9 +245,9 @@
     "semantic_hash": "e606ef91955a70df1474fc0ddaa9f47a"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/app/Http/Controllers/BulkController.php": {
-    "mtime": 1786388785.2763584,
-    "ast_hash": "d41718fa89ac5e53590a30f4e51759c6",
-    "semantic_hash": "d41718fa89ac5e53590a30f4e51759c6"
+    "mtime": 1786467547.8244326,
+    "ast_hash": "1e37634285fdf98182f657b53771ac06",
+    "semantic_hash": "1e37634285fdf98182f657b53771ac06"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/app/Http/Controllers/StatsController.php": {
     "mtime": 1786376065.8947315,
@@ -270,9 +270,9 @@
     "semantic_hash": "11a7a1030a8d0e5f0d1cc7503b52b4dd"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/app/Http/Controllers/BackupController.php": {
-    "mtime": 1786376066.9343421,
-    "ast_hash": "9f14573d9b85a6613a261d126f5f3bb2",
-    "semantic_hash": "9f14573d9b85a6613a261d126f5f3bb2"
+    "mtime": 1786559157.7141187,
+    "ast_hash": "154916c10338d4966fd6484ea483d922",
+    "semantic_hash": "154916c10338d4966fd6484ea483d922"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/app/Http/Routes/routes.php": {
     "mtime": 1786376833.3484254,
@@ -280,24 +280,24 @@
     "semantic_hash": "c94edc2a0d291f17020a79fa0a160fe3"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/app/Http/Routes/api.php": {
-    "mtime": 1786391533.8568199,
-    "ast_hash": "9959f32ec21a52ed00c793c20a3a8d67",
-    "semantic_hash": "9959f32ec21a52ed00c793c20a3a8d67"
+    "mtime": 1786467563.4685483,
+    "ast_hash": "de588be906b2d7f8cc32b491cfb0cdd5",
+    "semantic_hash": "de588be906b2d7f8cc32b491cfb0cdd5"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/app/Hooks/actions.php": {
-    "mtime": 1786391556.4446998,
-    "ast_hash": "cd0bbce602ae9c145c42540c06427bf9",
-    "semantic_hash": "cd0bbce602ae9c145c42540c06427bf9"
+    "mtime": 1786560353.474901,
+    "ast_hash": "40e69f63cb7f11927399c80251842d88",
+    "semantic_hash": "40e69f63cb7f11927399c80251842d88"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/app/Hooks/Scheduler/JobRunner.php": {
-    "mtime": 1786376352.1136284,
-    "ast_hash": "4f483e34862405fa6c6fdf635f06e87f",
-    "semantic_hash": "4f483e34862405fa6c6fdf635f06e87f"
+    "mtime": 1786558957.0267625,
+    "ast_hash": "adb9f74555048b508f75a9119ef0be6a",
+    "semantic_hash": "adb9f74555048b508f75a9119ef0be6a"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/app/Hooks/CLI/Commands.php": {
-    "mtime": 1786391549.3637125,
-    "ast_hash": "40cf56ffd81fd68335ff18c41797b7cc",
-    "semantic_hash": "40cf56ffd81fd68335ff18c41797b7cc"
+    "mtime": 1786468648.227981,
+    "ast_hash": "2a6d824364051c6fbf53080728e74934",
+    "semantic_hash": "2a6d824364051c6fbf53080728e74934"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/app/Hooks/Handlers/NoticeHandler.php": {
     "mtime": 1786393774.4091692,
@@ -305,9 +305,9 @@
     "semantic_hash": "b3af7765ee86d27c9566e474b9927d9e"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/app/Hooks/Handlers/DeactivationHandler.php": {
-    "mtime": 1786388764.6729987,
-    "ast_hash": "d67b47fee8df9714d4f8ba4f8265a328",
-    "semantic_hash": "d67b47fee8df9714d4f8ba4f8265a328"
+    "mtime": 1786467654.87925,
+    "ast_hash": "3d7626ac2e4addcf8660e0954f4e624c",
+    "semantic_hash": "3d7626ac2e4addcf8660e0954f4e624c"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/app/Hooks/Handlers/MediaLibraryHandler.php": {
     "mtime": 1786393745.888177,
@@ -315,14 +315,14 @@
     "semantic_hash": "26134bbc600f83b0c9dca2bd23193488"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/app/Hooks/Handlers/ActivationHandler.php": {
-    "mtime": 1786376068.5680425,
-    "ast_hash": "769366d57e6ae359b50935f01a8a6cca",
-    "semantic_hash": "769366d57e6ae359b50935f01a8a6cca"
+    "mtime": 1786467673.4719217,
+    "ast_hash": "9f0dd7c8ec90af0881d6bc2b8eef4eee",
+    "semantic_hash": "9f0dd7c8ec90af0881d6bc2b8eef4eee"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/app/Hooks/Handlers/MenuHandler.php": {
-    "mtime": 1786342688.4226644,
-    "ast_hash": "82b50d2bc09ba1f79c2a278e1453ab17",
-    "semantic_hash": "82b50d2bc09ba1f79c2a278e1453ab17"
+    "mtime": 1786467714.233343,
+    "ast_hash": "75ecd20c0ff14ae255683168821a3968",
+    "semantic_hash": "75ecd20c0ff14ae255683168821a3968"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/app/Hooks/Handlers/AssetHandler.php": {
     "mtime": 1786342722.011281,
@@ -330,9 +330,9 @@
     "semantic_hash": "ff7588785bfa9941d6c365368a67cd2e"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/app/Views/admin/admin_app.php": {
-    "mtime": 1786376068.9431698,
-    "ast_hash": "71592b29a154039f881ac3d13307db07",
-    "semantic_hash": "71592b29a154039f881ac3d13307db07"
+    "mtime": 1786560362.9548125,
+    "ast_hash": "4b6b7ba01098f37394426938458c32f3",
+    "semantic_hash": "4b6b7ba01098f37394426938458c32f3"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/app/Views/admin/parts/media-column.php": {
     "mtime": 1786376525.1100805,
@@ -350,9 +350,9 @@
     "semantic_hash": "f81f5bf553cffbed201285b356a70d6c"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/app/Services/AttachmentConverter.php": {
-    "mtime": 1786391429.7612202,
-    "ast_hash": "fc998694df8bafbeea391d25d2895681",
-    "semantic_hash": "fc998694df8bafbeea391d25d2895681"
+    "mtime": 1786468649.8117418,
+    "ast_hash": "88a5306fe9e53090fde6803f3def0b3b",
+    "semantic_hash": "88a5306fe9e53090fde6803f3def0b3b"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/app/Services/Optimizer.php": {
     "mtime": 1786394624.5487363,
@@ -380,9 +380,9 @@
     "semantic_hash": "75ddeb3fb8394a7167034420c3aa8ba9"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/app/Services/Bulk/Runner.php": {
-    "mtime": 1786390219.5912142,
-    "ast_hash": "853c33422feb283e3adf3e14bdf7d96d",
-    "semantic_hash": "853c33422feb283e3adf3e14bdf7d96d"
+    "mtime": 1786468653.645561,
+    "ast_hash": "848c599e9315f067ccf7f57634273cab",
+    "semantic_hash": "848c599e9315f067ccf7f57634273cab"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/app/Services/Diagnostics/EnvironmentReport.php": {
     "mtime": 1786342297.4686518,
@@ -390,9 +390,9 @@
     "semantic_hash": "1c0488f16bd6c8e4b5ea6135adad5aac"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/app/Services/Backup/BackupManager.php": {
-    "mtime": 1786394619.027234,
-    "ast_hash": "15f5588c4ef137de88c3dd21726c4b32",
-    "semantic_hash": "15f5588c4ef137de88c3dd21726c4b32"
+    "mtime": 1786560614.6680715,
+    "ast_hash": "c921d112e36a58bcd0611ee1d80aa702",
+    "semantic_hash": "c921d112e36a58bcd0611ee1d80aa702"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/app/Services/Engine/GdEngine.php": {
     "mtime": 1786376234.4047074,
@@ -430,9 +430,9 @@
     "semantic_hash": "3852449737b7d50a4668148aa81d6804"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/app/Services/Upload/Interceptor.php": {
-    "mtime": 1786376897.7175848,
-    "ast_hash": "a0441530c8c2c4b323c1d3b2bc2cf37e",
-    "semantic_hash": "a0441530c8c2c4b323c1d3b2bc2cf37e"
+    "mtime": 1786468654.7158475,
+    "ast_hash": "7d96b7cea72a67e0e63f1eb4211ec37f",
+    "semantic_hash": "7d96b7cea72a67e0e63f1eb4211ec37f"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/boot/app.php": {
     "mtime": 1786376071.3248017,
@@ -440,9 +440,9 @@
     "semantic_hash": "cfe1a05cb16ddf8c3bd2144161e993d1"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/boot/bindings.php": {
-    "mtime": 1786376071.6007993,
-    "ast_hash": "9813f15bc24334d40feec1d251836128",
-    "semantic_hash": "9813f15bc24334d40feec1d251836128"
+    "mtime": 1786467573.4824295,
+    "ast_hash": "a2830b22da35adc02998fc99ce4a836b",
+    "semantic_hash": "a2830b22da35adc02998fc99ce4a836b"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/boot/globals.php": {
     "mtime": 1786376071.8516986,
@@ -485,14 +485,14 @@
     "semantic_hash": "5d207479d8ed9dad1ec5e324ba6394d1"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/config/optimizer.php": {
-    "mtime": 1786376074.1475196,
-    "ast_hash": "abe635b3425bc5ed976bfc8514e62a7a",
-    "semantic_hash": "abe635b3425bc5ed976bfc8514e62a7a"
+    "mtime": 1786468348.3961878,
+    "ast_hash": "70616e20c12aaf07b599d4ee6f0b1a6b",
+    "semantic_hash": "70616e20c12aaf07b599d4ee6f0b1a6b"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/resources/admin/App.jsx": {
-    "mtime": 1786393798.2407186,
-    "ast_hash": "f5e82e3f41c33cc19e8d4b9e3f1bb3da",
-    "semantic_hash": "f5e82e3f41c33cc19e8d4b9e3f1bb3da"
+    "mtime": 1786468020.6470022,
+    "ast_hash": "73e06a408ac93c918ae5d6376e625995",
+    "semantic_hash": "73e06a408ac93c918ae5d6376e625995"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/resources/admin/bootstrap/app.jsx": {
     "mtime": 1786342428.4189277,
@@ -535,9 +535,9 @@
     "semantic_hash": "1db891dda2e742ad056b929308cb325a"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/resources/admin/Components/index.js": {
-    "mtime": 1786393534.9141245,
-    "ast_hash": "a07e64e1c08d6deb586ff3e45ddbc342",
-    "semantic_hash": "a07e64e1c08d6deb586ff3e45ddbc342"
+    "mtime": 1786559072.7298934,
+    "ast_hash": "60b77295ef4abb619cc07ae574f4bd60",
+    "semantic_hash": "60b77295ef4abb619cc07ae574f4bd60"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/resources/admin/Components/NumberInput.jsx": {
     "mtime": 1786338396.7381325,
@@ -580,29 +580,29 @@
     "semantic_hash": "d40e2c60bf78e012dc6acf07487b7259"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/resources/admin/Pages/BulkPage.jsx": {
-    "mtime": 1786390913.3107908,
-    "ast_hash": "0db8938cc284632f99ed98a0b1f6db6e",
-    "semantic_hash": "0db8938cc284632f99ed98a0b1f6db6e"
+    "mtime": 1786560347.8504856,
+    "ast_hash": "a60ea49b04ef824fb02ef07518fe335a",
+    "semantic_hash": "a60ea49b04ef824fb02ef07518fe335a"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/resources/admin/Pages/SettingsPage.jsx": {
-    "mtime": 1786393824.8385243,
-    "ast_hash": "c2106d8ddbd11c20102ef8daf4e4e330",
-    "semantic_hash": "c2106d8ddbd11c20102ef8daf4e4e330"
+    "mtime": 1786468056.7564473,
+    "ast_hash": "01115548a54c34fdc1c1d58f95ecc8f8",
+    "semantic_hash": "01115548a54c34fdc1c1d58f95ecc8f8"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/resources/admin/Pages/BackupsPage.jsx": {
-    "mtime": 1786393865.4009387,
-    "ast_hash": "8224952bb658e7531283addcbf350186",
-    "semantic_hash": "8224952bb658e7531283addcbf350186"
+    "mtime": 1786560429.9064293,
+    "ast_hash": "cbdaf50f9b6c7d47f64a66f565948e47",
+    "semantic_hash": "cbdaf50f9b6c7d47f64a66f565948e47"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/resources/admin/Pages/TroubleshootPage.jsx": {
-    "mtime": 1786393842.7692044,
-    "ast_hash": "4196dd6b5d577b2eb40c695a672408ba",
-    "semantic_hash": "4196dd6b5d577b2eb40c695a672408ba"
+    "mtime": 1786560373.4975157,
+    "ast_hash": "158509c4e605739233ea5f07f76650c9",
+    "semantic_hash": "158509c4e605739233ea5f07f76650c9"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/resources/admin/Partials/HeroStats.jsx": {
-    "mtime": 1786338460.8060527,
-    "ast_hash": "af9ff9ce32ccef7d098b62031aaaba39",
-    "semantic_hash": "af9ff9ce32ccef7d098b62031aaaba39"
+    "mtime": 1786468035.022126,
+    "ast_hash": "0eafb0d09de05a4604d374f35735aac5",
+    "semantic_hash": "0eafb0d09de05a4604d374f35735aac5"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/resources/admin/Partials/Masthead.jsx": {
     "mtime": 1786338460.8057094,
@@ -620,9 +620,9 @@
     "semantic_hash": "6bb41a621aeb9dfea23bd30c492dfe93"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/resources/admin/Services/format.js": {
-    "mtime": 1786338396.738641,
-    "ast_hash": "b4b6804ed5734d02cef473d018bd40ec",
-    "semantic_hash": "b4b6804ed5734d02cef473d018bd40ec"
+    "mtime": 1786467885.3668904,
+    "ast_hash": "0d4ccb8e43c740e6252c48e4a20ba0ee",
+    "semantic_hash": "0d4ccb8e43c740e6252c48e4a20ba0ee"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/resources/admin/Services/config.js": {
     "mtime": 1786338396.7384925,
@@ -635,14 +635,14 @@
     "semantic_hash": "5dbdf958152167cf5f272ec8a79275ed"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/resources/media/media.js": {
-    "mtime": 1786338772.4515574,
-    "ast_hash": "ee6133fdff00eb783a1e4560ba8dae2f",
-    "semantic_hash": "ee6133fdff00eb783a1e4560ba8dae2f"
+    "mtime": 1786559311.8863828,
+    "ast_hash": "45d0f68c0c67fa40f4648c98ebfebccf",
+    "semantic_hash": "45d0f68c0c67fa40f4648c98ebfebccf"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/api/StoreSettings.php": {
-    "mtime": 1786342285.5295596,
-    "ast_hash": "2fd3234f4ccde916a178d76cfa4b8ea0",
-    "semantic_hash": "2fd3234f4ccde916a178d76cfa4b8ea0"
+    "mtime": 1786467614.1038413,
+    "ast_hash": "f94821b76b48cd2044456f64ebcfe1c1",
+    "semantic_hash": "f94821b76b48cd2044456f64ebcfe1c1"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/api/Resource/StatsResource.php": {
     "mtime": 1786376746.9471653,
@@ -680,9 +680,9 @@
     "semantic_hash": "f89ef856609c9d4acfe0eb2274d2782d"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/app/Hooks/Scheduler/BulkJobRunner.php": {
-    "mtime": 1786386429.1840234,
-    "ast_hash": "e4cd73b58b84767537305271722a7341",
-    "semantic_hash": "e4cd73b58b84767537305271722a7341"
+    "mtime": 1786557755.2646642,
+    "ast_hash": "5285d6a42e73c58ed74e340a654345cd",
+    "semantic_hash": "5285d6a42e73c58ed74e340a654345cd"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/resources/admin/Components/Toast.jsx": {
     "mtime": 1786393527.436128,
@@ -700,19 +700,19 @@
     "semantic_hash": "03510b3e19ee14b2235cfddd5591d057"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/tests/php/convert-restore-e2e.php": {
-    "mtime": 1786392901.3560512,
-    "ast_hash": "f3b05ded5bc72afe6d1f9fe2ac193d43",
-    "semantic_hash": "f3b05ded5bc72afe6d1f9fe2ac193d43"
+    "mtime": 1786560587.8926647,
+    "ast_hash": "1982a075f14c5a46c5c8c135bd278cdc",
+    "semantic_hash": "1982a075f14c5a46c5c8c135bd278cdc"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/tests/php/run.sh": {
-    "mtime": 1786385416.584701,
-    "ast_hash": "1c404b637207ac95e0a37c21522dd431",
-    "semantic_hash": "1c404b637207ac95e0a37c21522dd431"
+    "mtime": 1786560599.7670987,
+    "ast_hash": "dd8e2fd52382c5753b79d4cb009fa1e0",
+    "semantic_hash": "dd8e2fd52382c5753b79d4cb009fa1e0"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/tests/php/bulk-e2e.php": {
-    "mtime": 1786390240.8503227,
-    "ast_hash": "c1423f2fc772847fbaa45f59b64ab5b9",
-    "semantic_hash": "c1423f2fc772847fbaa45f59b64ab5b9"
+    "mtime": 1786468583.0576916,
+    "ast_hash": "bfe8702852e331334b463bd513f4d4a7",
+    "semantic_hash": "bfe8702852e331334b463bd513f4d4a7"
   },
   "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/tests/php/wp.php": {
     "mtime": 1786384826.008016,
@@ -738,5 +738,115 @@
     "mtime": 1786345970.6086228,
     "ast_hash": "b477a79445048042c864010aba3d8e18",
     "semantic_hash": "b477a79445048042c864010aba3d8e18"
+  },
+  "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/app/Http/Requests/ScanStartRequest.php": {
+    "mtime": 1786467496.7960734,
+    "ast_hash": "e91ef58ea11b8cb179fda323f97a9e26",
+    "semantic_hash": "e91ef58ea11b8cb179fda323f97a9e26"
+  },
+  "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/app/Http/Controllers/ScanController.php": {
+    "mtime": 1786467528.5688148,
+    "ast_hash": "5febac179b888b3523d99be59d7e93c8",
+    "semantic_hash": "5febac179b888b3523d99be59d7e93c8"
+  },
+  "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/app/Hooks/Scheduler/ScanJobRunner.php": {
+    "mtime": 1786557747.497398,
+    "ast_hash": "5db0ea2a14a054e8c7f76dad046f2f86",
+    "semantic_hash": "5db0ea2a14a054e8c7f76dad046f2f86"
+  },
+  "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/app/Services/Bulk/Coordinator.php": {
+    "mtime": 1786468651.442236,
+    "ast_hash": "66f13878252e009e8bda78275d9e8fb4",
+    "semantic_hash": "66f13878252e009e8bda78275d9e8fb4"
+  },
+  "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/app/Services/Bulk/ScanRunner.php": {
+    "mtime": 1786467524.8501399,
+    "ast_hash": "8dd732b3e5cf9b3c051637d21d473079",
+    "semantic_hash": "8dd732b3e5cf9b3c051637d21d473079"
+  },
+  "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/resources/admin/Components/ProgressRing.jsx": {
+    "mtime": 1786467869.0330398,
+    "ast_hash": "81b24e65946bebbd721c8c2a5234e1fd",
+    "semantic_hash": "81b24e65946bebbd721c8c2a5234e1fd"
+  },
+  "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/resources/admin/Partials/DryRunPanel.jsx": {
+    "mtime": 1786467941.1110857,
+    "ast_hash": "9fbabb0b696e797146217529d81214ed",
+    "semantic_hash": "9fbabb0b696e797146217529d81214ed"
+  },
+  "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/resources/admin/Partials/ScanSummary.jsx": {
+    "mtime": 1786467916.2142515,
+    "ast_hash": "1e05d8d85023ba60937fcaab0d194d0c",
+    "semantic_hash": "1e05d8d85023ba60937fcaab0d194d0c"
+  },
+  "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/resources/admin/Partials/RunProgress.jsx": {
+    "mtime": 1786467931.8288245,
+    "ast_hash": "b70897088908d077fc22e3799ab5f187",
+    "semantic_hash": "b70897088908d077fc22e3799ab5f187"
+  },
+  "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/resources/admin/Partials/LibraryCard.jsx": {
+    "mtime": 1786467969.7666917,
+    "ast_hash": "0beb71f796ab2bed06ce4a0da583ec31",
+    "semantic_hash": "0beb71f796ab2bed06ce4a0da583ec31"
+  },
+  "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/tests/e2e/library-scan.spec.js": {
+    "mtime": 1786468658.9190695,
+    "ast_hash": "3ff4095b052e3c7b77086122752439d3",
+    "semantic_hash": "3ff4095b052e3c7b77086122752439d3"
+  },
+  "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/context/specs/done/12-centralized-scan-stats.md": {
+    "mtime": 1786468936.7691283,
+    "ast_hash": "0836ce707fb58b60ee885a945514d59e",
+    "semantic_hash": "0836ce707fb58b60ee885a945514d59e"
+  },
+  "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/context/current-issues/image-6.png": {
+    "mtime": 1786462975.1461272,
+    "ast_hash": "19247f7e1808f381f602fb0060430cb6",
+    "semantic_hash": "19247f7e1808f381f602fb0060430cb6"
+  },
+  "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/context/current-issues/image-7.png": {
+    "mtime": 1786463125.0877888,
+    "ast_hash": "d9fd3828d70ea8a16cae4cd90ac9076d",
+    "semantic_hash": "d9fd3828d70ea8a16cae4cd90ac9076d"
+  },
+  "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/app/Hooks/Handlers/ForeignNoticeHandler.php": {
+    "mtime": 1786560342.4747398,
+    "ast_hash": "0a955991d9f54def7f7e5f934f819ed3",
+    "semantic_hash": "0a955991d9f54def7f7e5f934f819ed3"
+  },
+  "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/resources/admin/Components/Modal.jsx": {
+    "mtime": 1786560104.1725569,
+    "ast_hash": "b277313da1febae08ba1c9a6feef511c",
+    "semantic_hash": "b277313da1febae08ba1c9a6feef511c"
+  },
+  "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/resources/admin/Components/ConfirmDialog.jsx": {
+    "mtime": 1786560104.1725895,
+    "ast_hash": "b27fce02dc6eeb2ed5191a9f0066fb0b",
+    "semantic_hash": "b27fce02dc6eeb2ed5191a9f0066fb0b"
+  },
+  "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/resources/media/confirm.js": {
+    "mtime": 1786560104.1725738,
+    "ast_hash": "25db77fb689ab428b36aeaa36ba8ab33",
+    "semantic_hash": "25db77fb689ab428b36aeaa36ba8ab33"
+  },
+  "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/tests/php/notice-strip-test.php": {
+    "mtime": 1786560583.483319,
+    "ast_hash": "40dea4c73550a350e84891ab4806714d",
+    "semantic_hash": "40dea4c73550a350e84891ab4806714d"
+  },
+  "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/context/specs/14-notices-and-card-spacing.md": {
+    "mtime": 1786560761.914225,
+    "ast_hash": "f1e20ddb0abb3ac3bc95fd29d2709230",
+    "semantic_hash": "f1e20ddb0abb3ac3bc95fd29d2709230"
+  },
+  "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/context/specs/13-backup-purge-confirm-modal.md": {
+    "mtime": 1786558903.4860008,
+    "ast_hash": "7c0fc24bb2f722b646483ad00feaae21",
+    "semantic_hash": "7c0fc24bb2f722b646483ad00feaae21"
+  },
+  "/Users/chinmoy/Local Sites/cb-test/app/public/wp-content/plugins/swift-image-optimizer/context/current-issues/image-8.png": {
+    "mtime": 1786558020.7189393,
+    "ast_hash": "b20f7de1d543d9a238f5fdf84ae3db49",
+    "semantic_hash": "b20f7de1d543d9a238f5fdf84ae3db49"
   }
 }
