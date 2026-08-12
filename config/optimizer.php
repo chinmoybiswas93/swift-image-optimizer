@@ -6,6 +6,11 @@
  * ::sanitize(). Keeping the bounds here as data means the sanitizer and the
  * admin UI can be driven from one source rather than drifting apart.
  *
+ * NOTE: that intent has not been carried out. StoreSettings still hardcodes
+ * its own copy of every value below and never reads this file, so editing it
+ * changes nothing at runtime - it is documentation until something loads it.
+ * Any change here needs the matching edit in api/StoreSettings.php.
+ *
  * @package SwiftImageOptimizer
  */
 
@@ -15,9 +20,9 @@ if ( ! defined('ABSPATH')) {
 
 return [
     // The option row that holds the user's saved settings.
-    'option_name'    => 'swift_image_optimizer_settings',
+    'option_name'      => 'swift_image_optimizer_settings',
 
-    'defaults'       => [
+    'defaults'         => [
         'auto_optimize'       => 1,
         'quality'             => 82,
         'max_dimension'       => 2560,
@@ -30,10 +35,11 @@ return [
         'enable_404_fallback' => 1,
         'backup_uploads'      => 1,
         'enable_log'          => 0,
+        'scan_frequency'      => 'weekly',
     ],
 
     // Settings stored as 0/1. Anything falsy becomes 0.
-    'booleans'       => [
+    'booleans'         => [
         'auto_optimize',
         'disable_wp_scaling',
         'skip_if_larger',
@@ -44,19 +50,24 @@ return [
         'enable_log',
     ],
 
-    'quality'        => [
+    'quality'          => [
         'min' => 1,
         'max' => 100,
     ],
 
     // 0 means "do not downscale"; any other value is clamped into the range.
-    'max_dimension'  => [
+    'max_dimension'    => [
         'min' => 100,
         'max' => 10000,
     ],
 
-    'engines'        => [ 'auto', 'imagick', 'cwebp', 'gd' ],
+    'engines'          => [ 'auto', 'imagick', 'cwebp', 'gd' ],
 
     // Backup retention in days. 0 means "keep forever".
-    'retention_days' => [ 0, 7, 30, 90 ],
+    'retention_days'   => [ 0, 7, 30, 90 ],
+
+    // How often the library is rescanned. 'manual' means only on request.
+    // 'monthly' maps to a custom 30-day cron interval; the other three are
+    // core's own. See Hooks\Scheduler\ScanJobRunner.
+    'scan_frequencies' => [ 'manual', 'daily', 'weekly', 'monthly' ],
 ];

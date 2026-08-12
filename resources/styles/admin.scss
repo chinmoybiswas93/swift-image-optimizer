@@ -7,6 +7,7 @@
  */
 
 @use 'controls';
+@use 'modal';
 
 $sio-space-xs: 4px;
 $sio-space-sm: 8px;
@@ -287,6 +288,13 @@ $sio-shadow: 0 1px 2px rgba( 16, 24, 40, 0.04 ), 0 4px 16px rgba( 16, 24, 40, 0.
 
 	&__body {
 		padding: $sio-space-lg;
+
+		// Notices carry a bottom margin so they separate from what follows.
+		// On the last one there is nothing to separate from, and it adds a dead
+		// strip on top of the padding above.
+		> :last-child {
+			margin-bottom: 0;
+		}
 	}
 }
 
@@ -399,6 +407,92 @@ $sio-shadow: 0 1px 2px rgba( 16, 24, 40, 0.04 ), 0 4px 16px rgba( 16, 24, 40, 0.
 	color: $sio-text-muted;
 }
 
+/* Library card ------------------------------------------------------------
+ *
+ * The ring and the figures it summarises, side by side. One card now, where
+ * there were three - and one set of numbers, where there were two.
+ */
+
+.sio-library {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: $sio-space-lg;
+	align-items: center;
+	margin-bottom: $sio-space-md;
+
+	&__facts {
+		min-width: 0;
+	}
+}
+
+.sio-scanmeta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: $sio-space-md;
+	margin-top: $sio-space-md;
+
+	&__time {
+		font-size: 13px;
+		color: $sio-text-muted;
+	}
+
+	&__stale {
+		margin: $sio-space-sm 0 0;
+		font-size: 13px;
+		color: $sio-warning;
+	}
+
+	&__details {
+		margin-top: $sio-space-sm;
+		font-size: 13px;
+		color: $sio-text-muted;
+
+		summary {
+			cursor: pointer;
+		}
+
+		p {
+			margin: $sio-space-sm 0 0;
+		}
+	}
+}
+
+/* Run phases -------------------------------------------------------------- */
+
+.sio-phase {
+	margin-bottom: $sio-space-md;
+
+	&__head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: $sio-space-md;
+		margin-bottom: $sio-space-sm;
+	}
+
+	&__label {
+		font-weight: 600;
+		color: $sio-text;
+	}
+
+	&__steps {
+		display: flex;
+		gap: $sio-space-xs;
+	}
+
+	&__dot {
+		width: 8px;
+		height: 8px;
+		border-radius: 999px;
+		background: $sio-border;
+
+		&.is-done {
+			background: $sio-brand;
+		}
+	}
+}
+
 /* Progress --------------------------------------------------------------- */
 
 .sio-progress {
@@ -445,6 +539,17 @@ $sio-shadow: 0 1px 2px rgba( 16, 24, 40, 0.04 ), 0 4px 16px rgba( 16, 24, 40, 0.
 	&:first-child {
 		margin-top: 0;
 	}
+
+	/*
+	 * A notice explaining the button it follows - "everything is already
+	 * optimized", a stalled run, a resumable one. `.sio-notice` carries a
+	 * bottom margin only, so without this it sits flush against the button.
+	 * Scoped to the adjacency rather than added to `.sio-notice` itself, which
+	 * every screen in the plugin shares.
+	 */
+	+ .sio-notice {
+		margin-top: $sio-space-md;
+	}
 }
 
 .sio-savebar {
@@ -461,6 +566,39 @@ $sio-shadow: 0 1px 2px rgba( 16, 24, 40, 0.04 ), 0 4px 16px rgba( 16, 24, 40, 0.
 }
 
 /* Dry run and failure lists ---------------------------------------------- */
+
+/*
+ * The disclosure the dry run sits behind. It had no rule at all, so it rendered
+ * with the browser's default marker and no margins - flush against the Bulk
+ * optimize button below it. Follows `.sio-scanmeta__details`, the same pattern
+ * solved once already above.
+ */
+.sio-dryrun__panel {
+	margin: $sio-space-md 0;
+	font-size: 13px;
+
+	summary {
+		cursor: pointer;
+		color: $sio-text-muted;
+
+		&:focus {
+			outline: none;
+		}
+
+		// A <summary> is a control, and every control on this screen keeps a
+		// visible ring - core supplies one for its own, not for ours.
+		&:focus-visible {
+			outline: 2px solid $sio-brand;
+			outline-offset: 2px;
+			border-radius: $sio-radius-sm;
+		}
+	}
+
+	// Space between the disclosure's own contents and the summary above them.
+	> *:not( summary ) {
+		margin-top: $sio-space-sm;
+	}
+}
 
 .sio-dryrun {
 	margin-top: $sio-space-md;
@@ -669,5 +807,16 @@ $sio-shadow: 0 1px 2px rgba( 16, 24, 40, 0.04 ), 0 4px 16px rgba( 16, 24, 40, 0.
 
 	.sio-masthead {
 		flex-wrap: wrap;
+	}
+
+	/* The ring stops sitting beside the figures and sits above them. */
+	.sio-library {
+		grid-template-columns: 1fr;
+		justify-items: center;
+		text-align: center;
+	}
+
+	.sio-scanmeta {
+		justify-content: center;
 	}
 }

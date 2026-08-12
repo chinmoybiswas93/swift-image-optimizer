@@ -14,10 +14,12 @@ use SwiftImageOptimizer\App\Http\Controllers\BulkController;
 use SwiftImageOptimizer\App\Http\Controllers\DiagnosticsController;
 use SwiftImageOptimizer\App\Http\Controllers\LogController;
 use SwiftImageOptimizer\App\Http\Controllers\OptimizeController;
+use SwiftImageOptimizer\App\Http\Controllers\ScanController;
 use SwiftImageOptimizer\App\Http\Controllers\StatsController;
 use SwiftImageOptimizer\App\Http\Requests\BulkStartRequest;
 use SwiftImageOptimizer\App\Http\Requests\LogQueryRequest;
 use SwiftImageOptimizer\App\Http\Requests\OptimizeRequest;
+use SwiftImageOptimizer\App\Http\Requests\ScanStartRequest;
 
 if ( ! defined('ABSPATH')) {
     exit;
@@ -61,6 +63,25 @@ $router->withPolicy('AdminPolicy')->group(function ( Router $router ) {
         $router->match([ 'GET', 'POST' ], 'status', [ BulkController::class, 'status' ]);
         $router->post('batch', [ BulkController::class, 'batch' ]);
         $router->post('cancel', [ BulkController::class, 'cancel' ]);
+
+        // Added, not renamed. `start` still begins a bare optimize run for the
+        // CLI and for any cached build; `run` is the dashboard's button, which
+        // measures the library on the way in and again on the way out.
+        $router->post('run', [ BulkController::class, 'run' ]);
+        $router->match([ 'GET', 'POST' ], 'phase', [ BulkController::class, 'phase' ]);
+    });
+
+    /*
+     * The library scan. Under its own prefix because `scan` at the top level is
+     * already taken by the old synchronous summary, which stays until no
+     * cached build calls it.
+     */
+    $router->prefix('library')->group(function ( Router $router ) {
+        $router->post('scan', [ ScanController::class, 'start' ])->args(ScanStartRequest::args());
+        $router->match([ 'GET', 'POST' ], 'scan/status', [ ScanController::class, 'status' ]);
+        $router->post('scan/batch', [ ScanController::class, 'batch' ]);
+        $router->post('scan/cancel', [ ScanController::class, 'cancel' ]);
+        $router->get('snapshot', [ ScanController::class, 'snapshot' ]);
     });
 
     $router->prefix('backups')->group(function ( Router $router ) {

@@ -130,6 +130,25 @@ const SettingsPage = ( { values, setValues } ) => {
 					] }
 					onChange={ ( v ) => set( 'backup_retention', parseInt( v, 10 ) ) }
 				/>
+				{ /*
+				  * String-valued, so no parseInt on the way back - unlike
+				  * backup_retention above, which stores an integer.
+				  */ }
+				<Select
+					label={ __( 'Scan the library automatically', 'swift-image-optimizer' ) }
+					help={ __(
+						'The figures on the Bulk Optimize tab come from the last scan. A scan checks every image against the files on disk and runs in the background.',
+						'swift-image-optimizer'
+					) }
+					value={ values.scan_frequency || 'weekly' }
+					options={ [
+						{ label: __( 'Manual only', 'swift-image-optimizer' ), value: 'manual' },
+						{ label: __( 'Daily', 'swift-image-optimizer' ), value: 'daily' },
+						{ label: __( 'Weekly (recommended)', 'swift-image-optimizer' ), value: 'weekly' },
+						{ label: __( 'About every 30 days', 'swift-image-optimizer' ), value: 'monthly' },
+					] }
+					onChange={ ( v ) => set( 'scan_frequency', v ) }
+				/>
 			</Section>
 
 			<Section

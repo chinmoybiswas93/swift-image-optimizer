@@ -25,6 +25,7 @@ use SwiftImageOptimizer\App\Models\OptimizationLog;
 use SwiftImageOptimizer\App\Services\AttachmentConverter;
 use SwiftImageOptimizer\App\Services\Backup\BackupManager;
 use SwiftImageOptimizer\App\Services\Bulk\Scanner;
+use SwiftImageOptimizer\App\Http\Controllers\BackupController;
 use SwiftImageOptimizer\App\Services\Engine\EngineFactory;
 
 harness_require_site();
@@ -327,5 +328,145 @@ Harness::same(
 	is_array( $after_rescan ) ? $after_rescan['optimized_file'] : null,
 	'a healthy record is left alone by a rescan'
 );
+
+/* ================================================================ */
+Harness::suite( 'Backup purge deletes files, not just records' );
+
+/*
+ * This suite empties the backup directory, which is the only way to test a
+ * routine whose whole job is to empty the backup directory. It therefore
+ * refuses to run if the folder holds anything it did not put there: on a site
+ * with real backups it reports a skip rather than destroying them.
+ */
+$backup_root = BackupManager::root();
+
+$harness_foreign_backups = static function () use ( $backup_root ) {
+	if ( ! is_dir( $backup_root ) ) {
+		return array();
+	}
+
+	$foreign = array();
+
+	$iterator = new RecursiveIteratorIterator(
+		new RecursiveDirectoryIterator( $backup_root, FilesystemIterator::SKIP_DOTS )
+	);
+
+	foreach ( $iterator as $file ) {
+		if ( ! $file->isFile() ) {
+			continue;
+		}
+
+		$name = $file->getFilename();
+
+		if ( 'index.php' === $name || '.htaccess' === $name ) {
+			continue;
+		}
+
+		if ( false !== strpos( $name, 'sio-harness-' ) ) {
+			continue;
+		}
+
+		$foreign[] = $file->getPathname();
+	}
+
+	return $foreign;
+};
+
+$foreign_before = $harness_foreign_backups();
+
+if ( $foreign_before ) {
+	Harness::ok(
+		true,
+		sprintf(
+			'SKIPPED - the backup folder holds %d file(s) this harness did not create',
+			count( $foreign_before )
+		)
+	);
+} else {
+	// "Keep forever" is the retention the old purge could never reach.
+	harness_set_baseline_settings(
+		array(
+			'convert_png'      => true,
+			'backup_retention' => 0,
+		)
+	);
+
+	$keep_id   = harness_import_attachment( harness_make_jpeg( 480, 320 ) );
+	$created[] = $keep_id;
+
+	harness_make_converter()->convert( $keep_id );
+
+	$keep_row      = OptimizationLog::find( $keep_id );
+	$keep_manifest = is_array( $keep_row ) && ! empty( $keep_row['backup_path'] )
+		? json_decode( $keep_row['backup_path'], true )
+		: null;
+
+	Harness::ok( is_array( $keep_manifest ), 'a kept-forever conversion still stores a backup manifest' );
+	Harness::same( 0, is_array( $keep_row ) ? (int) $keep_row['backup_expires'] : -1, 'kept-forever backups expire at 0' );
+
+	$keep_dir   = trailingslashit( $backup_root ) . ltrim( (string) $keep_manifest['relative_dir'], '/' );
+	$keep_files = array();
+
+	foreach ( (array) $keep_manifest['files'] as $name ) {
+		$keep_files[] = trailingslashit( $keep_dir ) . $name;
+	}
+
+	Harness::ok( $keep_files && file_exists( $keep_files[0] ), 'its backup files are on disk before the purge' );
+
+	// An orphan: a file in the backup tree that no log row points at. This is
+	// what the folder was left full of (I-8).
+	$orphan_dir = trailingslashit( $backup_root ) . '2099/01';
+	wp_mkdir_p( $orphan_dir );
+	$orphan = trailingslashit( $orphan_dir ) . 'sio-harness-orphan-' . wp_generate_password( 8, false ) . '.jpg';
+	file_put_contents( $orphan, 'not a real jpeg, but a real file' );
+
+	Harness::ok( file_exists( $orphan ), 'an unreferenced backup file exists before the purge' );
+
+	// A symlink out of the backup root. Removing the link must never remove
+	// what it points at.
+	$uploads = wp_get_upload_dir();
+	$outside = trailingslashit( $uploads['basedir'] ) . 'sio-harness-outside-' . wp_generate_password( 8, false ) . '.txt';
+	file_put_contents( $outside, 'this file lives outside the backup root' );
+	$link   = trailingslashit( $backup_root ) . 'sio-harness-link-' . wp_generate_password( 8, false );
+	$linked = @symlink( $outside, $link );
+
+	$result = ( new BackupController() )->purge()->get_data();
+
+	Harness::ok( isset( $result['purged'] ) && $result['purged'] >= 1, 'the purge reports at least one backup cleared' );
+	Harness::ok( isset( $result['files_removed'] ) && $result['files_removed'] >= 1, 'the purge reports unreferenced files removed' );
+	Harness::ok( isset( $result['bytes_freed'] ) && $result['bytes_freed'] > 0, 'the purge reports space reclaimed' );
+
+	Harness::ok( ! file_exists( $keep_files[0] ), 'a kept-forever backup file is GONE from disk' );
+	Harness::ok( ! file_exists( $orphan ), 'the unreferenced file is GONE from disk' );
+
+	$keep_row_after = OptimizationLog::find( $keep_id );
+	Harness::same( '', is_array( $keep_row_after ) ? (string) $keep_row_after['backup_path'] : 'missing', 'the log row no longer claims a backup' );
+	Harness::same(
+		OptimizationLog::STATUS_OPTIMIZED,
+		is_array( $keep_row_after ) ? $keep_row_after['status'] : 'missing',
+		'the image still counts toward the savings stats'
+	);
+
+	Harness::ok( file_exists( trailingslashit( $backup_root ) . 'index.php' ), 'index.php guard survives the purge' );
+	Harness::ok( file_exists( trailingslashit( $backup_root ) . '.htaccess' ), '.htaccess guard survives the purge' );
+
+	if ( $linked ) {
+		Harness::ok( ! is_link( $link ), 'the symlink itself was removed' );
+		Harness::ok( file_exists( $outside ), 'what it pointed at, OUTSIDE the root, was NOT touched' );
+	}
+
+	@unlink( $outside );
+	@unlink( $link );
+
+	Harness::same( 0, BackupManager::disk_usage(), 'the backup folder reports 0 bytes afterwards' );
+	Harness::same( array(), $harness_foreign_backups(), 'nothing but the two guard files is left in the folder' );
+
+	// A second purge on an already-empty folder must be a quiet no-op.
+	$again = ( new BackupController() )->purge()->get_data();
+	Harness::same( 0, (int) $again['files_removed'], 'a second purge finds nothing to remove' );
+	Harness::same( 0, (int) $again['bytes_freed'], 'and reports no space reclaimed' );
+
+	harness_set_baseline_settings( array( 'convert_png' => true ) );
+}
 
 Harness::summary();

@@ -16,10 +16,14 @@
 require __DIR__ . '/bootstrap.php';
 require __DIR__ . '/wp.php';
 
+use SwiftImageOptimizer\Api\StoreSettings;
 use SwiftImageOptimizer\App\Hooks\Scheduler\BulkJobRunner;
+use SwiftImageOptimizer\App\Hooks\Scheduler\ScanJobRunner;
 use SwiftImageOptimizer\App\Models\OptimizationLog;
+use SwiftImageOptimizer\App\Services\Bulk\Coordinator;
 use SwiftImageOptimizer\App\Services\Bulk\Runner;
 use SwiftImageOptimizer\App\Services\Bulk\Scanner;
+use SwiftImageOptimizer\App\Services\Bulk\ScanRunner;
 use SwiftImageOptimizer\App\Services\Lock;
 
 harness_require_site();
@@ -49,6 +53,15 @@ register_shutdown_function(
 		Lock::release( Runner::LOCK );
 		BulkJobRunner::unschedule();
 
+		// Same for the scan, whose state is separate. The published snapshot
+		// goes too: one taken over harness fixtures describes a library that no
+		// longer exists, and the admin screen would render it as current.
+		delete_option( ScanRunner::PROGRESS_OPTION );
+		delete_option( ScanRunner::RESULT_OPTION );
+		delete_option( Coordinator::PHASE_OPTION );
+		Lock::release( ScanRunner::LOCK );
+		ScanJobRunner::unschedule();
+
 		harness_cleanup( $created );
 
 		if ( harness_count_attachments() !== $baseline_attachments || harness_count_log_rows() !== $baseline_log_rows ) {
@@ -60,6 +73,43 @@ register_shutdown_function(
 // Start from a clean slate rather than whatever a previous run left behind.
 delete_option( Runner::PROGRESS_OPTION );
 Lock::release( Runner::LOCK );
+delete_option( ScanRunner::PROGRESS_OPTION );
+delete_option( Coordinator::PHASE_OPTION );
+Lock::release( ScanRunner::LOCK );
+
+/**
+ * Run a scan to completion and return the published snapshot.
+ *
+ * @param ScanRunner $scanner    Scan engine.
+ * @param int        $batch_size Force a batch size, 0 to leave the default.
+ * @return array|null
+ */
+function harness_scan_to_completion( ScanRunner $scanner, $batch_size = 0 ) {
+	$started = $scanner->start( 'manual', '', true );
+
+	if ( is_wp_error( $started ) ) {
+		return null;
+	}
+
+	if ( $batch_size > 0 ) {
+		$state               = get_option( ScanRunner::PROGRESS_OPTION );
+		$state['batch_size'] = $batch_size;
+		update_option( ScanRunner::PROGRESS_OPTION, $state, false );
+	}
+
+	$guard = 0;
+
+	while ( ScanRunner::is_running() && $guard < 500 ) {
+		$result = $scanner->process_batch();
+		++$guard;
+
+		if ( is_wp_error( $result ) ) {
+			break;
+		}
+	}
+
+	return ScanRunner::snapshot();
+}
 
 /* ================================================================ */
 Harness::suite( 'Scanner counts' );
@@ -366,5 +416,327 @@ if ( ! $safe_to_run_bulk ) {
 	Harness::ok( ! $runner->state()['running'], 'run clears its own running flag when the queue empties' );
 	Harness::same( 0, Scanner::count_pending(), 'nothing is pending once the run completes' );
 }
+
+/* ================================================================ */
+Harness::suite( 'Scan buckets account for every image' );
+
+$scanner = new ScanRunner();
+
+// Two fresh fixtures, so there is something in the pending bucket whatever the
+// sections above left behind.
+for ( $i = 0; $i < 2; $i++ ) {
+	$created[] = harness_import_attachment( harness_make_jpeg( 360, 300 ) );
+}
+
+$snapshot = harness_scan_to_completion( $scanner );
+
+Harness::ok( is_array( $snapshot ), 'a scan publishes a snapshot' );
+
+$bucket_sum = (int) $snapshot['optimized']
+	+ (int) $snapshot['skipped_permanent']
+	+ (int) $snapshot['skipped_retryable']
+	+ (int) $snapshot['failed']
+	+ (int) $snapshot['pending']
+	+ (int) $snapshot['unknown'];
+
+/*
+ * The property the old dashboard could not hold. Its "already processed" was
+ * total minus pending - a subtraction, not a count - so the figures had no
+ * reason to reconcile and did not.
+ */
+Harness::same( (int) $snapshot['total_images'], $bucket_sum, 'the buckets sum to total_images' );
+
+Harness::ok( (int) $snapshot['total_images'] > 0, 'the scan found images' );
+Harness::ok( (int) $snapshot['pending'] >= 2, 'the two new fixtures are pending' );
+Harness::ok( $snapshot['percent'] >= 0 && $snapshot['percent'] <= 100, 'percent is within 0-100' );
+Harness::same(
+	(int) $snapshot['total_images'] - (int) $snapshot['optimized'],
+	(int) $snapshot['unresolved'],
+	'unresolved is everything not optimized'
+);
+Harness::same(
+	(int) $snapshot['skipped_retryable'] + (int) $snapshot['failed'],
+	(int) $snapshot['requeueable'],
+	'requeueable is retryable skips plus failures'
+);
+Harness::same( (int) $snapshot['pending'], (int) $snapshot['actionable'], 'actionable is the pending bucket' );
+Harness::ok( (int) $snapshot['completed_at'] > 0, 'the snapshot is timestamped' );
+Harness::same( ScanRunner::SNAPSHOT_VERSION, (int) $snapshot['version'], 'the snapshot records its shape version' );
+
+/*
+ * A converted image keeps its place in the denominator. This is the specific
+ * defect behind the report: post_mime_type becomes image/webp on success, and
+ * the old summary counted only jpeg and png - so every success made both the
+ * total and the processed count smaller.
+ */
+$webp_probe = $created[ count( $created ) - 1 ];
+
+OptimizationLog::upsert(
+	$webp_probe,
+	array(
+		'status'         => OptimizationLog::STATUS_OPTIMIZED,
+		'optimized_file' => wp_basename( get_attached_file( $webp_probe ) ),
+		'original_size'  => 1000,
+		'optimized_size' => 400,
+		'created_at'     => current_time( 'mysql' ),
+	)
+);
+
+$after_optimized = harness_scan_to_completion( $scanner );
+
+Harness::same(
+	(int) $snapshot['total_images'],
+	(int) $after_optimized['total_images'],
+	'marking an image optimized does NOT shrink total_images'
+);
+Harness::same(
+	(int) $snapshot['optimized'] + 1,
+	(int) $after_optimized['optimized'],
+	'the optimized bucket grew by one'
+);
+Harness::same(
+	(int) $snapshot['pending'] - 1,
+	(int) $after_optimized['pending'],
+	'the pending bucket shrank by one'
+);
+// A delta, not an absolute: the real library already holds optimized rows, so
+// asserting the total here would only be measuring this install's history.
+Harness::same(
+	(int) $snapshot['saved_bytes'] + 600,
+	(int) $after_optimized['saved_bytes'],
+	'saved_bytes grew by exactly original minus optimized'
+);
+
+/* ================================================================ */
+Harness::suite( 'The scan asks the disk, not the column (invariant 22)' );
+
+/*
+ * The row still claims optimized; the file is gone. A scan that trusted the
+ * column would keep counting it as done forever, which is exactly how a
+ * restored site reported a fully processed library it could not optimize.
+ */
+$vanished = get_attached_file( $webp_probe );
+$stashed  = $vanished . '.stashed';
+
+rename( $vanished, $stashed );
+
+$after_vanish = harness_scan_to_completion( $scanner );
+
+Harness::same(
+	(int) $after_optimized['optimized'] - 1,
+	(int) $after_vanish['optimized'],
+	'an optimized row whose file is missing leaves the optimized bucket'
+);
+Harness::same(
+	(int) $after_optimized['pending'] + 1,
+	(int) $after_vanish['pending'],
+	'...and lands back in pending'
+);
+Harness::same(
+	(int) $after_optimized['total_images'],
+	(int) $after_vanish['total_images'],
+	'...without changing the total'
+);
+
+/*
+ * And it observes without mutating. Deleting the row is Scanner::rescan()'s
+ * job; a scan that runs unattended on a schedule must not touch the log table.
+ */
+Harness::ok(
+	null !== OptimizationLog::find( $webp_probe ),
+	'the scan did NOT delete the stale log row'
+);
+
+rename( $stashed, $vanished );
+OptimizationLog::delete( $webp_probe );
+
+/* ================================================================ */
+Harness::suite( 'Cursor paging produces the same answer' );
+
+$paged = harness_scan_to_completion( $scanner, 1 );
+$whole = harness_scan_to_completion( $scanner, 10000 );
+
+foreach ( array( 'total_images', 'optimized', 'pending', 'skipped_permanent', 'skipped_retryable', 'failed', 'unknown' ) as $bucket ) {
+	Harness::same( (int) $whole[ $bucket ], (int) $paged[ $bucket ], "one-per-batch matches one-big-batch: {$bucket}" );
+}
+
+Harness::ok( (int) $paged['batches'] > (int) $whole['batches'], 'a smaller batch size really did take more batches' );
+
+/* ================================================================ */
+Harness::suite( 'Scan locking and refusal' );
+
+Harness::ok( Lock::acquire( ScanRunner::LOCK ), 'the scan lock can be acquired' );
+
+$scanner->start( 'manual', '', true );
+$locked_out = $scanner->process_batch();
+
+Harness::ok( is_wp_error( $locked_out ), 'a batch is refused while the lock is held' );
+Harness::same( 'scan-locked', $locked_out->get_error_code(), '...with the scan-locked code' );
+
+Lock::release( ScanRunner::LOCK );
+$scanner->cancel();
+
+Harness::ok( ! ScanRunner::is_running(), 'cancel() clears the running flag' );
+Harness::ok(
+	is_array( ScanRunner::snapshot() ),
+	'cancelling leaves the previously published snapshot intact'
+);
+
+/*
+ * A scan taken mid-run would be obsolete before it published, and the ring
+ * would jump backwards when it landed. The chain's own stages are exempt.
+ */
+$runner->start( true );
+
+$refused = $scanner->start( 'manual' );
+
+Harness::ok( is_wp_error( $refused ), 'a standalone scan is refused while a bulk run is active' );
+Harness::same( 'bulk-active', $refused->get_error_code(), '...with the bulk-active code' );
+
+$chained = $scanner->start( 'bulk-pre', Coordinator::CHAIN );
+
+Harness::ok( ! is_wp_error( $chained ), 'a chained scan is allowed while a bulk run is active' );
+
+$scanner->cancel();
+$runner->cancel();
+
+/* ================================================================ */
+Harness::suite( 'Scan schedule' );
+
+$sanitized = StoreSettings::sanitize( array( 'scan_frequency' => 'yearly' ) );
+Harness::same( 'weekly', $sanitized['scan_frequency'], 'an unknown frequency falls back to weekly' );
+
+foreach ( array( 'manual', 'daily', 'weekly', 'monthly' ) as $frequency ) {
+	$round_trip = StoreSettings::sanitize( array( 'scan_frequency' => $frequency ) );
+	Harness::same( $frequency, $round_trip['scan_frequency'], "{$frequency} survives sanitize" );
+}
+
+$schedules = wp_get_schedules();
+Harness::ok( isset( $schedules[ ScanJobRunner::MONTHLY ] ), 'the monthly interval is registered' );
+Harness::ok( isset( $schedules['weekly'] ), 'weekly comes from core, not from us' );
+
+ScanJobRunner::schedule( 'monthly' );
+Harness::same( ScanJobRunner::MONTHLY, wp_get_schedule( ScanJobRunner::SCHEDULE_HOOK ), 'monthly schedules the custom interval' );
+
+ScanJobRunner::schedule( 'daily' );
+Harness::same( 'daily', wp_get_schedule( ScanJobRunner::SCHEDULE_HOOK ), 'changing the frequency re-schedules' );
+
+ScanJobRunner::schedule( 'manual' );
+Harness::ok( ! wp_next_scheduled( ScanJobRunner::SCHEDULE_HOOK ), 'manual clears the recurring event' );
+
+/* ================================================================ */
+Harness::suite( 'The chain sequences scan, optimize, scan' );
+
+$coordinator = new Coordinator( $scanner, $runner );
+
+Harness::same( '', $coordinator->state()['phase'], 'the chain starts idle' );
+
+$phase_state = $coordinator->state();
+
+Harness::ok( array_key_exists( 'percent', $phase_state ), 'phase state exposes an overall percent' );
+Harness::ok( array_key_exists( 'snapshot', $phase_state ), 'phase state carries the snapshot' );
+Harness::ok( array_key_exists( 'scan', $phase_state ), 'phase state carries the scan state' );
+Harness::ok( array_key_exists( 'bulk', $phase_state ), 'phase state carries the bulk state' );
+
+if ( ! $safe_to_run_bulk ) {
+	echo "  SKIP  chain transitions - {$pre_existing_pending} real image(s) are pending\n";
+} else {
+	$created[] = harness_import_attachment( harness_make_jpeg( 340, 280 ) );
+
+	$coordinator->register();
+	$coordinator->start_full_run();
+
+	Harness::same( 'scanning-before', $coordinator->state()['phase'], 'a full run begins by scanning' );
+
+	$percents = array( $coordinator->state()['percent'] );
+
+	// Drive the leading scan; the completion action moves the chain on.
+	$guard = 0;
+
+	while ( ScanRunner::is_running() && $guard < 500 ) {
+		$scanner->process_batch();
+		++$guard;
+	}
+
+	$percents[] = $coordinator->state()['percent'];
+
+	Harness::same( 'optimizing', $coordinator->state()['phase'], 'the scan hands over to optimizing' );
+	Harness::ok( $runner->state()['running'], '...and the bulk run is live' );
+	Harness::same( 0, (int) $runner->state()['done'], '...starting from a zeroed done count' );
+
+	$guard = 0;
+
+	while ( $runner->state()['running'] && $guard < 50 ) {
+		$result = $runner->process_batch();
+		++$guard;
+
+		if ( is_wp_error( $result ) ) {
+			break;
+		}
+	}
+
+	$percents[] = $coordinator->state()['percent'];
+
+	Harness::same( 'scanning-after', $coordinator->state()['phase'], 'optimizing hands over to the closing scan' );
+
+	$guard = 0;
+
+	while ( ScanRunner::is_running() && $guard < 500 ) {
+		$scanner->process_batch();
+		++$guard;
+	}
+
+	/*
+	 * Sampled only while the chain was busy. Once it goes idle the overall
+	 * percent is 0 by design - there is nothing running to be a percentage of,
+	 * and RunProgress renders only while busy, so that zero never reaches the
+	 * screen. Including it here would assert that idle means "complete", which
+	 * is not something this state can distinguish from "never started".
+	 */
+	Harness::same( '', $coordinator->state()['phase'], 'the chain returns to idle' );
+	Harness::ok( ! $coordinator->state()['busy'], '...and reports not busy' );
+	Harness::same( 0, (int) $coordinator->state()['percent'], '...and reports no progress, having nothing in flight' );
+
+	$monotonic = true;
+
+	for ( $i = 1; $i < count( $percents ); $i++ ) {
+		if ( $percents[ $i ] < $percents[ $i - 1 ] ) {
+			$monotonic = false;
+		}
+	}
+
+	Harness::ok( $monotonic, 'overall percent never goes backwards: ' . implode( ' -> ', $percents ) );
+
+	$final = ScanRunner::snapshot();
+
+	Harness::ok( is_array( $final ), 'the chain leaves a fresh snapshot behind' );
+	Harness::same( 'bulk-post', $final['trigger'], '...taken by the closing scan' );
+	Harness::same( 0, (int) $final['actionable'], '...reporting nothing left to do' );
+}
+
+/* ================================================================ */
+Harness::suite( 'A frozen total cannot outlive its run' );
+
+/*
+ * The reported "369 of 1". total was snapshotted once at start() and never
+ * revisited while done kept climbing, so anything that grew the pending set
+ * mid-run left the two describing different libraries.
+ */
+$runner->start( true );
+
+$forced          = get_option( Runner::PROGRESS_OPTION );
+$forced['total'] = 1;
+$forced['done']  = 369;
+update_option( Runner::PROGRESS_OPTION, $forced, false );
+
+$repaired = $runner->state();
+
+Harness::ok(
+	(int) $repaired['total'] >= (int) $repaired['done'],
+	'total is never left below done: ' . (int) $repaired['done'] . ' of ' . (int) $repaired['total']
+);
+Harness::ok( $repaired['percent'] <= 100, 'percent stays within bounds' );
+
+$runner->cancel();
 
 Harness::summary();

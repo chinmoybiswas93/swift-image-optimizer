@@ -164,7 +164,7 @@ class AttachmentConverter {
 	private $rewriter;
 
 	/**
-	 * Constructor.
+	 * Wire up the optimizer and rewriter this converter depends on.
 	 *
 	 * @param Optimizer        $optimizer Optimizer instance.
 	 * @param DatabaseRewriter $rewriter  Rewriter instance.

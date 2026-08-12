@@ -7,7 +7,10 @@
 
 namespace SwiftImageOptimizer\App\Hooks\Handlers;
 
+use SwiftImageOptimizer\Api\StoreSettings;
 use SwiftImageOptimizer\App\Hooks\Scheduler\JobRunner;
+use SwiftImageOptimizer\App\Hooks\Scheduler\ScanJobRunner;
+use SwiftImageOptimizer\App\Services\Bulk\ScanRunner;
 use SwiftImageOptimizer\Database\DBMigrator;
 
 if ( ! defined('ABSPATH')) {
@@ -64,6 +67,19 @@ class ActivationHandler {
         DBMigrator::migrateUp();
 
         JobRunner::schedule();
+        ScanJobRunner::schedule(StoreSettings::get('scan_frequency'));
+
+        /*
+         * Kick a first scan so the dashboard has real figures the first time it
+         * is opened. This only writes the progress option and queues a cron
+         * tick - the work itself happens in batches afterwards, so activation
+         * costs the same on a library of ten images or ten thousand.
+         *
+         * Constructed directly rather than resolved from the container: the
+         * activation hook can fire before bindings are registered, and this
+         * class takes no dependencies.
+         */
+        ( new ScanRunner() )->start('activation');
 
         do_action('swift_image_optimizer/activated');
     }

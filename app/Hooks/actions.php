@@ -15,11 +15,13 @@
 use SwiftImageOptimizer\App\App;
 use SwiftImageOptimizer\App\Hooks\CLI\Commands;
 use SwiftImageOptimizer\App\Hooks\Handlers\AssetHandler;
+use SwiftImageOptimizer\App\Hooks\Handlers\ForeignNoticeHandler;
 use SwiftImageOptimizer\App\Hooks\Handlers\MediaLibraryHandler;
 use SwiftImageOptimizer\App\Hooks\Handlers\MenuHandler;
 use SwiftImageOptimizer\App\Hooks\Handlers\NoticeHandler;
 use SwiftImageOptimizer\App\Hooks\Scheduler\BulkJobRunner;
 use SwiftImageOptimizer\App\Hooks\Scheduler\JobRunner;
+use SwiftImageOptimizer\App\Hooks\Scheduler\ScanJobRunner;
 use SwiftImageOptimizer\Api\StoreSettings;
 use SwiftImageOptimizer\App\Services\Engine\EngineFactory;
 use SwiftImageOptimizer\App\Services\Logging\Logger;
@@ -45,6 +47,9 @@ add_action('update_option_' . StoreSettings::OPTION, [ EngineFactory::class, 're
 // ... and whether logging is on, which Logger caches for the request.
 add_action('update_option_' . StoreSettings::OPTION, [ Logger::class, 'settings_changed' ], 10, 2);
 
+// ... and how often the library is rescanned, which is a cron schedule.
+add_action('update_option_' . StoreSettings::OPTION, [ ScanJobRunner::class, 'settings_changed' ], 10, 2);
+
 /*
  * Uploads. Intercepts new attachments so they are converted on the way in.
  */
@@ -61,6 +66,19 @@ add_action('update_option_' . StoreSettings::OPTION, [ Logger::class, 'settings_
 ( new BulkJobRunner() )->register();
 
 /*
+ * Library scan. Advances a running scan from cron, and starts one on whatever
+ * schedule the scan_frequency setting names.
+ */
+( new ScanJobRunner() )->register();
+
+/*
+ * Sequences scan -> optimize -> scan behind the dashboard's one button. A
+ * listener on the two completion actions rather than a caller, so neither the
+ * runner nor the scanner needs to know the chain exists.
+ */
+App::make('coordinator')->register();
+
+/*
  * URL rewriting. Serves the converted file when a pre-conversion URL is hit.
  */
 ( new Fallback404() )->register();
@@ -74,6 +92,7 @@ add_action('init', static function () {
     }
 
     ( new NoticeHandler() )->register();
+    ( new ForeignNoticeHandler() )->register();
     ( new MediaLibraryHandler() )->register();
     ( new MenuHandler() )->register();
     ( new AssetHandler() )->register();

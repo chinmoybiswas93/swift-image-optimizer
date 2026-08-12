@@ -163,4 +163,105 @@ class OptimizationLog extends Model {
     public static function flushStatsCache() {
         delete_transient(self::STATS_CACHE_KEY);
     }
+
+    /**
+     * Every image attachment the library scan considers, one page at a time.
+     *
+     * Deliberately not Scanner's predicate. Scanner asks "what is left to do",
+     * so it filters to convertible mimes and drops terminal rows - which is why
+     * an optimized image, whose mime is now image/webp, disappears from its
+     * totals entirely. The scan asks a different question: what is in the
+     * library and what state is each item in. So the universe here is every
+     * image, WebP included, and the classification happens in PHP against the
+     * disk rather than in SQL against the status column (invariant 22).
+     *
+     * Paged by primary key rather than OFFSET, so a library of any size costs
+     * the same per page.
+     *
+     * @param int      $after           Only rows with a greater ID.
+     * @param int      $limit           Page size.
+     * @param string[] $excludedMimes   Mime types to leave out entirely.
+     * @return array<int, array<string, mixed>> Rows of id, mime, status, reason, optimized_file.
+     */
+    public static function attachmentScanPage( $after, $limit, array $excludedMimes = [] ) {
+        $db    = self::db();
+        $table = self::table();
+
+        // Bound rather than inlined: wpdb::prepare() reads a literal % in the
+        // SQL as a placeholder, so 'image/%' has to arrive as a value.
+        $params = [ 'image/%' ];
+        $filter = '';
+
+        if ($excludedMimes) {
+            $placeholders = implode(', ', array_fill(0, count($excludedMimes), '%s'));
+            $filter       = "AND p.post_mime_type NOT IN ( {$placeholders} )";
+            $params       = array_merge($params, $excludedMimes);
+        }
+
+        $params[] = (int) $after;
+        $params[] = (int) $limit;
+
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Table names are internal identifiers and cannot be bound; $placeholders is a generated %s list and every value goes through prepare() in $params.
+        $rows = $db->get_results(
+            $db->prepare(
+                "SELECT p.ID AS attachment_id, p.post_mime_type AS mime,
+                        l.status AS status, l.reason AS reason,
+                        l.optimized_file AS optimized_file,
+                        l.original_size AS original_size, l.optimized_size AS optimized_size
+                FROM {$db->posts} p
+                LEFT JOIN {$table} l ON l.attachment_id = p.ID
+                WHERE p.post_type = 'attachment'
+                    AND p.post_mime_type LIKE %s
+                    {$filter}
+                    AND p.ID > %d
+                ORDER BY p.ID ASC
+                LIMIT %d",
+                $params
+            ),
+            ARRAY_A
+        );
+        // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
+
+        return is_array($rows) ? $rows : [];
+    }
+
+    /**
+     * How many attachments a full scan will walk.
+     *
+     * Used only to size the scan's own progress bar. The published total is
+     * what was actually classified, so a library that grows mid-scan still
+     * yields a self-consistent snapshot.
+     *
+     * @param string[] $excludedMimes Mime types to leave out entirely.
+     * @return int
+     */
+    public static function countScannableAttachments( array $excludedMimes = [] ) {
+        $db = self::db();
+
+        $filter = '';
+
+        // Same reason as attachmentScanPage(): a literal % in prepared SQL is
+        // read as a placeholder, so the LIKE pattern is bound as a value.
+        $params = [ 'image/%' ];
+
+        if ($excludedMimes) {
+            $placeholders = implode(', ', array_fill(0, count($excludedMimes), '%s'));
+            $filter       = "AND post_mime_type NOT IN ( {$placeholders} )";
+            $params       = array_merge($params, $excludedMimes);
+        }
+
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Table name is a core identifier and cannot be bound; $placeholders is a generated %s list and every value goes through prepare().
+        $count = $db->get_var(
+            $db->prepare(
+                "SELECT COUNT(*) FROM {$db->posts}
+                WHERE post_type = 'attachment'
+                    AND post_mime_type LIKE %s
+                    {$filter}",
+                $params
+            )
+        );
+        // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
+
+        return (int) $count;
+    }
 }

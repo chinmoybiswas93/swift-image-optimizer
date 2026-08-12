@@ -70,7 +70,7 @@ class Runner {
 	private $rewriter;
 
 	/**
-	 * Constructor.
+	 * Wire up the converter and rewriter the bulk run drives.
 	 *
 	 * @param AttachmentConverter $converter Converter instance.
 	 * @param DatabaseRewriter    $rewriter  Rewriter instance.
@@ -205,7 +205,11 @@ class Runner {
 
 			Logger::mark( 'bulk', 'Run finished. Nothing left to process.' );
 
-			return $this->state();
+			$finished = $this->state();
+
+			$this->announce_completion( $finished );
+
+			return $finished;
 		}
 
 		Logger::info( 'batch', 'Starting a batch of ' . count( $ids ) . '.', 0, array( 'cursor' => (int) $state['cursor'] ) );
@@ -327,7 +331,36 @@ class Runner {
 			BulkJobRunner::unschedule();
 		}
 
-		return $this->state();
+		$result = $this->state();
+
+		if ( empty( $state['running'] ) ) {
+			$this->announce_completion( $result );
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Say that the run has ended.
+	 *
+	 * Fired from both places process_batch() can finish - the empty batch and
+	 * the exhausted-queue check - because a run that ends down one path is no
+	 * less finished than one that ends down the other, and a listener that only
+	 * hears about half of them is worse than none.
+	 *
+	 * Announced rather than acted on: Runner's job is converting images, and it
+	 * has no business knowing what a dashboard or a chain wants to do next.
+	 *
+	 * @param array $state Final run state.
+	 * @return void
+	 */
+	private function announce_completion( array $state ) {
+		/**
+		 * Fires when a bulk run stops having work to do.
+		 *
+		 * @param array $state Final run state.
+		 */
+		do_action( 'swift_image_optimizer_bulk_completed', $state );
 	}
 
 	/**
@@ -405,9 +438,25 @@ class Runner {
 		 * arithmetic on different snapshots is what made the progress figures
 		 * disagree with each other.
 		 */
-		$total = (int) $state['total'];
-		$done  = (int) $state['done'];
+		$done = (int) $state['done'];
 
+		/*
+		 * Recomputed rather than read back. The stored total is a snapshot
+		 * taken once at start() and never revisited, while done climbs for as
+		 * long as the run lasts - so anything that grows the pending set
+		 * mid-run (turning on convert_png, a Requeue, an upload) leaves the two
+		 * describing different libraries. That is what produced the reported
+		 * "369 of 1": a run started when one image was outstanding, then
+		 * hundreds more became eligible.
+		 *
+		 * done plus what is still pending is the same number when nothing has
+		 * changed, and the honest one when something has. It costs one count
+		 * per status call - the same one the resumable check below already runs
+		 * whenever a run is stopped, now paid while running too.
+		 */
+		$total = max( (int) $state['total'], $done + Scanner::count_pending() );
+
+		$state['total']   = $total;
 		$state['percent'] = $total > 0 ? (int) min( 100, round( ( $done / $total ) * 100 ) ) : 0;
 
 		/*

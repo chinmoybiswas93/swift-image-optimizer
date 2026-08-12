@@ -89,12 +89,10 @@ class BulkJobRunner {
 	 * @return void
 	 */
 	public static function unschedule() {
-		$timestamp = wp_next_scheduled( self::HOOK );
-
-		while ( $timestamp ) {
-			wp_unschedule_event( $timestamp, self::HOOK );
-			$timestamp = wp_next_scheduled( self::HOOK );
-		}
+		// One read, one write. See ScanJobRunner::unschedule_batch() for why the
+		// ask-again shape is not safe against a lock-free, last-write-wins
+		// option - this hook is re-armed on every request during a run too.
+		wp_unschedule_hook( self::HOOK );
 	}
 
 	/**

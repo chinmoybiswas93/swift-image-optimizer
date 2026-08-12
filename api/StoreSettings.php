@@ -43,6 +43,7 @@ class StoreSettings {
 			'enable_404_fallback' => 1,
 			'backup_uploads'      => 1,
 			'enable_log'          => 0,
+			'scan_frequency'      => 'weekly',
 		);
 	}
 
@@ -103,6 +104,9 @@ class StoreSettings {
 							'enable_404_fallback' => array( 'type' => 'integer' ),
 							'backup_uploads'      => array( 'type' => 'integer' ),
 							'enable_log'          => array( 'type' => 'integer' ),
+							// Declared, or core strips the key before sanitize()
+							// ever sees it and the setting silently never saves.
+							'scan_frequency'      => array( 'type' => 'string' ),
 						),
 					),
 				),
@@ -145,6 +149,9 @@ class StoreSettings {
 
 		$retention                = isset( $input['backup_retention'] ) ? (int) $input['backup_retention'] : $defaults['backup_retention'];
 		$out['backup_retention']  = in_array( $retention, array( 0, 7, 30, 90 ), true ) ? $retention : 30;
+
+		$frequency             = isset( $input['scan_frequency'] ) ? sanitize_key( $input['scan_frequency'] ) : $defaults['scan_frequency'];
+		$out['scan_frequency'] = in_array( $frequency, array( 'manual', 'daily', 'weekly', 'monthly' ), true ) ? $frequency : 'weekly';
 
 		return $out;
 	}

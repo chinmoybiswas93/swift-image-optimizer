@@ -481,3 +481,70 @@ $sio-radius-sm: 4px;
 		color: $sio-text-muted;
 	}
 }
+
+/* Progress ring ----------------------------------------------------------
+ *
+ * Two arcs on one circle. The brand arc is the headline figure; the muted one
+ * behind it is the share that can never be optimized, so a finished library
+ * reads as closed rather than stuck short of 100%.
+ */
+
+.sio-ring {
+	position: relative;
+	flex-shrink: 0;
+
+	&__svg {
+		display: block;
+		transform-origin: center;
+	}
+
+	&__track {
+		stroke: $sio-border;
+	}
+
+	&__muted {
+		stroke: $sio-border-strong;
+		opacity: 0.45;
+		transition: stroke-dasharray 300ms ease, stroke-dashoffset 300ms ease;
+	}
+
+	&__value {
+		stroke: $sio-brand;
+		transition: stroke-dasharray 300ms ease;
+	}
+
+	/*
+	 * Centred as HTML rather than SVG <text>, so it inherits the admin font
+	 * stack and a long translation wraps instead of running past the ring.
+	 */
+	&__center {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		text-align: center;
+		pointer-events: none;
+	}
+
+	&__figure {
+		font-size: 28px;
+		font-weight: 700;
+		line-height: 1.1;
+		color: $sio-text;
+	}
+
+	&__caption {
+		margin-top: 2px;
+		font-size: 12px;
+		color: $sio-text-muted;
+	}
+}
+
+@media ( prefers-reduced-motion: reduce ) {
+	.sio-ring__value,
+	.sio-ring__muted {
+		transition: none;
+	}
+}

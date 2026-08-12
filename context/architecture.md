@@ -49,6 +49,8 @@ app/
 │   ├── Handlers/           ActivationHandler, DeactivationHandler, MenuHandler, NoticeHandler,
 │   │                       MediaLibraryHandler, AssetHandler
 │   ├── Scheduler/JobRunner.php   Daily purge of expired backups
+│   ├── Scheduler/BulkJobRunner.php  Advances an active bulk run from cron
+│   ├── Scheduler/ScanJobRunner.php  Advances a running scan + the scan_frequency schedule
 │   └── CLI/Commands.php    wp swift-image-optimizer optimize|restore|stats|diagnostics|logs|requeue
 ├── Http/
 │   ├── Controllers/        Controller (base), Optimize, Bulk, Backup, Diagnostics, Log, Stats
@@ -62,6 +64,9 @@ app/
 ├── Modules/                Reserved for self-contained feature packages
 ├── Services/               Domain layer: Optimizer, AttachmentConverter, Lock, Engine/, Backup/,
 │                           Bulk/, Rewrite/, Logging/, Diagnostics/, Upload/
+│                           Bulk/ also holds Scanner (live counts), ScanRunner (the batched,
+│                           disk-verified library scan) and Coordinator (chains scan -> optimize
+│                           -> scan behind one Bulk Optimize button)
 └── Views/                  Plain-PHP templates
     └── admin/              admin_app.php (SPA mount) + parts/{notice,media-column}.php
 
@@ -119,6 +124,7 @@ so treat them as non-negotiable.
 | 22 | **A column describing a file is not evidence the file exists.** Ask the disk: `BackupManager::manifest_is_intact()` before offering Restore, `AttachmentConverter::optimized_output_exists()` before reporting or refusing an optimization. | The database and the uploads directory can be restored from different points in time, and a plugin backup restore does exactly that. Trusting the column showed a whole library as processed with no way to optimize any of it, and offered Restores that could not succeed. Three of Unit 11's four reports were this same mistake. |
 | 23 | **A batch persists its pending rewrite map before applying it.** `Runner` parks `pending_rewrite`, rewrites, then clears it; the next batch flushes anything left behind. | Conversion writes a terminal log row per image but repoints references once per batch. A death in between leaves those images marked done forever with references pointing at filenames that no longer exist — `Scanner` never revisits a terminal row. Tolerable when a batch was one foreground request; not once cron runs batches unattended. |
 | 24 | **The server owns whether a bulk run is active.** `start()` is idempotent, `cancel()` keeps the cursor, and the client reconciles from `state()` rather than computing its own. | Two clients doing their own arithmetic over different snapshots is why progress figures disagreed, and an unguarded `start()` let a second tab reset a run mid-flight — which surfaced as "already running" from a button that looked available. |
+| 25 | **The library scan observes; it never writes to the log table.** A row claiming `optimized` whose file is missing is bucketed `pending` in the published snapshot and left exactly as it was. Deleting the row is `Scanner::rescan()`'s job, not the scan's. | The scan runs unattended on a schedule (invariant 13 already rules out a loopback trigger, so this has to be true for the same reason). A routine that mutates the log table while nobody is watching is a routine that can silently destroy the one record that makes Restore possible. |
 
 ## The upload path (Feature 1)
 

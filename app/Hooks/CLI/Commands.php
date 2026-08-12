@@ -45,7 +45,7 @@ class Commands {
 	private $rewriter;
 
 	/**
-	 * Constructor.
+	 * Wire up the converter and rewriter the CLI commands delegate to.
 	 *
 	 * @param AttachmentConverter $converter Converter instance.
 	 * @param DatabaseRewriter    $rewriter  Rewriter instance.

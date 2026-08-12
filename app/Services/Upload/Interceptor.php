@@ -45,7 +45,7 @@ class Interceptor {
 	private $optimizer;
 
 	/**
-	 * Constructor.
+	 * Wire up the optimizer used to convert images as they are uploaded.
 	 *
 	 * @param Optimizer $optimizer Optimizer instance.
 	 */

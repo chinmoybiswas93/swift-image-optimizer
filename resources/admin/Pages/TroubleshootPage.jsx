@@ -2,7 +2,16 @@
 
 import { useState, useEffect, useCallback, useRef } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
-import { Button, Notice, Section, Spinner, Stat, Toggle, useToast } from '../Components';
+import {
+	Button,
+	ConfirmDialog,
+	Notice,
+	Section,
+	Spinner,
+	Stat,
+	Toggle,
+	useToast,
+} from '../Components';
 import { IconDocument, IconLayers, IconStethoscope } from '../Icons';
 import DiagnosticRow from '../Partials/DiagnosticRow';
 import { request, saveSettings } from '../Services/http';
@@ -14,6 +23,7 @@ const TroubleshootPage = ( { values, setValues } ) => {
 	const [ log, setLog ] = useState( { lines: [], size: 0, rotated: false } );
 	const [ filter, setFilter ] = useState( '' );
 	const [ busy, setBusy ] = useState( '' );
+	const [ confirming, setConfirming ] = useState( false );
 	const [ error, setError ] = useState( '' );
 	const viewer = useRef( null );
 	const toast = useToast();
@@ -66,24 +76,15 @@ const TroubleshootPage = ( { values, setValues } ) => {
 	};
 
 	const reset = async () => {
-		if (
-			! window.confirm( // eslint-disable-line no-alert
-				__(
-					'This permanently deletes the log file and everything recorded in it. Continue?',
-					'swift-image-optimizer'
-				)
-			)
-		) {
-			return;
-		}
-
 		setBusy( 'reset' );
 		try {
 			const result = await request( 'logs/reset', { method: 'POST' } );
 			setLog( result.log );
+			setConfirming( false );
 			toast.push( __( 'Log cleared.', 'swift-image-optimizer' ) );
 		} catch ( e ) {
 			setError( e.message );
+			setConfirming( false );
 		}
 		setBusy( '' );
 	};
@@ -276,7 +277,7 @@ const TroubleshootPage = ( { values, setValues } ) => {
 					<Button
 						variant="secondary"
 						isDestructive
-						onClick={ reset }
+						onClick={ () => setConfirming( true ) }
 						disabled={ 'reset' === busy || ! log.size }
 					>
 						{ 'reset' === busy ? <Spinner /> : __( 'Reset log', 'swift-image-optimizer' ) }
@@ -342,6 +343,30 @@ const TroubleshootPage = ( { values, setValues } ) => {
 					</Button>
 				</div>
 			</Section>
+
+			{ confirming && (
+				<ConfirmDialog
+					title={ __( 'Reset the log?', 'swift-image-optimizer' ) }
+					confirmLabel={ __( 'Reset log', 'swift-image-optimizer' ) }
+					isDestructive
+					busy={ 'reset' === busy }
+					onConfirm={ reset }
+					onCancel={ () => setConfirming( false ) }
+				>
+					<p>
+						{ __(
+							'This permanently deletes the log file and everything recorded in it. Your images and backups are unaffected.',
+							'swift-image-optimizer'
+						) }
+					</p>
+					<p>
+						{ __(
+							'Download the log first if you still need it for support.',
+							'swift-image-optimizer'
+						) }
+					</p>
+				</ConfirmDialog>
+			) }
 		</>
 	);
 };

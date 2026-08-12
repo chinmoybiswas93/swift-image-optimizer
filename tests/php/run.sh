@@ -38,9 +38,9 @@ fi
 if [ $# -gt 0 ]; then
   SUITES=("$@")
 else
-  # rewriter-test first: it needs no database, so a failure there is a pure
-  # logic regression and worth seeing before anything touches WordPress.
-  SUITES=(rewriter-test convert-restore-e2e bulk-e2e)
+  # The two database-free suites run first: a failure in either is a pure
+  # logic regression, worth seeing before anything touches WordPress.
+  SUITES=(rewriter-test notice-strip-test convert-restore-e2e bulk-e2e)
 fi
 
 failed=0
