@@ -18,13 +18,36 @@ file-based logging and server diagnostics. Version bumped to **1.1.0**.
 exercised by the suite for the first time, and the four user-reported issues (I-10…I-13) are
 fixed. Both release blockers are closed.
 
-What stands between here and a .org submission now is **I-3: nobody has clicked the dashboard.**
-Every change in Unit 11 touched that UI. The build is verified, the endpoints are verified, the
-PHP is covered by 150 assertions — but the Bulk, Settings, Backups and Troubleshoot tabs have
-still never been used in a browser, and Unit 11 added more unclicked surface to them (Resume, the
-stalled warning, toasts, Rescan).
+**Unit 12 is done.** Closed I-14 (renumbered from I-11, which collided with Unit 11's own I-11).
+The Bulk Optimize tab's numbers never reconciled because they came from two unrelated
+computations — `Scanner::summary()`'s live mime count (which loses an image from its own totals
+the moment that image is optimized, since its mime becomes `image/webp`) and `StatsResource`'s
+log-table aggregate. Replaced both with one stored, disk-verified scan snapshot (`ScanRunner`,
+cron-driven, invariant 25) that the merged card's ring, the hero and the tiles all read. Bulk
+Optimize now chains scan → optimize → scan via `Coordinator`. Scheduled rescans
+(manual/daily/weekly/monthly) via `ScanJobRunner`. 131 PHP assertions passing (up from 68), 0
+`phpcs` errors/warnings, `owasp-security-review` clean on the five new routes.
 
-Next up: a browser pass over the admin UI, then the `future-specs/` backlog.
+What stands between here and a .org submission now is **I-3: nobody has clicked the dashboard.**
+Every change in Unit 11 touched that UI, and Unit 12 rewrote the Bulk tab on top of it without a
+browser available to click it either. The build is verified, the endpoints are verified, the PHP
+is covered by 131 assertions — but the Bulk, Settings, Backups and Troubleshoot tabs have still
+never been used in a browser. Unit 12 wrote `tests/e2e/library-scan.spec.js` for the new surface;
+it has never been run against a real login, only confirmed to load and to skip cleanly without
+credentials.
+
+**Unit 13 is In Progress** — [13-backup-purge-confirm-modal.md](specs/13-backup-purge-confirm-modal.md).
+Two user reports on the Backups tab: "Delete all backups now" confirms, toasts and updates the
+number without deleting a single file, and the confirmation is a raw `window.confirm()`. The
+deletion is manifest-driven only, so orphaned backups (**I-8**) are unreachable — and on cb-test
+*every* log row has an empty `backup_path` while 892 KB sits in the folder, so the button can
+never do anything. Adds a guarded sweep of the plugin's own backup root, removes the
+`backup_expires > 0` / `status = 'optimized'` filters that also excluded "Keep forever" backups,
+and replaces every `window.confirm()` in the plugin with a real modal — typed `DELETE` for the
+purge.
+
+Next up: a browser pass over the admin UI (now the largest open item), then the `future-specs/`
+backlog.
 
 ## Completed
 
@@ -43,13 +66,35 @@ Next up: a browser pass over the admin UI, then the `future-specs/` backlog.
 | 10 | Hardening — 14 defects closed, `Logging\Logger`, `Diagnostics\EnvironmentReport`, `Support\Lock`, Troubleshoot tab, engine chain, schema v3 (URL lookup table) | [10-hardening-troubleshoot.md](specs/done/10-hardening-troubleshoot.md) |
 | 09 | PHPCS actually run for the first time: 784 violations → 0. Dead `safe_mode` check removed, `imagedestroy()` version-gated, SQL annotations fixed (they had never been in effect) | [09-phpcs-compliance.md](specs/done/09-phpcs-compliance.md) |
 | 11 | The four user reports: toasts + no core notice markup (I-10), one storage folder (I-11), resumable cron-driven bulk (I-12), optimized state verified against disk (I-13). Harnesses rebuilt and **committed**, Imagick covered (I-2) | — |
+| 12 | Closed I-14 — one scan-backed dashboard. `ScanRunner` (batched, disk-verified scan), `Coordinator` (scan→optimize→scan chain), `ScanJobRunner` (scheduled rescans), a hand-rolled `ProgressRing`, and the three-card Bulk tab merged into one. Invariant 25 added | [12-centralized-scan-stats.md](specs/done/12-centralized-scan-stats.md) |
 
 ## Next Up
 
 | What | Why |
 |---|---|
-| **Browser pass over the admin UI (I-3)** | The last thing between here and .org. Unit 11 changed every tab and added Resume, the stalled warning, toasts and Rescan — none of it clicked. |
+| **Browser pass over the admin UI (I-3)** | The last thing between here and .org. Units 11 and 12 changed every tab; none of it has been clicked, including Unit 12's merged card and its Playwright spec. |
+| Run `tests/e2e/library-scan.spec.js` for real | Written and confirmed to load/skip cleanly, but never run against a live login — no admin credentials were available in the session that wrote it. Needs `WP_ADMIN_USER` / `WP_ADMIN_PASSWORD`. |
 | Rebuild the upload and media-UI harnesses | Two of the original five were lost and not rewritten; that is the gap between 150 assertions and the old 143 plus what those covered. |
+| Fix the 216 pre-existing `prettier`/`jsdoc` errors `lint:js` now surfaces | First successful `lint:js` run ever (see below) — errors are spread across ~10 files under `resources/`, all pre-existing, none on lines touched by the comment cleanup. Out of scope for that unit; needs its own pass, ideally with `--fix` reviewed file by file since some of those files have other uncommitted work in flight. |
+
+### 2026-08-11 — comment cleanup (no spec, too small to warrant one)
+
+Reworded 5 vacuous `Constructor.` docblocks (`Hooks/CLI/Commands.php`,
+`Services/AttachmentConverter.php`, `Services/Bulk/Coordinator.php`, `Services/Bulk/Runner.php`,
+`Services/Upload/Interceptor.php`) and removed 4 decorative ASCII banner comments in
+`resources/media/media.js`. Added a standing "no decorative banners / no placeholder docblocks / no
+commented-out code" rule to `context/code-standards.md` under `## Comments`. No behavior changed.
+
+`phpcs` now runs clean (0 errors/warnings, all 75 files) using the WPCS install already present at
+`~/.wpcs` per `specs/done/09-phpcs-compliance.md` — just needed that `vendor/bin` on `PATH`.
+
+`lint:js` was crashing outright before this unit, unrelated to the comment cleanup: the committed
+`package-lock.json` let a floating `typescript` peer dependency resolve to `7.0.2`, which
+`@typescript-eslint@6.21.0` (pulled in by `@wordpress/eslint-plugin`) cannot load — a version
+`@typescript-eslint` was never designed to see. Pinned via a `"typescript": "^5.4.5"` entry in
+`package.json`'s new `overrides` block (dev-only, doesn't affect `build/` output), then
+`rm -rf node_modules && npm install`. `lint:js` now runs for the first time and reports 216
+pre-existing `prettier`/`jsdoc` errors, unrelated to this unit — see Next Up.
 
 ## Verified behaviour
 

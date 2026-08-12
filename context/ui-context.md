@@ -14,16 +14,19 @@
 
 ## Design rules
 
-**Every control is a stock `@wordpress/components` control.** Toggles, ranges, selects, number
-inputs, buttons and notices are never reimplemented — core owns their look, states and
-accessibility. Tabs are the one exception; see below.
+**Stale claim, corrected:** the line below used to say every control was a stock
+`@wordpress/components` control. That was reversed before this file was last touched — see
+`agent.md` and `architecture.md`'s invariants, which govern. **No control is `@wordpress/components`.**
+Every one is the plugin's own, in `resources/admin/Components/` — `Toggle`, `Range`, `Select`,
+`NumberInput`, `Button`, `Notice`, `Spinner`, plus `ProgressRing` added in Unit 12. `Card` /
+`CardHeader` / `CardBody` are the plugin's own too, not core's.
 
 **The chrome around those controls is ours.** The masthead, the savings hero and the section
 headers are custom so the screen reads as a finished product rather than an options page. The
 line to hold: brand the *frame*, never the *controls*. No upsell strip, no fake pro teasers.
 
-Components in use: `Card` / `CardHeader` / `CardBody`, `Button`, `Notice`, `ToggleControl`,
-`RangeControl`, `SelectControl`, `NumberControl`, `Spinner`.
+Components in use: `Card` / `CardHeader` / `CardBody`, `Button`, `Notice`, `Toggle`, `Range`,
+`Select`, `NumberInput`, `Spinner`, `ProgressRing`.
 
 **Tabs are ours** (`admin/tabs.js`), not core's `TabPanel`. Core draws the active indicator as an
 `::after` pinned to the item's bottom edge and animated with `transition: all`, which cannot be
@@ -80,9 +83,12 @@ beside three metrics (images optimized, original size, optimized size). Every va
 
 ### Bulk Optimize
 
-Three stat tiles (convertible / processed / pending), then the engine line, then
-two sections: **Before you start** (dry run) and **Bulk optimization** (progress + start/stop).
-Space saved is deliberately *not* repeated here — the hero above already headlines it.
+**Rewritten in Unit 12.** Three separate cards (stat tiles, dry run, progress) merged into one —
+see `resources/admin/Partials/LibraryCard.jsx`. A circular ring (`ProgressRing`) leads, reading
+`optimized / total_images` from a stored, disk-verified scan snapshot; tiles, the Scan button and
+last-scanned time sit beside it; the dry-run preview lives in a `<details>` disclosure inside the
+same card, still above the Bulk Optimize button for the same reason as before. Space saved is
+still not repeated here — the hero above headlines it, now from the same snapshot.
 
 The dry-run card is deliberately placed *above* the start button. Given the plugin rewrites
 URLs destructively, the user should meet the preview before they meet the trigger.
@@ -127,8 +133,11 @@ is asked to open when they report a problem, so nothing on it assumes prior know
 
 - **Confirm before anything destructive.** Starting a bulk run and purging backups both use
   `window.confirm()` with a message that says plainly what will happen.
-- **The bulk loop is driven from the browser.** Each batch is one REST call; the loop continues
-  while `state.running`. A slow server takes more requests rather than timing out.
+- **The loop is driven from wherever is watching, with cron as the floor.** An open tab still
+  pumps batches directly (each is one REST call, continuing while `state.running`), which is
+  faster than waiting on WP-Cron — but since Unit 11/12, cron advances the same run on its own via
+  `BulkJobRunner` / `ScanJobRunner`, so closing the tab pauses the pace, not the run. A slow server
+  takes more requests rather than timing out either way.
 - **Stop must be immediate.** A `useRef` flag breaks the loop without waiting for a re-render.
 - **Progress survives a closed tab.** State lives in an option; the dashboard calls
   `bulk/status` on mount and resumes if a run is live.
