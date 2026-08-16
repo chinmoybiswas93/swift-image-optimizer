@@ -1,59 +1,160 @@
-/** Bulk optimization tab. */
+/** Bulk optimization tab: one card, one source of figures. */
 
 import { useState, useEffect, useCallback, useRef } from '@wordpress/element';
-import { __, sprintf } from '@wordpress/i18n';
-import { Button, Notice, Section, Spinner, Stat } from '../Components';
-import { IconBolt, IconLayers, IconSliders } from '../Icons';
-import EngineNotice from '../Partials/EngineNotice';
+import { __ } from '@wordpress/i18n';
+import { ConfirmDialog, Notice } from '../Components';
+import LibraryCard from '../Partials/LibraryCard';
 import { request } from '../Services/http';
 import config from '../Services/config';
-import { formatBytes } from '../Services/format';
 
-const BulkPage = ( { summary, setSummary, setStats } ) => {
-	const [ progress, setProgress ] = useState( null );
-	const [ running, setRunning ] = useState( false );
+const POLL_MS = 4000;
+
+const BulkPage = ( { snapshot, setSnapshot } ) => {
+	const [ phase, setPhase ] = useState( null );
+	const [ stale, setStale ] = useState( !! config.snapshotStale );
 	const [ dryRun, setDryRun ] = useState( null );
-	const [ busy, setBusy ] = useState( false );
+	const [ dryRunBusy, setDryRunBusy ] = useState( false );
+	const [ confirming, setConfirming ] = useState( false );
 	const [ error, setError ] = useState( '' );
 
-	// A ref so the batch loop can be stopped without waiting for a re-render.
+	// Refs so the batch pumps can be stopped without waiting for a re-render.
 	const stopped = useRef( false );
+	const autoScanned = useRef( false );
 
-	const refresh = useCallback( async () => {
-		try {
-			const [ nextSummary, nextStats ] = await Promise.all( [
-				request( 'scan' ),
-				request( 'stats' ),
-			] );
-			setSummary( nextSummary );
-			setStats( nextStats );
-		} catch ( e ) {
-			setError( e.message );
-		}
-	}, [ setSummary, setStats ] );
+	/**
+	 * Take a phase payload and spread it across the pieces that render it.
+	 *
+	 * The snapshot travels inside the same response as the run state, so the
+	 * ring and the progress bar are always describing the same instant. Fetching
+	 * them separately is what let the old screen show two different libraries.
+	 */
+	const absorb = useCallback(
+		( state ) => {
+			if ( ! state ) {
+				return null;
+			}
 
+			setPhase( state );
+			setStale( !! state.snapshot_stale );
+
+			if ( state.snapshot ) {
+				setSnapshot( state.snapshot );
+			}
+
+			return state;
+		},
+		[ setSnapshot ]
+	);
+
+	/*
+	 * Reconcile with the server on mount. The server is the authority on
+	 * whether anything is running - this tab may have been closed through an
+	 * entire run, or another tab may be driving one right now.
+	 */
 	useEffect( () => {
-		request( 'bulk/status', { method: 'POST' } )
+		let cancelledEffect = false;
+
+		request( 'bulk/phase', { method: 'POST' } )
 			.then( ( state ) => {
-				if ( state && state.running ) {
-					setProgress( state );
+				if ( cancelledEffect ) {
+					return;
+				}
+
+				absorb( state );
+
+				/*
+				 * Nothing has ever been scanned and nothing is running, so take
+				 * a first one. Behind a ref because effects can run twice in
+				 * development, and behind the busy check because a scan during
+				 * a run is refused server-side anyway.
+				 *
+				 * Started from the client rather than from the enqueue on the
+				 * PHP side deliberately: enqueue runs on every load of this
+				 * screen, and starting minutes of batched work as a side effect
+				 * of drawing a page is how a dashboard freezes a site.
+				 */
+				if ( ! autoScanned.current && state && ! state.busy && ! state.snapshot ) {
+					autoScanned.current = true;
+					startScan();
 				}
 			} )
 			.catch( () => {} );
+
+		return () => {
+			cancelledEffect = true;
+		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [] );
 
-	const runDryRun = async () => {
-		setBusy( true );
-		setError( '' );
-		try {
-			setDryRun( await request( 'dry-run', { method: 'POST' } ) );
-		} catch ( e ) {
-			setError( e.message );
+	/*
+	 * Poll while anything is in flight, whoever is driving it. Batches are
+	 * advanced by cron and by other tabs as well as by this one, so this tab
+	 * has to be able to see progress it did not cause.
+	 */
+	useEffect( () => {
+		if ( ! phase || ! phase.busy ) {
+			return undefined;
 		}
-		setBusy( false );
+
+		const timer = setInterval( async () => {
+			try {
+				absorb( await request( 'bulk/phase', { method: 'POST' } ) );
+			} catch ( e ) {
+				// A failed poll is not a failed run; the next tick retries.
+			}
+		}, POLL_MS );
+
+		return () => clearInterval( timer );
+	}, [ phase, absorb ] );
+
+	/**
+	 * Drive scan batches directly while someone is watching.
+	 *
+	 * Cron advances a scan on its own, but only as fast as site traffic allows.
+	 * Both paths exist and the server-side lock keeps them from overlapping, so
+	 * an open tab makes the scan quick without making cron redundant.
+	 */
+	const pumpScan = async () => {
+		let state = null;
+
+		do {
+			if ( stopped.current ) {
+				break;
+			}
+
+			try {
+				state = await request( 'library/scan/batch', { method: 'POST' } );
+			} catch ( e ) {
+				// Cron or another tab took this batch. Ordinary, not a failure -
+				// hand over and let the poll keep the display current.
+				if ( e && ( e.code === 'scan-locked' || e.code === 'not-scanning' ) ) {
+					return;
+				}
+
+				setError( e.message );
+				break;
+			}
+
+			if ( state ) {
+				setStale( !! state.snapshot_stale );
+
+				if ( state.snapshot ) {
+					setSnapshot( state.snapshot );
+				}
+			}
+		} while ( state && state.running );
+
+		try {
+			absorb( await request( 'bulk/phase', { method: 'POST' } ) );
+		} catch ( e ) {
+			// The figures are already current; the next poll will catch up.
+		}
 	};
 
-	const loop = async () => {
+	/**
+	 * Drive optimize batches directly, for the same reason.
+	 */
+	const pumpBulk = async () => {
 		let state = null;
 
 		do {
@@ -64,55 +165,101 @@ const BulkPage = ( { summary, setSummary, setStats } ) => {
 			try {
 				state = await request( 'bulk/batch', { method: 'POST' } );
 			} catch ( e ) {
+				if ( e && ( e.code === 'bulk-locked' || e.code === 'not-running' ) ) {
+					return;
+				}
+
 				setError( e.message );
 				break;
 			}
-
-			setProgress( state );
 		} while ( state && state.running );
 
-		setRunning( false );
-		await refresh();
+		try {
+			absorb( await request( 'bulk/phase', { method: 'POST' } ) );
+		} catch ( e ) {
+			// As above.
+		}
 	};
 
-	const start = async () => {
-		if (
-			! window.confirm( // eslint-disable-line no-alert
-				__(
-					'This converts your existing images to WebP and updates every reference to them. Originals are backed up first. Continue?',
-					'swift-image-optimizer'
-				)
-			)
-		) {
+	const startScan = async ( force = false ) => {
+		setError( '' );
+		stopped.current = false;
+
+		try {
+			const state = await request( 'library/scan', {
+				method: 'POST',
+				data: { force },
+			} );
+
+			if ( state ) {
+				setPhase( ( prev ) => ( {
+					...( prev || {} ),
+					busy: true,
+					scan: state,
+				} ) );
+			}
+
+			await pumpScan();
+		} catch ( e ) {
+			setError( e.message );
+		}
+	};
+
+	const onScan = () => {
+		// A stalled scan is restarted rather than joined: its cron tick is
+		// queued fine, it is the request to run it that never arrived.
+		startScan( !! ( phase && phase.scan && phase.scan.stalled ) );
+	};
+
+	const onOptimize = () => setConfirming( true );
+
+	const startOptimize = async () => {
+		// Closed before the run rather than after: the pumps below take as
+		// long as the library does, and the progress belongs on the card.
+		setConfirming( false );
+		setError( '' );
+		stopped.current = false;
+
+		try {
+			absorb( await request( 'bulk/run', { method: 'POST' } ) );
+		} catch ( e ) {
+			setError( e.message );
+
 			return;
 		}
 
-		setError( '' );
-		stopped.current = false;
-		setRunning( true );
-
-		try {
-			setProgress( await request( 'bulk/start', { method: 'POST' } ) );
-			await loop();
-		} catch ( e ) {
-			setError( e.message );
-			setRunning( false );
-		}
+		/*
+		 * Pump the leading scan, then the conversions, then the closing scan.
+		 * The server owns the transitions between them - these calls only make
+		 * each stage finish sooner than cron alone would.
+		 */
+		await pumpScan();
+		await pumpBulk();
+		await pumpScan();
 	};
 
-	const cancel = async () => {
+	const onCancel = async () => {
 		stopped.current = true;
+
 		try {
-			setProgress( await request( 'bulk/cancel', { method: 'POST' } ) );
+			absorb( await request( 'bulk/cancel', { method: 'POST' } ) );
 		} catch ( e ) {
 			setError( e.message );
 		}
-		setRunning( false );
 	};
 
-	const total = progress ? progress.total : summary.pending;
-	const done = progress ? progress.done : 0;
-	const percent = total > 0 ? Math.min( 100, Math.round( ( done / total ) * 100 ) ) : 0;
+	const onDryRun = async () => {
+		setDryRunBusy( true );
+		setError( '' );
+
+		try {
+			setDryRun( await request( 'dry-run', { method: 'POST' } ) );
+		} catch ( e ) {
+			setError( e.message );
+		}
+
+		setDryRunBusy( false );
+	};
 
 	return (
 		<>
@@ -122,161 +269,39 @@ const BulkPage = ( { summary, setSummary, setStats } ) => {
 				</Notice>
 			) }
 
-			<Section
-				icon={ <IconLayers /> }
-				title={ __( 'Your library', 'swift-image-optimizer' ) }
-				description={ __(
-					'What Swift can see in your media library right now.',
-					'swift-image-optimizer'
-				) }
-			>
-				<div className="sio-stats">
-					<Stat
-						label={ __( 'Convertible images', 'swift-image-optimizer' ) }
-						value={ summary.total ?? 0 }
-					/>
-					<Stat
-						label={ __( 'Already processed', 'swift-image-optimizer' ) }
-						value={ summary.processed ?? 0 }
-						tone="good"
-					/>
-					<Stat
-						label={ __( 'Still to do', 'swift-image-optimizer' ) }
-						value={ summary.pending ?? 0 }
-						tone={ summary.pending > 0 ? 'warn' : 'good' }
-					/>
-				</div>
-				<EngineNotice engine={ config.engine } engines={ config.engines || {} } />
-			</Section>
+			<LibraryCard
+				phase={ phase }
+				snapshot={ snapshot }
+				stale={ stale }
+				dryRun={ dryRun }
+				dryRunBusy={ dryRunBusy }
+				onScan={ onScan }
+				onOptimize={ onOptimize }
+				onCancel={ onCancel }
+				onDryRun={ onDryRun }
+			/>
 
-			<Section
-				icon={ <IconSliders /> }
-				title={ __( 'Before you start', 'swift-image-optimizer' ) }
-				description={ __(
-					'Preview the damage before you commit to it.',
-					'swift-image-optimizer'
-				) }
-			>
-				<p className="sio-lede">
-					{ __(
-						'A dry run reports how many references would be rewritten, without changing anything. Run it first.',
-						'swift-image-optimizer'
-					) }
-				</p>
-				<Button variant="secondary" onClick={ runDryRun } disabled={ busy || running }>
-					{ busy ? <Spinner /> : __( 'Run dry run', 'swift-image-optimizer' ) }
-				</Button>
-
-				{ dryRun && (
-					<div className="sio-dryrun">
-						<p>
-							{ sprintf(
-								/* translators: 1: references found, 2: rows, 3: images sampled. */
-								__(
-									'Found %1$d references across %2$d rows in a sample of %3$d images.',
-									'swift-image-optimizer'
-								),
-								dryRun.replacements,
-								dryRun.rows,
-								dryRun.sampled
-							) }
-						</p>
-						<p>
-							{ sprintf(
-								/* translators: %d: estimated total references. */
-								__( 'Estimated across the whole library: about %d references.', 'swift-image-optimizer' ),
-								dryRun.estimated_total
-							) }
-						</p>
-						<ul className="sio-tablecounts">
-							{ Object.entries( dryRun.by_table || {} ).map( ( [ table, count ] ) => (
-								<li key={ table }>
-									<code>{ table }</code> <span>{ count }</span>
-								</li>
-							) ) }
-						</ul>
-						{ dryRun.skipped > 0 && (
-							<Notice status="warning" isDismissible={ false }>
-								{ sprintf(
-									/* translators: %d: number of values. */
-									__(
-										'%d values contain data that cannot be safely rewritten and will be left untouched.',
-										'swift-image-optimizer'
-									),
-									dryRun.skipped
-								) }
-							</Notice>
+			{ confirming && (
+				<ConfirmDialog
+					title={ __( 'Optimize your media library?', 'swift-image-optimizer' ) }
+					confirmLabel={ __( 'Start optimizing', 'swift-image-optimizer' ) }
+					onConfirm={ startOptimize }
+					onCancel={ () => setConfirming( false ) }
+				>
+					<p>
+						{ __(
+							'This converts your existing images to WebP and updates every reference to them across your site.',
+							'swift-image-optimizer'
 						) }
-					</div>
-				) }
-			</Section>
-
-			<Section
-				icon={ <IconBolt /> }
-				title={ __( 'Bulk optimization', 'swift-image-optimizer' ) }
-				description={ __(
-					'Converts every pending image and rewrites the references to it.',
-					'swift-image-optimizer'
-				) }
-			>
-				{ progress && (
-					<div className="sio-progress">
-						<div className="sio-progress__bar">
-							<div className="sio-progress__fill" style={ { width: `${ percent }%` } } />
-						</div>
-						<div className="sio-progress__meta">
-							<span>
-								{ sprintf(
-									/* translators: 1: done, 2: total. */
-									__( '%1$d of %2$d', 'swift-image-optimizer' ),
-									done,
-									total
-								) }
-							</span>
-							<span>
-								{ sprintf(
-									/* translators: 1: optimized, 2: skipped, 3: failed. */
-									__( '%1$d optimized · %2$d skipped · %3$d failed', 'swift-image-optimizer' ),
-									progress.optimized,
-									progress.skipped,
-									progress.failed
-								) }
-							</span>
-							<span>{ formatBytes( progress.saved ) } { __( 'saved', 'swift-image-optimizer' ) }</span>
-						</div>
-					</div>
-				) }
-
-				<div className="sio-actions">
-					{ ! running ? (
-						<Button
-							variant="primary"
-							onClick={ start }
-							disabled={ ! config.engine || ( summary.pending ?? 0 ) === 0 }
-						>
-							{ __( 'Start bulk optimization', 'swift-image-optimizer' ) }
-						</Button>
-					) : (
-						<Button variant="secondary" isDestructive onClick={ cancel }>
-							{ __( 'Stop', 'swift-image-optimizer' ) }
-						</Button>
-					) }
-					{ running && <Spinner /> }
-				</div>
-
-				{ progress && progress.errors && progress.errors.length > 0 && (
-					<div className="sio-errors">
-						<h4>{ __( 'Failures', 'swift-image-optimizer' ) }</h4>
-						<ul>
-							{ progress.errors.map( ( item ) => (
-								<li key={ item.id }>
-									<strong>#{ item.id }</strong> { item.title } — { item.message }
-								</li>
-							) ) }
-						</ul>
-					</div>
-				) }
-			</Section>
+					</p>
+					<p>
+						{ __(
+							'Every original is backed up first, so any image can be restored afterwards.',
+							'swift-image-optimizer'
+						) }
+					</p>
+				</ConfirmDialog>
+			) }
 		</>
 	);
 };

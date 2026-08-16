@@ -26,7 +26,16 @@ class BackupManager {
 	/**
 	 * Directory name inside uploads.
 	 */
-	const DIRNAME = 'swift-image-optimizer-backups';
+	/**
+	 * Backup directory, relative to the uploads basedir.
+	 *
+	 * One folder named for the plugin, with backups, temp files and logs as
+	 * subdirectories of it, rather than three siblings scattered through
+	 * wp-content/uploads. `wp_mkdir_p()` creates the parent, and safe_path()'s
+	 * traversal guard resolves against root() so the extra level costs it
+	 * nothing.
+	 */
+	const DIRNAME = 'swift-image-optimizer/backup';
 
 	/**
 	 * Absolute path to the backup root.
@@ -433,6 +442,116 @@ class BackupManager {
 	}
 
 	/**
+	 * Delete every file left in the backup root, referenced or not.
+	 *
+	 * The manifest-driven `delete()` above can only reach backups a log row
+	 * still points at. A backup whose row was deleted, or whose pointer was
+	 * already cleared, is unreachable by it forever - which is why "Delete all
+	 * backups now" could report success while the folder stayed full (I-8).
+	 *
+	 * This is the one place that deletes without a manifest, so it is fenced
+	 * in accordingly. The glob cleanup that destroyed 54 real backups ran
+	 * automatically, over a shared directory, with no containment check; every
+	 * one of those properties is inverted here:
+	 *
+	 *   - the root must resolve and must actually be the plugin's own backup
+	 *     directory, or nothing is deleted;
+	 *   - only regular files are touched, never symlinks, and every path is
+	 *     re-resolved and checked to still sit inside the root;
+	 *   - the protective index.php and .htaccess are kept;
+	 *   - and the only caller is the explicit, typed-confirmation admin
+	 *     action. Cron must never reach this.
+	 *
+	 * @return array {
+	 *     @type int $files Files removed.
+	 *     @type int $bytes Bytes reclaimed.
+	 * }
+	 */
+	public static function purge_orphans() {
+		$result = array(
+			'files' => 0,
+			'bytes' => 0,
+		);
+
+		$root = self::root();
+
+		if ( ! is_dir( $root ) ) {
+			return $result;
+		}
+
+		$real_root = realpath( $root );
+
+		// Refuse to sweep anything that is not this plugin's own backup
+		// directory, however we were called.
+		if ( false === $real_root || self::DIRNAME !== substr( str_replace( '\\', '/', $real_root ), -strlen( self::DIRNAME ) ) ) {
+			return $result;
+		}
+
+		$keep = array( 'index.php', '.htaccess' );
+
+		try {
+			$iterator = new \RecursiveIteratorIterator(
+				new \RecursiveDirectoryIterator( $real_root, \FilesystemIterator::SKIP_DOTS ),
+				\RecursiveIteratorIterator::CHILD_FIRST
+			);
+
+			foreach ( $iterator as $item ) {
+				$path = $item->getPathname();
+
+				/*
+				 * A symlink is never followed. Removing the link removes the
+				 * link and nothing else, so whatever it points at - which by
+				 * definition is not ours - is left untouched.
+				 */
+				if ( $item->isLink() ) {
+					wp_delete_file( $path );
+					continue;
+				}
+
+				if ( $item->isDir() ) {
+					// CHILD_FIRST, so anything still in here was skipped above
+					// and the directory has to stay.
+					$remaining = @scandir( $path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Handled by the array check.
+
+					if ( is_array( $remaining ) && 2 === count( $remaining ) ) {
+						@rmdir( $path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- Removing the plugin's own empty backup directory.
+					}
+
+					continue;
+				}
+
+				if ( ! $item->isFile() ) {
+					continue;
+				}
+
+				// The guards that keep the directory unreadable over HTTP stay.
+				if ( in_array( $item->getFilename(), $keep, true ) && dirname( $path ) === $real_root ) {
+					continue;
+				}
+
+				$real_path = realpath( $path );
+
+				if ( false === $real_path || 0 !== strpos( $real_path, $real_root . DIRECTORY_SEPARATOR ) ) {
+					continue;
+				}
+
+				$size = (int) $item->getSize();
+
+				wp_delete_file( $real_path );
+
+				if ( ! file_exists( $real_path ) ) {
+					++$result['files'];
+					$result['bytes'] += $size;
+				}
+			}
+		} catch ( \Exception $e ) {
+			return $result;
+		}
+
+		return $result;
+	}
+
+	/**
 	 * Resolve a relative backup path, refusing anything outside the backup root.
 	 *
 	 * @param string $relative_dir Untrusted relative directory.
@@ -477,6 +596,12 @@ class BackupManager {
 	/**
 	 * Total disk space used by backups.
 	 *
+	 * Excludes the two files ensure_root() writes to keep the directory
+	 * unreadable over HTTP. They are not backups and they are never deleted,
+	 * so counting them left the screen reporting 59 bytes of "backup storage"
+	 * on an empty folder - which also kept the delete button live with nothing
+	 * to delete.
+	 *
 	 * @return int Bytes.
 	 */
 	public static function disk_usage() {
@@ -494,9 +619,16 @@ class BackupManager {
 			);
 
 			foreach ( $iterator as $file ) {
-				if ( $file->isFile() ) {
-					$total += $file->getSize();
+				if ( ! $file->isFile() ) {
+					continue;
 				}
+
+				if ( in_array( $file->getFilename(), array( 'index.php', '.htaccess' ), true )
+					&& dirname( $file->getPathname() ) === $root ) {
+					continue;
+				}
+
+				$total += $file->getSize();
 			}
 		} catch ( \Exception $e ) {
 			return $total;

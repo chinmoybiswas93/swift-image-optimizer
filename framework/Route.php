@@ -7,7 +7,7 @@
 
 namespace SwiftImageOptimizer\Framework;
 
-if (!defined('ABSPATH')) {
+if ( ! defined('ABSPATH')) {
     exit;
 }
 
@@ -19,8 +19,8 @@ if (!defined('ABSPATH')) {
  *            ->args(StoreRequest::args())
  *            ->withPolicy('AdminPolicy');
  */
-class Route
-{
+class Route {
+
     /**
      * HTTP method(s), as a WP_REST_Server constant or comma-separated list.
      *
@@ -57,13 +57,14 @@ class Route
     private $args = [];
 
     /**
+     * Describe a single route.
+     *
      * @param string         $method HTTP method.
      * @param string         $uri    Route URI.
      * @param callable|array $action Handler.
      * @param string|null    $policy Policy short name.
      */
-    public function __construct($method, $uri, $action, $policy = null)
-    {
+    public function __construct( $method, $uri, $action, $policy = null ) {
         $this->method = $method;
         $this->uri    = $uri;
         $this->action = $action;
@@ -76,8 +77,7 @@ class Route
      * @param array<string, mixed> $args Args schema.
      * @return $this
      */
-    public function args(array $args)
-    {
+    public function args( array $args ) {
         $this->args = $args;
 
         return $this;
@@ -89,8 +89,7 @@ class Route
      * @param string $policy Policy class short name.
      * @return $this
      */
-    public function withPolicy($policy)
-    {
+    public function withPolicy( $policy ) {
         $this->policy = $policy;
 
         return $this;
@@ -101,8 +100,7 @@ class Route
      *
      * @return string
      */
-    public function getMethod()
-    {
+    public function getMethod() {
         return $this->method;
     }
 
@@ -111,8 +109,7 @@ class Route
      *
      * @return string
      */
-    public function getUri()
-    {
+    public function getUri() {
         return $this->uri;
     }
 
@@ -121,8 +118,7 @@ class Route
      *
      * @return callable|array
      */
-    public function getAction()
-    {
+    public function getAction() {
         return $this->action;
     }
 
@@ -131,8 +127,7 @@ class Route
      *
      * @return string|null
      */
-    public function getPolicy()
-    {
+    public function getPolicy() {
         return $this->policy;
     }
 
@@ -141,8 +136,7 @@ class Route
      *
      * @return array<string, mixed>
      */
-    public function getArgs()
-    {
+    public function getArgs() {
         return $this->args;
     }
 }

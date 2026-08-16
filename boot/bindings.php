@@ -11,11 +11,13 @@
 use SwiftImageOptimizer\Api\StoreSettings;
 use SwiftImageOptimizer\App\App;
 use SwiftImageOptimizer\App\Services\AttachmentConverter;
+use SwiftImageOptimizer\App\Services\Bulk\Coordinator;
 use SwiftImageOptimizer\App\Services\Bulk\Runner;
+use SwiftImageOptimizer\App\Services\Bulk\ScanRunner;
 use SwiftImageOptimizer\App\Services\Optimizer;
 use SwiftImageOptimizer\App\Services\Rewrite\DatabaseRewriter;
 
-if (!defined('ABSPATH')) {
+if ( ! defined('ABSPATH')) {
     exit;
 }
 
@@ -35,6 +37,14 @@ App::singleton('runner', static function () {
     return new Runner(App::make('converter'), App::make('rewriter'));
 });
 
+App::singleton('scanner', static function () {
+    return new ScanRunner();
+});
+
+App::singleton('coordinator', static function () {
+    return new Coordinator(App::make('scanner'), App::make('runner'));
+});
+
 App::singleton('settings', static function () {
     return new StoreSettings();
 });
@@ -45,4 +55,6 @@ App::alias('rewriter', DatabaseRewriter::class);
 App::alias('optimizer', Optimizer::class);
 App::alias('converter', AttachmentConverter::class);
 App::alias('runner', Runner::class);
+App::alias('scanner', ScanRunner::class);
+App::alias('coordinator', Coordinator::class);
 App::alias('settings', StoreSettings::class);

@@ -30,7 +30,7 @@ class Interceptor {
 	/**
 	 * Results awaiting an attachment ID, keyed by absolute file path.
 	 *
-	 * wp_handle_upload runs before wp_insert_attachment in the same request, so
+	 * The wp_handle_upload hook runs before wp_insert_attachment in the same request, so
 	 * results are parked here and bound on add_attachment.
 	 *
 	 * @var array<string, array>
@@ -45,7 +45,7 @@ class Interceptor {
 	private $optimizer;
 
 	/**
-	 * Constructor.
+	 * Wire up the optimizer used to convert images as they are uploaded.
 	 *
 	 * @param Optimizer $optimizer Optimizer instance.
 	 */

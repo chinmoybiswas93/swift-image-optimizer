@@ -107,11 +107,16 @@ backups.
 The knowledge graph at `graphify-out/` indexes the source and doc files. One query costs a
 fraction of what reading files costs.
 
-> **The graph is stale.** It was built against the old `src/` + `Providers/` + `Repositories/`
-> layout and still names classes that no longer exist (`Plugin`, `*ServiceProvider`,
-> `SettingsPage`, `ListTable`, `RetentionCron`, `Database`, `Services\Bulk\Cli`,
-> `SettingsRepository`, `StatsRepository`, `App\Foundation\*`, `App\Vite`). Run
-> `/graphify --update` before trusting it.
+> **Rebuilt 2026-08-11 after Unit 11** — 1335 nodes, 1780 edges, 179 communities. It indexes the
+> current layout, the committed `tests/php/` harnesses, all 24 architecture invariants and the
+> closed issues. The classes an earlier warning here listed as phantoms (`Plugin`,
+> `*ServiceProvider`, `SettingsPage`, `ListTable`, `RetentionCron`, `SettingsRepository`,
+> `App\Foundation\*`) are gone from it. Still run `/graphify --update` after any unit that adds
+> or changes files.
+
+It is worth querying even for questions that feel like documentation rather than code. Reading
+the graph is what caught that the notice in the I-10 screenshot belonged to Elementor rather than
+to this plugin, after the first fix had already been written and committed.
 
 ```bash
 graphify query "how does BackupManager expire backups"
@@ -131,7 +136,7 @@ longer exists.
 | Current unit, what's done, open questions | `context/progress-tracker.md` — **read directly**, it's small and always current |
 | The unit you're implementing | `context/specs/NN-*.md` — **read directly**, always required |
 | Class map, data model, engine selection | `graphify query`, not `architecture.md` in full |
-| The 13 **Architecture invariants** | `context/architecture.md` — **read directly**, they're short and several encode data-loss failure modes |
+| The 24 **Architecture invariants** | `context/architecture.md` — **read directly**, they're short and several encode data-loss failure modes |
 | Security, DB access, filesystem, i18n rules | `context/code-standards.md` |
 | Known bugs and the backup-deletion incident | `context/current-issues/` |
 | Not-yet-scoped work (AVIF, resize, scheduling) | `context/future-specs/` — do not implement unspecced |
@@ -162,7 +167,7 @@ longer exists.
   Every control is ours (`resources/admin/Components/`); markup uses `sio-*` classes, never core's
   `notice notice-*`, `button button-*` or `.description`. `build/admin.asset.php` is the check:
   it must list `wp-element` and `wp-api-fetch`, and must not list `wp-components`
-- Never touch `wp-content/uploads/swift-image-optimizer-backups/` — that is user data
+- Never touch `wp-content/uploads/swift-image-optimizer/backup/` — that is user data
 - Never modify a file outside the current spec's "Files changed"
 - Never add a Composer *runtime* dependency — the plugin ships dependency-free by design.
   npm packages are build-time only and still need to be named in the spec
@@ -190,15 +195,20 @@ environment first.
 
 ## A unit is not complete until
 
-1. `npm run lint:php` clean (and `npm run lint:js` if JS changed)
+1. `npm run lint:php` clean (and `npm run lint:js` if JS changed). WPCS lives **outside** the
+   plugin — see `context/specs/done/09-phpcs-compliance.md`; never `require-dev` it here, because the
+   committed `vendor/` must stay autoloader-only (invariant 12)
 2. `composer dump-autoload -o` clean, and every moved class still resolves — a namespace/path
    mismatch is a fatal at call time, not at load
-3. `npm run build` succeeds, `build/admin.asset.php` still excludes `wp-components`, and the admin
+3. `npm run test:php` clean. Add `--web` (`tests/php/run.sh --web`) whenever the change touches an
+   engine: CLI PHP here has no Imagick, so a CLI-only run silently proves nothing about the
+   engine the site actually uses
+4. `npm run build` succeeds, `build/admin.asset.php` still excludes `wp-components`, and the admin
    screen still mounts; `npm run test:e2e` if the UI changed
-4. `/security-review` on the diff — plus `owasp-security-review` on the files if the unit touched
+5. `/security-review` on the diff — plus `owasp-security-review` on the files if the unit touched
    REST, upload, shell-out, or backup/restore
-5. `/graphify --update`
-6. `progress-tracker.md` updated: spec moved to `specs/done/`, row added to Completed, next unit
+6. `/graphify --update`
+7. `progress-tracker.md` updated: spec moved to `specs/done/`, row added to Completed, next unit
    set In Progress, any architectural decision recorded in `architecture.md`
 
 If tests fail, say so and show the output. Never describe partial work as complete, and

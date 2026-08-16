@@ -10,7 +10,7 @@ namespace SwiftImageOptimizer\Framework;
 use RuntimeException;
 use WP_REST_Server;
 
-if (!defined('ABSPATH')) {
+if ( ! defined('ABSPATH')) {
     exit;
 }
 
@@ -26,8 +26,8 @@ if (!defined('ABSPATH')) {
  * Controllers are resolved from the container, so they declare their own
  * dependencies rather than being handed pre-built instances.
  */
-class Router
-{
+class Router {
+
     /**
      * The container used to resolve controllers and policies.
      *
@@ -71,12 +71,13 @@ class Router
     private $pending = [];
 
     /**
+     * Bind the router to its container and REST namespaces.
+     *
      * @param Container $container       Container for resolving handlers.
      * @param string    $namespace       REST namespace.
      * @param string    $policyNamespace Namespace for bare policy names.
      */
-    public function __construct(Container $container, $namespace, $policyNamespace)
-    {
+    public function __construct( Container $container, $namespace, $policyNamespace ) {
         $this->container       = $container;
         $this->namespace       = trim($namespace, '/');
         $this->policyNamespace = rtrim($policyNamespace, '\\') . '\\';
@@ -88,8 +89,7 @@ class Router
      * @param string $prefix URI segment.
      * @return $this
      */
-    public function prefix($prefix)
-    {
+    public function prefix( $prefix ) {
         $this->pending['prefix'] = trim($prefix, '/');
 
         return $this;
@@ -101,8 +101,7 @@ class Router
      * @param string $policy Policy class short name or FQCN.
      * @return $this
      */
-    public function withPolicy($policy)
-    {
+    public function withPolicy( $policy ) {
         $this->pending['policy'] = $policy;
 
         return $this;
@@ -114,8 +113,7 @@ class Router
      * @param callable $callback Receives this router.
      * @return $this
      */
-    public function group(callable $callback)
-    {
+    public function group( callable $callback ) {
         $current = $this->currentAttributes();
 
         $prefix = isset($this->pending['prefix'])
@@ -127,7 +125,7 @@ class Router
             : $current['policy'];
 
         $this->pending      = [];
-        $this->groupStack[] = ['prefix' => $prefix, 'policy' => $policy];
+        $this->groupStack[] = [ 'prefix' => $prefix, 'policy' => $policy ];
 
         try {
             $callback($this);
@@ -145,8 +143,7 @@ class Router
      * @param callable|array $action Handler.
      * @return Route
      */
-    public function get($uri, $action)
-    {
+    public function get( $uri, $action ) {
         return $this->addRoute(WP_REST_Server::READABLE, $uri, $action);
     }
 
@@ -157,8 +154,7 @@ class Router
      * @param callable|array $action Handler.
      * @return Route
      */
-    public function post($uri, $action)
-    {
+    public function post( $uri, $action ) {
         return $this->addRoute(WP_REST_Server::CREATABLE, $uri, $action);
     }
 
@@ -169,8 +165,7 @@ class Router
      * @param callable|array $action Handler.
      * @return Route
      */
-    public function put($uri, $action)
-    {
+    public function put( $uri, $action ) {
         return $this->addRoute(WP_REST_Server::EDITABLE, $uri, $action);
     }
 
@@ -181,8 +176,7 @@ class Router
      * @param callable|array $action Handler.
      * @return Route
      */
-    public function delete($uri, $action)
-    {
+    public function delete( $uri, $action ) {
         return $this->addRoute(WP_REST_Server::DELETABLE, $uri, $action);
     }
 
@@ -194,8 +188,7 @@ class Router
      * @param callable|array $action  Handler.
      * @return Route
      */
-    public function match(array $methods, $uri, $action)
-    {
+    public function match( array $methods, $uri, $action ) {
         return $this->addRoute(implode(', ', $methods), $uri, $action);
     }
 
@@ -204,8 +197,7 @@ class Router
      *
      * @return Route[]
      */
-    public function getRoutes()
-    {
+    public function getRoutes() {
         return $this->routes;
     }
 
@@ -214,8 +206,7 @@ class Router
      *
      * @return string
      */
-    public function getNamespace()
-    {
+    public function getNamespace() {
         return $this->namespace;
     }
 
@@ -224,8 +215,7 @@ class Router
      *
      * @return void
      */
-    public function flush()
-    {
+    public function flush() {
         foreach ($this->routes as $route) {
             $args = [
                 'methods'             => $route->getMethod(),
@@ -249,8 +239,7 @@ class Router
      * @param callable|array $action Handler.
      * @return Route
      */
-    private function addRoute($method, $uri, $action)
-    {
+    private function addRoute( $method, $uri, $action ) {
         $attributes = $this->currentAttributes();
 
         $uri = trim($uri, '/');
@@ -268,13 +257,12 @@ class Router
      *
      * @return array{prefix: string, policy: string|null}
      */
-    private function currentAttributes()
-    {
-        if (!$this->groupStack) {
-            return ['prefix' => '', 'policy' => null];
+    private function currentAttributes() {
+        if ( ! $this->groupStack) {
+            return [ 'prefix' => '', 'policy' => null ];
         }
 
-        return $this->groupStack[count($this->groupStack) - 1];
+        return $this->groupStack[ count($this->groupStack) - 1 ];
     }
 
     /**
@@ -284,12 +272,11 @@ class Router
      * @param Route $route Route being registered.
      * @return callable
      */
-    private function makeCallback(Route $route)
-    {
+    private function makeCallback( Route $route ) {
         $action    = $route->getAction();
         $container = $this->container;
 
-        return static function ($request) use ($action, $container) {
+        return static function ( $request ) use ( $action, $container ) {
             if (is_array($action) && is_string($action[0])) {
                 $controller = $container->make($action[0]);
 
@@ -310,22 +297,21 @@ class Router
      * @param Route $route Route being registered.
      * @return callable
      */
-    private function makePermissionCallback(Route $route)
-    {
+    private function makePermissionCallback( Route $route ) {
         $policy    = $route->getPolicy();
         $namespace = $this->policyNamespace;
         $container = $this->container;
 
-        if (!$policy) {
+        if ( ! $policy) {
             return static function () {
                 return false;
             };
         }
 
-        return static function ($request) use ($policy, $namespace, $container) {
+        return static function ( $request ) use ( $policy, $namespace, $container ) {
             $class = false === strpos($policy, '\\') ? $namespace . $policy : $policy;
 
-            if (!class_exists($class)) {
+            if ( ! class_exists($class)) {
                 throw new RuntimeException("Policy '{$class}' not found.");
             }
 

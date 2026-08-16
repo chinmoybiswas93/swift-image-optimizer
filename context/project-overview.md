@@ -38,7 +38,7 @@ times that.
 | Option / function prefix | `swift_image_optimizer_` |
 | REST namespace | `swift-image-optimizer/v1` |
 | DB table | `{$wpdb->prefix}swift_image_optimizer_log` |
-| Backup directory | `uploads/swift-image-optimizer-backups/` |
+| Backup directory | `uploads/swift-image-optimizer/backup/` |
 | React mount point | `#swift-image-optimizer-root` |
 | CSS class prefix | `sio-` |
 

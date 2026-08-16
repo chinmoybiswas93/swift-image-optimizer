@@ -1,0 +1,1 @@
+{"nodes": [{"id": "requests_bulkstartrequest", "label": "BulkStartRequest", "file_type": "code", "source_file": "app/Http/Requests/BulkStartRequest.php", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null}], "edges": [], "hyperedges": []}

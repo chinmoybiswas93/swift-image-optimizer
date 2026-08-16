@@ -258,11 +258,12 @@ class DatabaseRewriter {
 			$column_sql = '`' . implode( '`, `', $select ) . '`';
 
 			do {
+				// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Identifiers are internal table/column descriptors and cannot be bound; $where_sql contributes its own placeholders, all of which are satisfied by $params.
 				$query = $wpdb->prepare(
-					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Identifiers come from $wpdb; all values are placeholders.
 					"SELECT `{$key}`, {$column_sql} FROM `{$table}` WHERE {$where_sql} AND `{$key}` > %d ORDER BY `{$key}` ASC LIMIT %d",
 					array_merge( $params, array( $last_id, self::BATCH ) )
 				);
+				// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Query is prepared above; bulk maintenance operation.
 				$rows = $wpdb->get_results( $query, ARRAY_A );
@@ -270,6 +271,8 @@ class DatabaseRewriter {
 				if ( empty( $rows ) ) {
 					break;
 				}
+
+				$fetched = count( $rows );
 
 				foreach ( $rows as $row ) {
 					$last_id = (int) $row[ $key ];
@@ -321,7 +324,7 @@ class DatabaseRewriter {
 						$touched[] = (int) $row[ $target['object'] ];
 					}
 				}
-			} while ( count( $rows ) === self::BATCH );
+			} while ( self::BATCH === $fetched );
 		}
 
 		return array(
@@ -554,6 +557,7 @@ class DatabaseRewriter {
 	/**
 	 * Clear caches that would otherwise still serve the old URLs.
 	 *
+	 * @param int[] $touched Object IDs whose caches were invalidated by the rewrite.
 	 * @return void
 	 */
 	private function flush_caches( array $touched = array() ) {
@@ -603,6 +607,7 @@ class DatabaseRewriter {
 
 		// Elementor keeps compiled CSS containing image URLs.
 		if ( class_exists( '\Elementor\Plugin' ) ) {
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Elementor's own action; it has to keep Elementor's name to clear Elementor's cache.
 			do_action( 'elementor/core/files/clear_cache' );
 		}
 

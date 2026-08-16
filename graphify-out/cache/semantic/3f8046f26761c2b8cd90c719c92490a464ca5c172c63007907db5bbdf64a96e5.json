@@ -1,0 +1,1 @@
+{"nodes": [{"id": "logger_service", "label": "Logging\\Logger", "file_type": "code", "source_file": "app/Services/Logging/Logger.php", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null}], "edges": [], "hyperedges": []}

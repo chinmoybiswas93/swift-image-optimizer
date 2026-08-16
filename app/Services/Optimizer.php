@@ -34,7 +34,12 @@ class Optimizer {
 	/**
 	 * Scratch directory inside uploads, for conversions in progress.
 	 */
-	const TEMP_DIRNAME = 'swift-image-optimizer-tmp';
+	/**
+	 * Scratch directory, relative to the uploads basedir.
+	 *
+	 * A subdirectory of the plugin's one folder rather than a sibling of it.
+	 */
+	const TEMP_DIRNAME = 'swift-image-optimizer/temp';
 
 	/**
 	 * Decide whether a file should be converted at all.
@@ -257,6 +262,7 @@ class Optimizer {
 			return $configured;
 		}
 
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WordPress core's own filter; it has to keep core's name to read the configured value.
 		$threshold = (int) apply_filters( 'big_image_size_threshold', 2560, array( 0, 0 ), '', 0 );
 
 		if ( $configured > 0 && $threshold > 0 ) {

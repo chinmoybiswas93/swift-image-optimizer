@@ -2,7 +2,16 @@
 
 import { useState, useEffect, useCallback, useRef } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
-import { Button, Notice, Section, Spinner, Stat, Toggle } from '../Components';
+import {
+	Button,
+	ConfirmDialog,
+	Notice,
+	Section,
+	Spinner,
+	Stat,
+	Toggle,
+	useToast,
+} from '../Components';
 import { IconDocument, IconLayers, IconStethoscope } from '../Icons';
 import DiagnosticRow from '../Partials/DiagnosticRow';
 import { request, saveSettings } from '../Services/http';
@@ -14,9 +23,10 @@ const TroubleshootPage = ( { values, setValues } ) => {
 	const [ log, setLog ] = useState( { lines: [], size: 0, rotated: false } );
 	const [ filter, setFilter ] = useState( '' );
 	const [ busy, setBusy ] = useState( '' );
-	const [ message, setMessage ] = useState( '' );
+	const [ confirming, setConfirming ] = useState( false );
 	const [ error, setError ] = useState( '' );
 	const viewer = useRef( null );
+	const toast = useToast();
 
 	const enabled = !! Number( values.enable_log );
 
@@ -66,24 +76,15 @@ const TroubleshootPage = ( { values, setValues } ) => {
 	};
 
 	const reset = async () => {
-		if (
-			! window.confirm( // eslint-disable-line no-alert
-				__(
-					'This permanently deletes the log file and everything recorded in it. Continue?',
-					'swift-image-optimizer'
-				)
-			)
-		) {
-			return;
-		}
-
 		setBusy( 'reset' );
 		try {
 			const result = await request( 'logs/reset', { method: 'POST' } );
 			setLog( result.log );
-			setMessage( __( 'Log cleared.', 'swift-image-optimizer' ) );
+			setConfirming( false );
+			toast.push( __( 'Log cleared.', 'swift-image-optimizer' ) );
 		} catch ( e ) {
 			setError( e.message );
+			setConfirming( false );
 		}
 		setBusy( '' );
 	};
@@ -92,7 +93,7 @@ const TroubleshootPage = ( { values, setValues } ) => {
 		setBusy( 'requeue' );
 		try {
 			const result = await request( 'requeue', { method: 'POST' } );
-			setMessage(
+			toast.push(
 				sprintf(
 					/* translators: %d: number of images returned to the queue. */
 					__( '%d image(s) will be tried again on the next bulk run.', 'swift-image-optimizer' ),
@@ -106,11 +107,42 @@ const TroubleshootPage = ( { values, setValues } ) => {
 		setBusy( '' );
 	};
 
+	const rescan = async () => {
+		setBusy( 'rescan' );
+		try {
+			const result = await request( 'rescan', { method: 'POST' } );
+			toast.push(
+				0 === result.cleared
+					? sprintf(
+							/* translators: %d: number of records checked. */
+							__(
+								'Checked %d record(s). Every optimized file is present.',
+								'swift-image-optimizer'
+							),
+							result.checked
+					  )
+					: sprintf(
+							/* translators: 1: records checked, 2: records cleared. */
+							__(
+								'Checked %1$d record(s) and cleared %2$d whose file was missing. Those images are pending again.',
+								'swift-image-optimizer'
+							),
+							result.checked,
+							result.cleared
+					  )
+			);
+			await loadReport();
+		} catch ( e ) {
+			setError( e.message );
+		}
+		setBusy( '' );
+	};
+
 	const cleanup = async () => {
 		setBusy( 'cleanup' );
 		try {
 			const result = await request( 'cleanup', { method: 'POST' } );
-			setMessage(
+			toast.push(
 				sprintf(
 					/* translators: %d: number of leftover files deleted. */
 					__( '%d leftover file(s) removed.', 'swift-image-optimizer' ),
@@ -131,7 +163,7 @@ const TroubleshootPage = ( { values, setValues } ) => {
 
 		try {
 			await window.navigator.clipboard.writeText( report.text );
-			setMessage( __( 'Diagnostics copied to the clipboard.', 'swift-image-optimizer' ) );
+			toast.push( __( 'Diagnostics copied to the clipboard.', 'swift-image-optimizer' ) );
 		} catch ( e ) {
 			setError( __( 'Could not copy. Select the text and copy it manually.', 'swift-image-optimizer' ) );
 		}
@@ -145,8 +177,8 @@ const TroubleshootPage = ( { values, setValues } ) => {
 
 	return (
 		<>
+			{ /* Errors stay put: they describe something still wrong. */ }
 			{ error && <Notice status="error" onRemove={ () => setError( '' ) }>{ error }</Notice> }
-			{ message && <Notice status="success" onRemove={ () => setMessage( '' ) }>{ message }</Notice> }
 
 			<Section
 				icon={ <IconStethoscope /> }
@@ -245,7 +277,7 @@ const TroubleshootPage = ( { values, setValues } ) => {
 					<Button
 						variant="secondary"
 						isDestructive
-						onClick={ reset }
+						onClick={ () => setConfirming( true ) }
 						disabled={ 'reset' === busy || ! log.size }
 					>
 						{ 'reset' === busy ? <Spinner /> : __( 'Reset log', 'swift-image-optimizer' ) }
@@ -285,6 +317,12 @@ const TroubleshootPage = ( { values, setValues } ) => {
 						'swift-image-optimizer'
 					) }
 				</p>
+				<p className="sio-lede">
+					{ __(
+						'After restoring a site, the database and the uploads folder can come from different points in time, leaving images recorded as optimized whose files are no longer there. Rescanning checks every recorded result against the disk and returns any that no longer exist to the queue. Results whose files are intact are left untouched.',
+						'swift-image-optimizer'
+					) }
+				</p>
 				<div className="sio-actions">
 					<Button
 						variant="secondary"
@@ -292,6 +330,9 @@ const TroubleshootPage = ( { values, setValues } ) => {
 						disabled={ 'requeue' === busy || ! report?.retryable }
 					>
 						{ 'requeue' === busy ? <Spinner /> : __( 'Requeue for another attempt', 'swift-image-optimizer' ) }
+					</Button>
+					<Button variant="secondary" onClick={ rescan } disabled={ 'rescan' === busy }>
+						{ 'rescan' === busy ? <Spinner /> : __( 'Rescan library against disk', 'swift-image-optimizer' ) }
 					</Button>
 					<Button
 						variant="secondary"
@@ -302,6 +343,30 @@ const TroubleshootPage = ( { values, setValues } ) => {
 					</Button>
 				</div>
 			</Section>
+
+			{ confirming && (
+				<ConfirmDialog
+					title={ __( 'Reset the log?', 'swift-image-optimizer' ) }
+					confirmLabel={ __( 'Reset log', 'swift-image-optimizer' ) }
+					isDestructive
+					busy={ 'reset' === busy }
+					onConfirm={ reset }
+					onCancel={ () => setConfirming( false ) }
+				>
+					<p>
+						{ __(
+							'This permanently deletes the log file and everything recorded in it. Your images and backups are unaffected.',
+							'swift-image-optimizer'
+						) }
+					</p>
+					<p>
+						{ __(
+							'Download the log first if you still need it for support.',
+							'swift-image-optimizer'
+						) }
+					</p>
+				</ConfirmDialog>
+			) }
 		</>
 	);
 };

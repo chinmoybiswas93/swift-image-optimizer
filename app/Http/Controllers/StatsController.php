@@ -11,15 +11,15 @@ use SwiftImageOptimizer\Api\Resource\StatsResource;
 use SwiftImageOptimizer\App\Services\Backup\BackupManager;
 use WP_REST_Response;
 
-if (!defined('ABSPATH')) {
+if ( ! defined('ABSPATH')) {
     exit;
 }
 
 /**
  * Aggregate savings across the library.
  */
-class StatsController extends Controller
-{
+class StatsController extends Controller {
+
     /**
      * The stats aggregate.
      *
@@ -29,8 +29,7 @@ class StatsController extends Controller
      *
      * @return WP_REST_Response
      */
-    public function index()
-    {
+    public function index() {
         $stats                 = StatsResource::get(true);
         $stats['backup_bytes'] = BackupManager::disk_usage();
 

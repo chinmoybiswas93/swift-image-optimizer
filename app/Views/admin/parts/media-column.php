@@ -13,9 +13,16 @@
  * @package SwiftImageOptimizer
  */
 
-if (!defined('ABSPATH')) {
+if ( ! defined('ABSPATH')) {
     exit;
 }
+
+/*
+ * A template variable, extracted into the local scope of View::render() and
+ * never global. PHPCS analyses a template as a standalone file, so it reads
+ * it as a global and cannot see the method doing the including.
+ */
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound
 
 $detail = isset($detail) ? $detail : '';
 

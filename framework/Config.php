@@ -7,7 +7,7 @@
 
 namespace SwiftImageOptimizer\Framework;
 
-if (!defined('ABSPATH')) {
+if ( ! defined('ABSPATH')) {
     exit;
 }
 
@@ -15,8 +15,8 @@ if (!defined('ABSPATH')) {
  * Holds every config/*.php file, keyed by filename, and exposes them through
  * dot notation: config/app.php returning ['slug' => 'x'] is App::config()->get('app.slug').
  */
-class Config
-{
+class Config {
+
     /**
      * Loaded config, keyed by file basename.
      *
@@ -25,10 +25,11 @@ class Config
     private $items = [];
 
     /**
+     * Seed the repository with the loaded config arrays.
+     *
      * @param array<string, mixed> $items Config arrays keyed by basename.
      */
-    public function __construct(array $items = [])
-    {
+    public function __construct( array $items = [] ) {
         $this->items = $items;
     }
 
@@ -38,15 +39,14 @@ class Config
      * @param string $directory Absolute path to the config directory.
      * @return static
      */
-    public static function fromDirectory($directory)
-    {
+    public static function fromDirectory( $directory ) {
         $items = [];
 
-        foreach ((array) glob(rtrim($directory, '/') . '/*.php') as $file) {
+        foreach ( (array) glob(rtrim($directory, '/') . '/*.php') as $file) {
             $value = require $file;
 
             if (is_array($value)) {
-                $items[basename($file, '.php')] = $value;
+                $items[ basename($file, '.php') ] = $value;
             }
         }
 
@@ -60,16 +60,15 @@ class Config
      * @param mixed  $default Returned when the key is absent.
      * @return mixed
      */
-    public function get($key, $default = null)
-    {
+    public function get( $key, $default = null ) {
         $value = $this->items;
 
         foreach (explode('.', $key) as $segment) {
-            if (!is_array($value) || !array_key_exists($segment, $value)) {
+            if ( ! is_array($value) || ! array_key_exists($segment, $value)) {
                 return $default;
             }
 
-            $value = $value[$segment];
+            $value = $value[ $segment ];
         }
 
         return $value;
@@ -82,22 +81,23 @@ class Config
      * @param mixed  $value Value to set.
      * @return void
      */
-    public function set($key, $value)
-    {
-        $segments = explode('.', $key);
-        $target   = &$this->items;
+    public function set( $key, $value ) {
+        $segments  = explode('.', $key);
+        $remaining = count($segments);
+        $target    = &$this->items;
 
-        while (count($segments) > 1) {
+        while ($remaining > 1) {
             $segment = array_shift($segments);
+            --$remaining;
 
-            if (!isset($target[$segment]) || !is_array($target[$segment])) {
-                $target[$segment] = [];
+            if ( ! isset($target[ $segment ]) || ! is_array($target[ $segment ])) {
+                $target[ $segment ] = [];
             }
 
-            $target = &$target[$segment];
+            $target = &$target[ $segment ];
         }
 
-        $target[array_shift($segments)] = $value;
+        $target[ array_shift($segments) ] = $value;
     }
 
     /**
@@ -106,8 +106,7 @@ class Config
      * @param string $key Dot-notated key.
      * @return bool
      */
-    public function has($key)
-    {
+    public function has( $key ) {
         $sentinel = new \stdClass();
 
         return $this->get($key, $sentinel) !== $sentinel;

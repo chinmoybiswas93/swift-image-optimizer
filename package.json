@@ -8,11 +8,15 @@
 		"build": "wp-scripts build",
 		"start": "wp-scripts start",
 		"lint:js": "wp-scripts lint-js",
-		"lint:php": "phpcs --standard=phpcs.xml.dist -s",
-		"test:e2e": "playwright test"
+		"lint:php": "command -v phpcs >/dev/null || { echo 'phpcs not found on PATH. WPCS is installed outside this plugin so the committed vendor/ stays autoloader-only - see context/specs/done/09-phpcs-compliance.md.'; exit 1; }; phpcs --standard=phpcs.xml.dist -s",
+		"test:e2e": "playwright test",
+		"test:php": "tests/php/run.sh"
 	},
 	"devDependencies": {
 		"@playwright/test": "^1.62.1",
 		"@wordpress/scripts": "^30.0.0"
+	},
+	"overrides": {
+		"typescript": "^5.4.5"
 	}
 }

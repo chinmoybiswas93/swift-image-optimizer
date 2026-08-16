@@ -45,7 +45,7 @@ class Commands {
 	private $rewriter;
 
 	/**
-	 * Constructor.
+	 * Wire up the converter and rewriter the CLI commands delegate to.
 	 *
 	 * @param AttachmentConverter $converter Converter instance.
 	 * @param DatabaseRewriter    $rewriter  Rewriter instance.
@@ -269,13 +269,14 @@ class Commands {
 
 		$table = OptimizationLog::table();
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Plugin-owned table; CLI maintenance command.
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Plugin-owned table name cannot be bound; the status value is prepared. CLI maintenance command.
 		$ids = $wpdb->get_col(
 			$wpdb->prepare(
 				"SELECT attachment_id FROM {$table} WHERE status = %s AND backup_path != ''",
 				OptimizationLog::STATUS_OPTIMIZED
 			)
 		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		if ( empty( $ids ) ) {
 			WP_CLI::success( 'Nothing to restore.' );
@@ -417,5 +418,47 @@ class Commands {
 		Logger::mark( 'requeue', $removed . ' row(s) cleared for another attempt.' );
 
 		WP_CLI::success( sprintf( '%d image(s) will be tried again on the next run.', $removed ) );
+	}
+
+	/**
+	 * Reconcile recorded results against the files on disk.
+	 *
+	 * Use after restoring a site, when the database and the uploads directory
+	 * may have come from different points in time. Records claiming an image
+	 * was optimized are checked against the file they name; those whose file is
+	 * missing are cleared, which returns the image to the queue. Records whose
+	 * file is intact are left untouched.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp swift-image-optimizer rescan
+	 *
+	 * @return void
+	 */
+	public function rescan() {
+		$result = Scanner::rescan();
+
+		Logger::start_run( 'cli' );
+		Logger::mark(
+			'rescan',
+			sprintf(
+				'Checked %d optimized record(s); cleared %d whose file was missing.',
+				$result['checked'],
+				$result['cleared']
+			)
+		);
+
+		if ( 0 === $result['cleared'] ) {
+			WP_CLI::success( sprintf( 'Checked %d record(s). Every optimized file is present.', $result['checked'] ) );
+			return;
+		}
+
+		WP_CLI::success(
+			sprintf(
+				'Checked %d record(s) and cleared %d whose file was missing. Those images are pending again.',
+				$result['checked'],
+				$result['cleared']
+			)
+		);
 	}
 }

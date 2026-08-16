@@ -9,6 +9,12 @@
 	<exclude-pattern>/build/*</exclude-pattern>
 	<exclude-pattern>/resources/*</exclude-pattern>
 	<exclude-pattern>/dist/*</exclude-pattern>
+	<!--
+		Harnesses are CLI scripts that never ship (see bin/build-dist.sh). They
+		deliberately do the things the shipped code may not: raw counting
+		queries, direct filesystem calls, and reflection into private methods.
+	-->
+	<exclude-pattern>/tests/*</exclude-pattern>
 
 	<arg name="extensions" value="php"/>
 	<arg name="colors"/>
@@ -24,6 +30,14 @@
 		-->
 		<exclude name="WordPress.NamingConventions.ValidFunctionName"/>
 		<exclude name="WordPress.NamingConventions.ValidVariableName"/>
+		<!--
+			File naming is dictated by the PSR-4 autoloader, not by preference.
+			`app/`, `api/`, `framework/` and `database/` are autoloaded by
+			mapping the class name to the file name, so `Runner.php` cannot
+			become `class-runner.php` without the autoloader failing to find
+			it - a fatal at call time, not a style problem.
+		-->
+		<exclude name="WordPress.Files.FileName"/>
 		<exclude name="Generic.Formatting.MultipleStatementAlignment"/>
 		<exclude name="WordPress.Arrays.ArrayDeclarationSpacing"/>
 		<exclude name="WordPress.Arrays.ArrayIndentation"/>
@@ -32,6 +46,54 @@
 		<exclude name="Generic.WhiteSpace.DisallowSpaceIndent"/>
 		<exclude name="WordPress.WhiteSpace.ControlStructureSpacing"/>
 		<exclude name="Universal.Arrays.DisallowShortArraySyntax"/>
+		<!--
+			`$abstract`, `$default` and `$namespace` are soft-reserved words,
+			which is to say legal. They are also the idiomatic names for these
+			parameters in a DI container, a config reader and a router - the
+			shapes this layer is modelled on. Renaming them would make the
+			framework layer harder to read, not safer.
+		-->
+		<exclude name="Universal.NamingConventions.NoReservedKeywordParameterNames"/>
+		<!--
+			This plugin's whole job is reading and writing image bytes, plus a
+			file-based log it must be able to append to and tail. WP_Filesystem
+			is built for plugin/theme installs: it can require credentials, has
+			no streaming read, and round-trips binary content through methods
+			that are not appropriate for image data. Every direct call here is
+			to a path the plugin itself created and validated - see
+			`BackupManager::safe_path()` for the traversal guard.
+		-->
+		<exclude name="WordPress.WP.AlternativeFunctions"/>
+		<!--
+			The plugin namespaces its own hooks with slashes
+			(`swift_image_optimizer/activated`), the convention the surrounding
+			codebase uses. The remaining hits are hooks this plugin does not
+			own at all - WordPress core's `big_image_size_threshold` and
+			Elementor's cache-clear action - which must keep their published
+			names to work.
+		-->
+		<exclude name="WordPress.NamingConventions.ValidHookName"/>
+	</rule>
+
+	<!--
+		`Resource` is a soft-reserved word, and it is a namespace segment here
+		(`SwiftImageOptimizer\Api\Resource`), not a class name. The PSR-4
+		autoloader maps that segment to `api/Resource/`, so renaming it would
+		break class resolution at runtime.
+	-->
+	<rule ref="PHPCompatibility.Keywords.ForbiddenNamesAsDeclared">
+		<exclude-pattern>/api/Resource/*</exclude-pattern>
+	</rule>
+
+	<!--
+		The framework layer throws on programmer error - an unresolvable
+		binding, a missing view, a route with no policy. Those messages are
+		developer-facing and contain no request data; they are not output to a
+		browser by this plugin. Escaping still applies everywhere user data
+		reaches a page.
+	-->
+	<rule ref="WordPress.Security.EscapeOutput.ExceptionNotEscaped">
+		<exclude-pattern>/framework/*</exclude-pattern>
 	</rule>
 
 	<rule ref="WordPress-Docs">

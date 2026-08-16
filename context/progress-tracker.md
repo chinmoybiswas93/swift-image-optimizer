@@ -14,11 +14,44 @@ Units 01–08 built both features. **Unit 10 closed fourteen defects** found in 
 conversion path — three of which destroyed user data silently — and added the Troubleshoot tab,
 file-based logging and server diagnostics. Version bumped to **1.1.0**.
 
-What still stands between here and a .org submission is Unit 09 — `phpcs` has never actually
-been run, because WPCS is not installed here. The code is *written* to standard but that claim
-is unverified by a linter. Unit 10 added roughly a thousand lines to lint, so Unit 09 has grown.
+**Unit 09 and Unit 11 are done.** `phpcs` has now actually been run (784 → 0), Imagick is
+exercised by the suite for the first time, and the four user-reported issues (I-10…I-13) are
+fixed. Both release blockers are closed.
 
-Next up: Unit 09, then the `future-specs/` backlog.
+**Unit 12 is done.** Closed I-14 (renumbered from I-11, which collided with Unit 11's own I-11).
+The Bulk Optimize tab's numbers never reconciled because they came from two unrelated
+computations — `Scanner::summary()`'s live mime count (which loses an image from its own totals
+the moment that image is optimized, since its mime becomes `image/webp`) and `StatsResource`'s
+log-table aggregate. Replaced both with one stored, disk-verified scan snapshot (`ScanRunner`,
+cron-driven, invariant 25) that the merged card's ring, the hero and the tiles all read. Bulk
+Optimize now chains scan → optimize → scan via `Coordinator`. Scheduled rescans
+(manual/daily/weekly/monthly) via `ScanJobRunner`. 131 PHP assertions passing (up from 68), 0
+`phpcs` errors/warnings, `owasp-security-review` clean on the five new routes.
+
+**I-3 is closed — the dashboard has been tested in a browser** (2026-08-16). That was the last
+release gate standing between here and a .org submission, and it also carried the two claims
+Unit 14 could only prove in source: that foreign notices are actually gone from the screen, and
+that the card boxes were merely touching rather than overlapping. Unit 12's
+`tests/e2e/library-scan.spec.js` is still a separate item — it has never been run against a real
+login, only confirmed to load and to skip cleanly without credentials.
+
+**Units 13 and 14 are done**, and their specs have moved to `specs/done/`. Unit 13 closed the
+Backups tab reports: "Delete all backups now" confirmed, toasted and updated the number without
+deleting a file, because deletion was manifest-driven only and on cb-test *every* log row has an
+empty `backup_path` while 892 KB sits in the folder. It adds a guarded sweep of the plugin's own
+backup root (`BackupManager::purge_orphans()`), drops the `backup_expires > 0` /
+`status = 'optimized'` filters that also excluded "Keep forever" backups
+(`JobRunner::purge_manifests()`), and replaces every `window.confirm()` in the plugin with a real
+modal — typed `DELETE` for the purge. Unit 14 closed I-10 (reopened) and I-15: foreign admin
+notices are stripped on this plugin's screen only, and the card's bottom spacing is fixed in
+`admin.scss`.
+
+**Two things Unit 13 left open.** Its spec's Completion Notes are still the placeholder, and the
+purge has not been run against cb-test's 892 KB of orphans — the one path in the plugin that
+deletes user files on purpose. Confirm the folder actually empties before treating that unit as
+proven.
+
+Next up: the remaining items in **Next Up** below, then the `future-specs/` backlog.
 
 ## Completed
 
@@ -35,12 +68,38 @@ Next up: Unit 09, then the `future-specs/` backlog.
 | 07 | React admin — Bulk / Settings / Backups tabs, `@wordpress/scripts` build, custom webpack entry | [07-react-admin.md](specs/done/07-react-admin.md) |
 | 08 | Media Library UI — grid-view Bulk Optimize button, selection runner with progress, modal panel; schema v2 (`conversion_ms`) | [08-media-library-ui.md](specs/done/08-media-library-ui.md) |
 | 10 | Hardening — 14 defects closed, `Logging\Logger`, `Diagnostics\EnvironmentReport`, `Support\Lock`, Troubleshoot tab, engine chain, schema v3 (URL lookup table) | [10-hardening-troubleshoot.md](specs/done/10-hardening-troubleshoot.md) |
+| 09 | PHPCS actually run for the first time: 784 violations → 0. Dead `safe_mode` check removed, `imagedestroy()` version-gated, SQL annotations fixed (they had never been in effect) | [09-phpcs-compliance.md](specs/done/09-phpcs-compliance.md) |
+| 11 | The four user reports: toasts + no core notice markup (I-10), one storage folder (I-11), resumable cron-driven bulk (I-12), optimized state verified against disk (I-13). Harnesses rebuilt and **committed**, Imagick covered (I-2) | — |
+| 12 | Closed I-14 — one scan-backed dashboard. `ScanRunner` (batched, disk-verified scan), `Coordinator` (scan→optimize→scan chain), `ScanJobRunner` (scheduled rescans), a hand-rolled `ProgressRing`, and the three-card Bulk tab merged into one. Invariant 25 added | [12-centralized-scan-stats.md](specs/done/12-centralized-scan-stats.md) |
+| 13 | Backups tab: `BackupManager::purge_orphans()` sweeps the plugin's own backup root, `JobRunner::purge_manifests()` drops the expiry/status filters that hid "Keep forever" rows, and `Modal`/`ConfirmDialog` replace every `window.confirm()` — typed `DELETE` for the purge | [13-backup-purge-confirm-modal.md](specs/done/13-backup-purge-confirm-modal.md) |
+| 14 | Closed I-10 (reopened) and I-15 — `ForeignNoticeHandler` strips other plugins' notices on this screen only, whitelisting the plugin's own so the missing-build notice survives; three spacing rules in `admin.scss`. `tests/php/notice-strip-test.php`, 9 assertions against real `WP_Hook` | [14-notices-and-card-spacing.md](specs/done/14-notices-and-card-spacing.md) |
 
 ## Next Up
 
-| Unit | Spec | What |
-|---|---|---|
-| 09 | [09-phpcs-compliance.md](specs/09-phpcs-compliance.md) | Install WPCS, run it, fix what it finds. **Blocks .org submission.** |
+| What | Why |
+|---|---|
+| Run `tests/e2e/library-scan.spec.js` for real | Written and confirmed to load/skip cleanly, but never run against a live login — no admin credentials were available in the session that wrote it. Needs `WP_ADMIN_USER` / `WP_ADMIN_PASSWORD`. |
+| Rebuild the upload and media-UI harnesses | Two of the original five were lost and not rewritten; that is the gap between 150 assertions and the old 143 plus what those covered. |
+| Fix the 216 pre-existing `prettier`/`jsdoc` errors `lint:js` now surfaces | First successful `lint:js` run ever (see below) — errors are spread across ~10 files under `resources/`, all pre-existing, none on lines touched by the comment cleanup. Out of scope for that unit; needs its own pass, ideally with `--fix` reviewed file by file since some of those files have other uncommitted work in flight. |
+
+### 2026-08-11 — comment cleanup (no spec, too small to warrant one)
+
+Reworded 5 vacuous `Constructor.` docblocks (`Hooks/CLI/Commands.php`,
+`Services/AttachmentConverter.php`, `Services/Bulk/Coordinator.php`, `Services/Bulk/Runner.php`,
+`Services/Upload/Interceptor.php`) and removed 4 decorative ASCII banner comments in
+`resources/media/media.js`. Added a standing "no decorative banners / no placeholder docblocks / no
+commented-out code" rule to `context/code-standards.md` under `## Comments`. No behavior changed.
+
+`phpcs` now runs clean (0 errors/warnings, all 75 files) using the WPCS install already present at
+`~/.wpcs` per `specs/done/09-phpcs-compliance.md` — just needed that `vendor/bin` on `PATH`.
+
+`lint:js` was crashing outright before this unit, unrelated to the comment cleanup: the committed
+`package-lock.json` let a floating `typescript` peer dependency resolve to `7.0.2`, which
+`@typescript-eslint@6.21.0` (pulled in by `@wordpress/eslint-plugin`) cannot load — a version
+`@typescript-eslint` was never designed to see. Pinned via a `"typescript": "^5.4.5"` entry in
+`package.json`'s new `overrides` block (dev-only, doesn't affect `build/` output), then
+`rm -rf node_modules && npm install`. `lint:js` now runs for the first time and reports 216
+pre-existing `prettier`/`jsdoc` errors, unrelated to this unit — see Next Up.
 
 ## Verified behaviour
 
@@ -189,12 +248,27 @@ so they are not repeated:
 A test harness also **destroyed 54 real backups** with a glob-based cleanup. See the incident
 note in [current-issues/fix-plan.md](current-issues/fix-plan.md).
 
+## Unit 11 — the four user reports, and what they turned up
+
+Each report had a cause that was one line of misplaced trust, and two of them exposed something
+worse than what was reported:
+
+| Reported | Actual cause | Also found |
+|---|---|---|
+| WP notice on the plugin's page | The plugin emitted core's `notice` class itself, and hooked `admin_notices` on **every** admin screen | `BackupsPage` showed failures in a success-styled notice |
+| Three folders in uploads | Three sibling constants, never one parent | — |
+| Bulk stops on tab change, restarts from scratch | `start()` overwrote live run state; the UI never reconciled `running` on mount | **A crash between "files renamed" and "references repointed" broke those references permanently** — the batch marks images done before rewriting |
+| Restored site shows all processed | `already-optimized` trusted the status column with no disk check | Clearing the row does not re-queue for bulk: mime is already `image/webp` |
+
+The pattern in three of the four is the same one `manifest_is_intact()` was written for in Unit
+10: **a database column and the thing it describes are two different facts.** Worth looking for
+wherever else the plugin trusts a column.
+
 ## Open Questions
 
-1. **The suite never exercises Imagick** — the engine the site actually uses. Force the engine
-   per-run and repeat the suite across all three. (**I-2**) Unit 10 sharpened this: the engine
-   chain was verified live on `cwebp` and `gd` only, and the cwebp rotation bug is exactly the
-   class of defect this gap hides.
+1. ~~**The suite never exercises Imagick.**~~ Closed. `tests/php/run.sh --web` runs the harnesses
+   under the site's php-fpm, where Imagick exists; `SIO_TEST_ENGINE` forces one per run and the
+   harness asserts on the engine actually recorded, so "used" is proven rather than assumed.
 2. ~~**Should uploads be backed up?**~~ Settled in Unit 10: yes, behind `backup_uploads`,
    default on.
 3. **Dry-run extrapolation is a sample.** `Runner::dry_run()` inspects 25 attachments and

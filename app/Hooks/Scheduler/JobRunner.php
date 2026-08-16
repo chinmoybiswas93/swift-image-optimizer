@@ -62,12 +62,10 @@ class JobRunner {
 	 * @return void
 	 */
 	public static function unschedule() {
-		$timestamp = wp_next_scheduled( self::HOOK );
-
-		while ( $timestamp ) {
-			wp_unschedule_event( $timestamp, self::HOOK );
-			$timestamp = wp_next_scheduled( self::HOOK );
-		}
+		// One read, one write. See ScanJobRunner::unschedule_batch() for why the
+		// ask-again shape is not safe against a lock-free, last-write-wins
+		// option.
+		wp_unschedule_hook( self::HOOK );
 	}
 
 	/**
@@ -90,7 +88,7 @@ class JobRunner {
 
 		$table = OptimizationLog::table();
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Plugin-owned table; cron context, caching not applicable.
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Plugin-owned table name cannot be bound; every value is prepared. Cron context, caching not applicable.
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT attachment_id, backup_path, url_map
@@ -105,8 +103,55 @@ class JobRunner {
 			),
 			ARRAY_A
 		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
-		if ( empty( $rows ) ) {
+		return self::purge_rows( $rows );
+	}
+
+	/**
+	 * Delete every stored backup, whatever its retention or status.
+	 *
+	 * The cron purge above deliberately only touches backups whose retention
+	 * has elapsed. This one exists for the admin's "delete everything now"
+	 * action, so it applies neither filter:
+	 *
+	 *   - `backup_expires` is 0 for backups kept forever, which the expiry
+	 *     query can never match. A purge that skipped them would leave the
+	 *     files of the users most likely to have a full backup folder;
+	 *   - a row whose status has moved off `optimized` still owns its files.
+	 *
+	 * @return int Number of backups removed. Batched; call until it returns 0.
+	 */
+	public static function purge_manifests() {
+		global $wpdb;
+
+		$table = OptimizationLog::table();
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Plugin-owned table name cannot be bound; every value is prepared. Administrative action, caching not applicable.
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT attachment_id, backup_path, url_map
+				FROM {$table}
+				WHERE backup_path IS NOT NULL
+					AND backup_path <> ''
+				LIMIT %d",
+				self::BATCH
+			),
+			ARRAY_A
+		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		return self::purge_rows( $rows );
+	}
+
+	/**
+	 * Delete the backups named by a batch of log rows and clear their pointers.
+	 *
+	 * @param array $rows Rows with attachment_id and backup_path.
+	 * @return int Number of backups removed.
+	 */
+	private static function purge_rows( $rows ) {
+		if ( empty( $rows ) || ! is_array( $rows ) ) {
 			return 0;
 		}
 

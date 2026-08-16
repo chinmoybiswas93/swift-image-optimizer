@@ -40,3 +40,4 @@ coverage/
 # Env
 .env
 .env.local
+tests/php/.web-token

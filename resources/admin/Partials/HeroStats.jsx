@@ -3,10 +3,27 @@
 import { __, sprintf } from '@wordpress/i18n';
 import { Card, CardBody, Metric } from '../Components';
 import { IconBolt, IconDisk, IconImage, IconTrendDown } from '../Icons';
-import { formatBytes } from '../Services/format';
+import { formatBytes, formatTimeAgo } from '../Services/format';
 
-const HeroStats = ( { stats } ) => {
+/**
+ * Library-wide savings, from the last completed scan.
+ *
+ * These used to come from a cached aggregate over the log table while the tiles
+ * below came from a live query, which is how the same screen could show two
+ * incompatible pictures of one library. Both now read the scan.
+ *
+ * The cost is that these figures move when a scan completes rather than the
+ * instant a conversion does - which is why a bulk run ends with a scan, and why
+ * the sublabel dates the number instead of implying it is live.
+ *
+ * @param {Object} props          Component props.
+ * @param {Object} props.snapshot Published scan snapshot, or null.
+ * @return {JSX.Element} The hero.
+ */
+const HeroStats = ( { snapshot } ) => {
+	const stats = snapshot || {};
 	const percent = Number( stats.saved_percent ) || 0;
+	const scannedAt = snapshot ? formatTimeAgo( snapshot.completed_at ) : '';
 
 	return (
 		<Card className="sio-hero">
@@ -29,7 +46,16 @@ const HeroStats = ( { stats } ) => {
 						) }
 					</div>
 					<span className="sio-hero__sub">
-						{ __( 'Across all optimized media files', 'swift-image-optimizer' ) }
+						{ scannedAt
+							? sprintf(
+									/* translators: %s: how long ago the library was scanned. */
+									__(
+										'Across all optimized media files, as of %s',
+										'swift-image-optimizer'
+									),
+									scannedAt
+							  )
+							: __( 'Scan your library to see what it has saved', 'swift-image-optimizer' ) }
 					</span>
 				</div>
 

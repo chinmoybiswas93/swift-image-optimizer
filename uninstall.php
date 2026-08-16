@@ -58,14 +58,29 @@ function swift_image_optimizer_remove_dir( $name ) {
 	@rmdir( $dir ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- A directory left behind by a failed removal is harmless.
 }
 
-swift_image_optimizer_remove_dir( 'swift-image-optimizer-logs' );
-swift_image_optimizer_remove_dir( 'swift-image-optimizer-tmp' );
+swift_image_optimizer_remove_dir( 'swift-image-optimizer/logs' );
+swift_image_optimizer_remove_dir( 'swift-image-optimizer/temp' );
+
+/*
+ * Then the parent, which only succeeds once it is empty.
+ *
+ * `swift-image-optimizer/backup` is deliberately not removed - those are the
+ * user's original images and often the only copy. rmdir() refuses a directory
+ * that still has anything in it, so this tidies up after an install that never
+ * backed anything up, and leaves the folder alone the moment it holds
+ * originals. Nothing here globs into the backup directory.
+ */
+swift_image_optimizer_remove_dir( 'swift-image-optimizer' );
 
 delete_option( 'swift_image_optimizer_settings' );
 delete_option( 'swift_image_optimizer_schema_version' );
 delete_option( 'swift_image_optimizer_bulk_progress' );
 delete_option( 'swift_image_optimizer_log_suffix' );
 delete_option( 'swift_image_optimizer_bulk_lock' );
+delete_option( 'swift_image_optimizer_bulk_phase' );
+delete_option( 'swift_image_optimizer_library_scan' );
+delete_option( 'swift_image_optimizer_scan_progress' );
+delete_option( 'swift_image_optimizer_scan_lock' );
 
 // Per-attachment conversion locks are options rather than transients, so they
 // need clearing explicitly. Normally released as each conversion ends; a
@@ -81,3 +96,5 @@ $wpdb->query(
 delete_transient( 'swift_image_optimizer_stats' );
 
 wp_clear_scheduled_hook( 'swift_image_optimizer_purge_backups' );
+wp_clear_scheduled_hook( 'swift_image_optimizer_scan_batch' );
+wp_clear_scheduled_hook( 'swift_image_optimizer_scheduled_scan' );

@@ -7,7 +7,7 @@
 
 namespace SwiftImageOptimizer\Api\Resource;
 
-if (!defined('ABSPATH')) {
+if ( ! defined('ABSPATH')) {
     exit;
 }
 
@@ -19,8 +19,8 @@ if (!defined('ABSPATH')) {
  * the models or the tables directly. Keeping it separate from `app/` is what
  * lets the internals move without breaking callers.
  */
-abstract class BaseResourceApi
-{
+abstract class BaseResourceApi {
+
     /**
      * Transient key backing this resource, or an empty string when it is not
      * cached. Subclasses that cache must override it.
@@ -34,8 +34,7 @@ abstract class BaseResourceApi
      *
      * @return void
      */
-    public static function flushCache()
-    {
+    public static function flushCache() {
         if (static::$cacheKey) {
             delete_transient(static::$cacheKey);
         }

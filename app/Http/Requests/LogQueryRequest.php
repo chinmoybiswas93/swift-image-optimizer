@@ -7,15 +7,15 @@
 
 namespace SwiftImageOptimizer\App\Http\Requests;
 
-if (!defined('ABSPATH')) {
+if ( ! defined('ABSPATH')) {
     exit;
 }
 
 /**
  * How many lines of the log tail to return.
  */
-class LogQueryRequest
-{
+class LogQueryRequest {
+
     /**
      * Lines returned when the caller does not say.
      */
@@ -33,13 +33,12 @@ class LogQueryRequest
      *
      * @return array<string, mixed>
      */
-    public static function args()
-    {
+    public static function args() {
         return [
             'lines' => [
                 'type'              => 'integer',
                 'default'           => self::DEFAULT_LINES,
-                'sanitize_callback' => [self::class, 'sanitizeLines'],
+                'sanitize_callback' => [ self::class, 'sanitizeLines' ],
             ],
         ];
     }
@@ -50,8 +49,7 @@ class LogQueryRequest
      * @param mixed $value Raw input.
      * @return int
      */
-    public static function sanitizeLines($value)
-    {
+    public static function sanitizeLines( $value ) {
         $lines = absint($value);
 
         if ($lines < 1) {
