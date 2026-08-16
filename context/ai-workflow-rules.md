@@ -153,19 +153,37 @@ can permanently destroy a user's media library and content. For those files spec
 ## Testing
 
 There is no PHPUnit setup. Tests are standalone PHP harnesses run against the real Local
-install, and they are **committed under `tests/php/`**. Three exist, 110 assertions:
+install, and they are **committed under `tests/php/`**:
 
-| Harness | Needs WP? | Asserts | Guards |
+| Harness | Needs WP? | In the default suite? | Guards |
 |---|---|---|---|
-| `rewriter-test.php` | No — stubs `is_serialized` etc. | 33 | Invariants 1, 2, 3, 10 — serialization safety |
-| `convert-restore-e2e.php` | Yes | 38 | Round trip byte-identical, backup manifest, orientation |
-| `bulk-e2e.php` | Yes | 39 | Pending definition, cursor paging, lock, cancel, dry run |
+| `rewriter-test.php` | No — stubs `is_serialized` etc. | Yes | Invariants 1, 2, 3, 10 — serialization safety |
+| `notice-strip-test.php` | No — real `WP_Hook` | Yes | Foreign notices stripped on this screen only (I-10) |
+| `convert-restore-e2e.php` | Yes | Yes | Round trip byte-identical, backup manifest, orientation |
+| `bulk-e2e.php` | Yes | Yes | Pending definition, cursor paging, lock, cancel, dry run |
+| `cli-bulk-e2e.php` | Yes — **and a real `wp` binary** | **No, by design** | The CLI bulk flags: `--all`, `--dry-run`, `--limit`, `--batch`, `restore --all` (I-4) |
 
 ```bash
-npm run test:php                  # all three, socket pinned by the runner
+npm run test:php                  # the default suite, socket pinned by the runner
 tests/php/run.sh rewriter-test    # just one
 SIO_TEST_ENGINE=gd npm run test:php
+
+npm run test:cli                  # the CLI suite, separately
+tests/php/run-cli.sh --sites      # every Local site: name, PHP, domain, socket
+tests/php/run-cli.sh --smoke      # read-only commands only, no fixtures written
+tests/php/run-cli.sh --site foo   # a named site (refused unless these files are its own)
 ```
+
+**Why `cli-bulk-e2e.php` is not in the default suite:** it runs `optimize --all` and
+`restore --all`, which act on the whole media library rather than on its own fixtures. That is
+not something to trip over while running the other four. It refuses to start if the library holds
+any pending or restorable image it did not create (`SIO_CLI_ALLOW_DIRTY=1` overrides), and it
+shells out to the real `wp` binary instead of calling `Commands` methods, because flag parsing,
+the clamps and the `WP_CLI::error` exit codes are exactly what calling the method skips.
+
+`run-cli.sh` is the one runner that is **not** pinned to cb-test: socket, the site's own PHP
+version and the expected domain all come from Local's `sites.json`, resolved from the site that
+owns the checkout. Prefer it as the model when a harness needs to run somewhere else.
 
 > **They were previously kept in the session scratchpad rather than committed, and were lost** —
 > taking 143 assertions of regression cover with them, on a plugin that deletes user media. That

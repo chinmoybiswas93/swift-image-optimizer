@@ -421,6 +421,59 @@ class Commands {
 	}
 
 	/**
+	 * Rebuild backup manifests for originals still sitting on disk.
+	 *
+	 * The mirror image of `rescan`. That one clears records whose file is
+	 * gone; this one restores records for files that are still there. A row
+	 * loses its backup pointer when a purge cleared it, when the manifest
+	 * could not be encoded, or when a conversion died between copying the
+	 * originals and writing the row - and in every one of those cases the
+	 * originals are still on disk with nothing able to reach them.
+	 *
+	 * Writes pointers only. Nothing is deleted, and nothing is overwritten:
+	 * rows that already name a backup are not examined. Run it *before*
+	 * "Delete all backups now", which removes exactly what this recovers.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp swift-image-optimizer repair-backups
+	 *
+	 * @return void
+	 */
+	public function repair_backups() {
+		$repaired = 0;
+		$skipped  = 0;
+		$after    = 0;
+
+		do {
+			$result    = BackupManager::reconcile( $after );
+			$repaired += $result['repaired'];
+			$skipped  += $result['skipped'];
+			$moved     = $result['last_id'] > $after;
+			$after     = $result['last_id'];
+		} while ( $moved );
+
+		Logger::start_run( 'cli' );
+		Logger::mark(
+			'backup',
+			sprintf( '%d backup manifest(s) rebuilt, %d row(s) had no files left to find.', $repaired, $skipped )
+		);
+
+		if ( 0 === $repaired ) {
+			WP_CLI::success( sprintf( 'No backups to recover. %d row(s) claim no backup and have no files on disk.', $skipped ) );
+			return;
+		}
+
+		WP_CLI::success(
+			sprintf(
+				'Rebuilt %d backup manifest(s); %d row(s) had no files left to find. Those images can be restored again.',
+				$repaired,
+				$skipped
+			)
+		);
+	}
+
+	/**
 	 * Reconcile recorded results against the files on disk.
 	 *
 	 * Use after restoring a site, when the database and the uploads directory

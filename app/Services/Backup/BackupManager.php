@@ -8,6 +8,7 @@
 namespace SwiftImageOptimizer\App\Services\Backup;
 
 use SwiftImageOptimizer\Api\StoreSettings;
+use SwiftImageOptimizer\App\Models\OptimizationLog;
 use SwiftImageOptimizer\App\Services\Logging\Logger;
 use WP_Error;
 
@@ -347,6 +348,287 @@ class BackupManager {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Encode a manifest for storage, failing loudly rather than silently.
+	 *
+	 * `wp_json_encode()` returns false for input it cannot represent, and a
+	 * filename carrying bytes that are not valid UTF-8 is enough to do it.
+	 * Written straight into the column - as both callers used to - that false
+	 * becomes an empty string, which is indistinguishable from "this image was
+	 * never backed up". The files are still on disk and `reconcile()` can find
+	 * them again, but only if somebody knows to look, and this line is the
+	 * only thing that would tell them.
+	 *
+	 * @param array $backup        Manifest, in the shape backup() returns.
+	 * @param int   $attachment_id Attachment ID; 0 on the upload path, where no
+	 *                             attachment exists yet.
+	 * @return string JSON, or an empty string when it could not be encoded.
+	 */
+	public static function encode_manifest( array $backup, $attachment_id = 0 ) {
+		$json = wp_json_encode( $backup );
+
+		if ( ! is_string( $json ) ) {
+			Logger::error(
+				'backup',
+				'The backup manifest could not be encoded. The files are on disk with nothing pointing at them - run the backup repair to recover them.',
+				(int) $attachment_id,
+				array(
+					'dir'   => isset( $backup['relative_dir'] ) ? (string) $backup['relative_dir'] : '',
+					'files' => isset( $backup['files'] ) ? count( (array) $backup['files'] ) : 0,
+				)
+			);
+
+			return '';
+		}
+
+		return $json;
+	}
+
+	/**
+	 * Rebuild manifests for backups that are on disk with nothing pointing at them.
+	 *
+	 * Invariant 22 says a column describing a file is not evidence the file
+	 * exists. This is its converse: a file with no column describing it is not
+	 * evidence there is nothing to restore. A row loses its pointer when the
+	 * manifest could not be encoded, when a purge cleared it, or when a
+	 * conversion died between copying the originals and writing the row - the
+	 * files are copied first precisely so that a death in between is
+	 * survivable, and until now nothing survived it.
+	 *
+	 * Deliberately driven from the log rows, not from a directory walk. The
+	 * glob that destroyed 54 real backups started from the directory; starting
+	 * from our own records and asking the disk about each one keeps the blast
+	 * radius at one attachment. This routine only ever *writes* pointers - it
+	 * deletes nothing, which is what makes it safe to run before the sweep in
+	 * `purge_orphans()`, and why it must never be run after it.
+	 *
+	 * @param int $after Resume cursor; only rows with a greater attachment ID.
+	 * @param int $limit Page size.
+	 * @return array {
+	 *     @type int $repaired Rows given a manifest back.
+	 *     @type int $skipped  Rows whose files are genuinely gone.
+	 *     @type int $last_id  Cursor for the next call; 0 when nothing was seen.
+	 * }
+	 */
+	public static function reconcile( $after = 0, $limit = 100 ) {
+		$result = array(
+			'repaired' => 0,
+			'skipped'  => 0,
+			'last_id'  => (int) $after,
+		);
+
+		if ( ! is_dir( self::root() ) ) {
+			return $result;
+		}
+
+		$rows = OptimizationLog::unbackedPage( (int) $after, (int) $limit );
+
+		if ( empty( $rows ) ) {
+			return $result;
+		}
+
+		$uploads = wp_get_upload_dir();
+		$basedir = trailingslashit( $uploads['basedir'] );
+
+		foreach ( $rows as $row ) {
+			$attachment_id     = (int) $row['attachment_id'];
+			$result['last_id'] = $attachment_id;
+
+			$current = get_attached_file( $attachment_id );
+
+			if ( ! $current ) {
+				++$result['skipped'];
+				continue;
+			}
+
+			// The backup tree mirrors the uploads tree, so the attachment's own
+			// folder names the backup folder. The file living there now is the
+			// WebP, but it sits where the original sat.
+			$relative = ltrim( str_replace( $basedir, '', dirname( $current ) ), '/' );
+			$dir      = self::safe_path( $relative );
+
+			if ( is_wp_error( $dir ) || ! is_dir( $dir ) ) {
+				++$result['skipped'];
+				continue;
+			}
+
+			/*
+			 * safe_path() has already refused anything that resolves outside
+			 * the root, and this directory demonstrably exists, so it resolved.
+			 * Two things are still worth doing here rather than there:
+			 *
+			 *   - safe_path()'s containment test compares prefixes without a
+			 *     separator, so a sibling directory whose name merely starts
+			 *     with the root's would satisfy it. Re-checking with the
+			 *     separator costs nothing and does not weaken the shared guard
+			 *     other callers depend on;
+			 *   - `$relative` is derived from _wp_attached_file, which nothing
+			 *     guarantees is a tidy relative path, and it is about to be
+			 *     *stored*. restore() joins the stored value to the uploads
+			 *     basedir directly, so canonicalising it here is what keeps a
+			 *     future restore inside uploads.
+			 */
+			$real_dir  = realpath( $dir );
+			$real_root = realpath( self::root() );
+
+			if ( false === $real_dir || false === $real_root ) {
+				++$result['skipped'];
+				continue;
+			}
+
+			if ( $real_dir !== $real_root && 0 !== strpos( $real_dir, $real_root . DIRECTORY_SEPARATOR ) ) {
+				++$result['skipped'];
+				continue;
+			}
+
+			$dir      = $real_dir;
+			$relative = ltrim( str_replace( $real_root, '', $real_dir ), '/\\' );
+
+			/*
+			 * An attachment sitting directly in the uploads basedir - which is
+			 * what "Organize into month- and year-based folders" being off
+			 * produces - yields an empty relative dir, and manifest_is_intact()
+			 * treats an empty relative_dir as no manifest at all. Repairing one
+			 * of those would report a success the Restore button then refuses,
+			 * so it counts as skipped. backup() has the same blind spot on such
+			 * a site; that is a separate defect and not one to paper over here.
+			 */
+			if ( '' === $relative ) {
+				++$result['skipped'];
+				continue;
+			}
+
+			$original = wp_basename( (string) $row['original_file'] );
+
+			// Without the original itself there is nothing a restore could put
+			// back, so a manifest naming only subsizes would be a worse lie
+			// than no manifest at all.
+			if ( '' === $original || ! file_exists( trailingslashit( $dir ) . $original ) ) {
+				++$result['skipped'];
+				continue;
+			}
+
+			$files    = self::candidate_files( $dir, $original, (array) $row['url_map'] );
+			$manifest = array(
+				'relative_dir' => $relative,
+				'files'        => $files,
+				// A recovered backup starts its retention window now. It cannot
+				// keep the original one - that expiry died with the pointer -
+				// and inheriting "keep forever" would exempt it from the very
+				// setting the user chose.
+				'expires'      => self::expiry(),
+			);
+
+			$encoded = self::encode_manifest( $manifest, $attachment_id );
+
+			if ( '' === $encoded ) {
+				++$result['skipped'];
+				continue;
+			}
+
+			OptimizationLog::update(
+				$attachment_id,
+				array(
+					'backup_path'    => $encoded,
+					'backup_expires' => $manifest['expires'],
+				)
+			);
+
+			Logger::info(
+				'backup',
+				'Rebuilt the backup manifest from files already on disk.',
+				$attachment_id,
+				array( 'files' => count( $files ) )
+			);
+
+			++$result['repaired'];
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Which files in a backup directory belong to one attachment.
+	 *
+	 * A backup directory is a month folder shared by every attachment uploaded
+	 * that month, so "everything in here" is never the answer. Two independent
+	 * records narrow it to one image:
+	 *
+	 *   - the rewrite map, which recorded every filename the conversion
+	 *     replaced - that is the subsize list exactly as it stood at backup
+	 *     time, and it is the authoritative source;
+	 *   - the original's own basename, because WordPress names every subsize
+	 *     after it. `AttachmentConverter::drop_foreign_filenames()` prunes the
+	 *     map of names another attachment owns, so the map alone can be
+	 *     incomplete, and this fills the gap.
+	 *
+	 * The pattern is anchored on a stem we stored and matched against the
+	 * listing of one directory. It is not a glob over shared space, and
+	 * nothing here deletes.
+	 *
+	 * @param string $dir      Absolute backup directory, already resolved by safe_path().
+	 * @param string $original Basename of the original file.
+	 * @param array  $url_map  Stored old-URL to new-URL pairs.
+	 * @return array Basenames, original first.
+	 */
+	private static function candidate_files( $dir, $original, array $url_map ) {
+		$dir   = trailingslashit( $dir );
+		$files = array( $original );
+
+		foreach ( array_keys( $url_map ) as $url ) {
+			$name = wp_basename( (string) $url );
+
+			if ( '' !== $name && ! in_array( $name, $files, true ) && file_exists( $dir . $name ) ) {
+				$files[] = $name;
+			}
+		}
+
+		$dot  = strrpos( $original, '.' );
+		$stem = false !== $dot ? substr( $original, 0, $dot ) : '';
+		$ext  = false !== $dot ? substr( $original, $dot + 1 ) : '';
+
+		if ( '' === $stem || '' === $ext ) {
+			return $files;
+		}
+
+		$entries = @scandir( $dir ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Handled by the array check.
+
+		if ( ! is_array( $entries ) ) {
+			return $files;
+		}
+
+		// A -scaled original has an unscaled sibling and vice versa; both were
+		// backed up and both belong to this attachment.
+		$stems = array( $stem );
+
+		if ( '-scaled' === substr( $stem, -7 ) ) {
+			$stems[] = substr( $stem, 0, -7 );
+		} else {
+			$stems[] = $stem . '-scaled';
+		}
+
+		foreach ( $entries as $entry ) {
+			if ( '.' === $entry || '..' === $entry || in_array( $entry, $files, true ) ) {
+				continue;
+			}
+
+			if ( ! is_file( $dir . $entry ) ) {
+				continue;
+			}
+
+			foreach ( $stems as $candidate ) {
+				$pattern = '#^' . preg_quote( $candidate, '#' ) . '(-\d+x\d+)?\.' . preg_quote( $ext, '#' ) . '$#i';
+
+				if ( preg_match( $pattern, $entry ) ) {
+					$files[] = $entry;
+					break;
+				}
+			}
+		}
+
+		return $files;
 	}
 
 	/**

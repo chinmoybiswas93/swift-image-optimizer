@@ -11,7 +11,7 @@ class ComposerStaticInitf98a835886381a800bd6f6301847f25d
     );
 
     public static $prefixLengthsPsr4 = array (
-        'S' => 
+        'S' =>
         array (
             'SwiftImageOptimizer\\Framework\\' => 30,
             'SwiftImageOptimizer\\App\\' => 24,
@@ -20,15 +20,15 @@ class ComposerStaticInitf98a835886381a800bd6f6301847f25d
     );
 
     public static $prefixDirsPsr4 = array (
-        'SwiftImageOptimizer\\Framework\\' => 
+        'SwiftImageOptimizer\\Framework\\' =>
         array (
             0 => __DIR__ . '/../..' . '/framework',
         ),
-        'SwiftImageOptimizer\\App\\' => 
+        'SwiftImageOptimizer\\App\\' =>
         array (
             0 => __DIR__ . '/../..' . '/app',
         ),
-        'SwiftImageOptimizer\\Api\\' => 
+        'SwiftImageOptimizer\\Api\\' =>
         array (
             0 => __DIR__ . '/../..' . '/api',
         ),

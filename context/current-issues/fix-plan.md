@@ -54,7 +54,7 @@ Must be closed before v1.0.0 is submitted.
 | 1 | **I-1** PHPCS never run | .org review will reject on style and escaping findings; also the cheapest way to catch real security slips | Half a day |
 | 2 | **I-2** Suite tests cwebp, site runs Imagick | The engine users actually get is not covered by a single assertion | Half a day |
 | ~~3~~ | ~~**I-3** Dashboard never opened in a browser~~ | **Closed 2026-08-16** — browser pass done | — |
-| 4 | **I-4** WP-CLI untested | The docs recommend it for large libraries; one bug already found there by static analysis alone | An hour |
+| ~~4~~ | ~~**I-4** WP-CLI untested~~ | **Closed 2026-08-16** — `tests/php/cli-bulk-e2e.php`, 42 assertions through the real `wp` binary | — |
 | ~~5~~ | ~~**I-6** Multisite unconsidered~~ | **Closed 2026-08-16** — tested | — |
 
 **Do I-1 first** — it may surface problems in the other areas, and running it after manual UI

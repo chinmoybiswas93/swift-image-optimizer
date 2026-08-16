@@ -46,10 +46,34 @@ modal — typed `DELETE` for the purge. Unit 14 closed I-10 (reopened) and I-15:
 notices are stripped on this plugin's screen only, and the card's bottom spacing is fixed in
 `admin.scss`.
 
-**Two things Unit 13 left open.** Its spec's Completion Notes are still the placeholder, and the
-purge has not been run against cb-test's 892 KB of orphans — the one path in the plugin that
-deletes user files on purpose. Confirm the folder actually empties before treating that unit as
-proven.
+**Unit 13's two open items are settled.** Its purge has now run against a real folder — the
+`convert-restore-e2e` harness drives `BackupController::purge()` end to end and asserts the
+folder reaches 0 bytes, the guard files survive, and a symlink's target outside the root is not
+touched. cb-test's backup folder is empty and `stats` reports `Backups on disk: 0 B`. Unit 13's
+spec Completion Notes are still the placeholder; the reasoning that matters ended up in the I-8
+closure detail instead.
+
+**I-8 is closed (2026-08-16, no unit).** `BackupManager::reconcile()` rebuilds manifests for
+originals still on disk that no row points at, driven from the log rows rather than a directory
+walk, writing pointers and deleting nothing. `encode_manifest()` closes the silent-`false` hole
+in `wp_json_encode()` on both write paths. Surfaced as `POST backups/reconcile`, a **Repair
+backup records** button placed above the purge, and `wp swift-image-optimizer repair-backups`.
+New invariant 26 in `architecture.md`: repair runs before any sweep, because the purge deletes
+exactly what repair recovers. Unit 13's spec claims it closed I-8 — it closed the reclaim half
+and left the recover half, which is what this does. Full reasoning in
+[current-issues/issues.md](current-issues/issues.md) under "I-8 closure detail".
+
+**I-9 is closed (2026-08-16, no unit).** The retention cron now has 15 assertions in
+`convert-restore-e2e`, fired through `do_action( JobRunner::HOOK )` rather than by calling
+`purge()` directly. It had no coverage at all before — every existing backup assertion went
+through `purge_manifests()`, which deliberately drops the expiry filter — so the
+`backup_expires > 0 AND backup_expires < time()` query had never run under test. It works. The
+assertion worth keeping is that an *unexpired* backup survives a cron run: a wrong comparison
+there wipes every backup on the site, and nothing else in the suite would have caught it.
+
+**`current-issues/issues.md` is now empty of open items.** Per its own Unit 10 caution, that means
+nobody has looked recently — not that nothing is wrong. Unit 10 found fourteen defects, three of
+them data-destroying, none of which were listed there.
 
 Next up: the remaining items in **Next Up** below, then the `future-specs/` backlog.
 
@@ -79,8 +103,37 @@ Next up: the remaining items in **Next Up** below, then the `future-specs/` back
 | What | Why |
 |---|---|
 | Run `tests/e2e/library-scan.spec.js` for real | Written and confirmed to load/skip cleanly, but never run against a live login — no admin credentials were available in the session that wrote it. Needs `WP_ADMIN_USER` / `WP_ADMIN_PASSWORD`. |
+| Run `npm run test:cli` on a second Local site | I-4 was closed on cb-test alone. The runner is site-agnostic and `--smoke` is safe anywhere, so a second site costs little; a site on a different PHP (`ff-test` is 8.3.23) is the one worth spending it on. |
 | Rebuild the upload and media-UI harnesses | Two of the original five were lost and not rewritten; that is the gap between 150 assertions and the old 143 plus what those covered. |
-| Fix the 216 pre-existing `prettier`/`jsdoc` errors `lint:js` now surfaces | First successful `lint:js` run ever (see below) — errors are spread across ~10 files under `resources/`, all pre-existing, none on lines touched by the comment cleanup. Out of scope for that unit; needs its own pass, ideally with `--fix` reviewed file by file since some of those files have other uncommitted work in flight. |
+| Run `repair-backups` against a folder with real orphans | I-8 closed on synthetic orphans only — cb-test's backup folder was already empty when it landed, so every stranded backup tested was one the harness created. The routine reports "nothing to recover" there, which is correct and uninformative. |
+| Add `notice-strip-test` to `web-runner.php`'s suite allowlist | Unit 14 added the harness but never registered it for web mode, so `tests/php/run.sh --web` reports SUITE FAILED with "no such suite" while the CLI run passes. Deliberate allowlist, so it wants a considered one-line change, not a reflex. |
+| Fix the 220 pre-existing `prettier`/`jsdoc` errors `lint:js` now surfaces | First successful `lint:js` run ever (see below) — errors are spread across ~10 files under `resources/`, all pre-existing, none on lines touched by the comment cleanup. Out of scope for that unit; needs its own pass, ideally with `--fix` reviewed file by file since some of those files have other uncommitted work in flight. |
+
+### 2026-08-16 — WP-CLI bulk paths verified, closing I-4 (no spec)
+
+Unit 10 left the bulk half of the CLI unexercised: `optimize --all`, `optimize --dry-run`,
+`restore --all` and the `--limit` / `--batch` flags — the route the plugin actually recommends for
+large libraries. `tests/php/cli-bulk-e2e.php` closes it with **42 assertions, all passing** on
+cb-test.local, driving the real `wp` binary through `proc_open` rather than calling `Commands`
+methods. The flag parsing, the clamps and the `WP_CLI::error` exit codes are the part that had
+never run, and none of them exist when you call the method directly. Nothing broke, including
+`--batch=0` (clamps to 1) and `--batch` larger than the queue.
+
+`tests/php/run-cli.sh` runs it against **any** Local site: socket, the site's *own* PHP version
+and the expected domain all come from Local's `sites.json`, looked up by the site that owns the
+checkout. `--sites` lists them; `--smoke` runs only the read-only commands, which is the safe
+first thing to try on an unfamiliar site. Three guards, given the two-database history above: the
+runner refuses if `option get siteurl` disagrees with the domain Local has on record, refuses a
+`--site` naming a different site than the one these files live in, and the harness refuses if the
+library holds any pending or restorable image it did not create — `--all` acts on the whole
+library, not just fixtures. `SIO_CLI_ALLOW_DIRTY=1` overrides the last one.
+
+Not wired into `npm run test:php`'s default suite on purpose: a suite that converts and then
+restores an entire media library should not run by accident alongside the others. It has its own
+`npm run test:cli`. Note it uses PHP **8.2.27**, cb-test's actual version — `run.sh` pins 8.2.29,
+which no site on this machine runs.
+
+Deliberately not done: closing I-4 required one site's evidence, and one site is one data point.
 
 ### 2026-08-11 — comment cleanup (no spec, too small to warrant one)
 

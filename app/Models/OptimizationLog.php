@@ -226,6 +226,62 @@ class OptimizationLog extends Model {
     }
 
     /**
+     * Rows that claim no backup, paged by primary key.
+     *
+     * The counterpart to the manifest-driven queries in `JobRunner`: those
+     * find rows that point at files, this finds rows that point at nothing.
+     * A row here either never had a backup, had its pointer cleared by a
+     * purge, or lost it to a conversion that died between copying the files
+     * and writing the row - and only the disk can tell those apart, which is
+     * `BackupManager::reconcile()`'s job.
+     *
+     * Paged by `attachment_id` rather than OFFSET for the same reason
+     * attachmentScanPage() is: reconcile rewrites the very column the WHERE
+     * clause filters on, so an offset would skip rows as the set shrinks.
+     *
+     * @param int $after Only rows with a greater attachment ID.
+     * @param int $limit Page size.
+     * @return array<int, array<string, mixed>> Rows of attachment_id, original_file, url_map.
+     */
+    public static function unbackedPage( $after, $limit ) {
+        $db    = self::db();
+        $table = self::table();
+
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Plugin-owned table name cannot be bound; every value is prepared.
+        $rows = $db->get_results(
+            $db->prepare(
+                "SELECT attachment_id, original_file, url_map
+                FROM {$table}
+                WHERE status = %s
+                    AND ( backup_path IS NULL OR backup_path = '' )
+                    AND original_file <> ''
+                    AND attachment_id > %d
+                ORDER BY attachment_id ASC
+                LIMIT %d",
+                self::STATUS_OPTIMIZED,
+                (int) $after,
+                (int) $limit
+            ),
+            ARRAY_A
+        );
+        // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+        if ( ! is_array($rows)) {
+            return [];
+        }
+
+        foreach ($rows as $index => $row) {
+            $rows[ $index ]['url_map'] = $row['url_map'] ? json_decode($row['url_map'], true) : [];
+
+            if ( ! is_array($rows[ $index ]['url_map'])) {
+                $rows[ $index ]['url_map'] = [];
+            }
+        }
+
+        return $rows;
+    }
+
+    /**
      * How many attachments a full scan will walk.
      *
      * Used only to size the scan's own progress bar. The published total is

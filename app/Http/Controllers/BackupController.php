@@ -33,6 +33,47 @@ class BackupController extends Controller {
     const MAX_BATCHES = 500;
 
     /**
+     * Re-point log rows at backups that are still on disk.
+     *
+     * The repair half of what the purge does destructively. It writes
+     * pointers and deletes nothing, so it is safe to offer without a typed
+     * confirmation - but it is only useful *before* a purge, because the
+     * sweep removes exactly the files it recovers.
+     *
+     * @return WP_REST_Response
+     */
+    public function reconcile() {
+        $repaired = 0;
+        $skipped  = 0;
+        $after    = 0;
+        $batches  = 0;
+
+        // Same bounded loop the purge uses: reconcile rewrites the column its
+        // own query filters on, so the cursor - not the result count - is what
+        // guarantees forward progress.
+        do {
+            $result    = BackupManager::reconcile($after);
+            $repaired += $result['repaired'];
+            $skipped  += $result['skipped'];
+            $moved     = $result['last_id'] > $after;
+            $after     = $result['last_id'];
+            ++$batches;
+        } while ($moved && $batches < self::MAX_BATCHES);
+
+        Logger::start_run('admin');
+        Logger::mark(
+            'backup',
+            sprintf('%d backup manifest(s) rebuilt, %d row(s) had no files left to find.', $repaired, $skipped)
+        );
+
+        return $this->sendSuccess([
+            'repaired'     => $repaired,
+            'skipped'      => $skipped,
+            'backup_bytes' => BackupManager::disk_usage(),
+        ]);
+    }
+
+    /**
      * Delete every stored backup immediately.
      *
      * Two passes, because a backup can be on disk without a record pointing at

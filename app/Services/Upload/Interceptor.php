@@ -179,6 +179,8 @@ class Interceptor {
 
 		Logger::info( 'delete', 'Removed the uploaded source: ' . $original_file );
 
+		$manifest = $backup ? BackupManager::encode_manifest( $backup ) : '';
+
 		$this->pending[ $target ] = array(
 			'status'         => OptimizationLog::STATUS_OPTIMIZED,
 			'original_file'  => wp_basename( $original_file ),
@@ -190,8 +192,8 @@ class Interceptor {
 			'conversion_ms'  => isset( $result['duration_ms'] ) ? (int) $result['duration_ms'] : 0,
 			// Written in the same shape the converter path uses, which is what
 			// makes Restore work for uploads without a line of restore code.
-			'backup_path'    => $backup ? wp_json_encode( $backup ) : '',
-			'backup_expires' => $backup ? $backup['expires'] : 0,
+			'backup_path'    => $manifest,
+			'backup_expires' => '' !== $manifest ? $backup['expires'] : 0,
 			'reason'         => '',
 		);
 
