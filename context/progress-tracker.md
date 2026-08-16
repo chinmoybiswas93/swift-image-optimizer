@@ -28,26 +28,30 @@ Optimize now chains scan → optimize → scan via `Coordinator`. Scheduled resc
 (manual/daily/weekly/monthly) via `ScanJobRunner`. 131 PHP assertions passing (up from 68), 0
 `phpcs` errors/warnings, `owasp-security-review` clean on the five new routes.
 
-What stands between here and a .org submission now is **I-3: nobody has clicked the dashboard.**
-Every change in Unit 11 touched that UI, and Unit 12 rewrote the Bulk tab on top of it without a
-browser available to click it either. The build is verified, the endpoints are verified, the PHP
-is covered by 131 assertions — but the Bulk, Settings, Backups and Troubleshoot tabs have still
-never been used in a browser. Unit 12 wrote `tests/e2e/library-scan.spec.js` for the new surface;
-it has never been run against a real login, only confirmed to load and to skip cleanly without
-credentials.
+**I-3 is closed — the dashboard has been tested in a browser** (2026-08-16). That was the last
+release gate standing between here and a .org submission, and it also carried the two claims
+Unit 14 could only prove in source: that foreign notices are actually gone from the screen, and
+that the card boxes were merely touching rather than overlapping. Unit 12's
+`tests/e2e/library-scan.spec.js` is still a separate item — it has never been run against a real
+login, only confirmed to load and to skip cleanly without credentials.
 
-**Unit 13 is In Progress** — [13-backup-purge-confirm-modal.md](specs/13-backup-purge-confirm-modal.md).
-Two user reports on the Backups tab: "Delete all backups now" confirms, toasts and updates the
-number without deleting a single file, and the confirmation is a raw `window.confirm()`. The
-deletion is manifest-driven only, so orphaned backups (**I-8**) are unreachable — and on cb-test
-*every* log row has an empty `backup_path` while 892 KB sits in the folder, so the button can
-never do anything. Adds a guarded sweep of the plugin's own backup root, removes the
-`backup_expires > 0` / `status = 'optimized'` filters that also excluded "Keep forever" backups,
-and replaces every `window.confirm()` in the plugin with a real modal — typed `DELETE` for the
-purge.
+**Units 13 and 14 are done**, and their specs have moved to `specs/done/`. Unit 13 closed the
+Backups tab reports: "Delete all backups now" confirmed, toasted and updated the number without
+deleting a file, because deletion was manifest-driven only and on cb-test *every* log row has an
+empty `backup_path` while 892 KB sits in the folder. It adds a guarded sweep of the plugin's own
+backup root (`BackupManager::purge_orphans()`), drops the `backup_expires > 0` /
+`status = 'optimized'` filters that also excluded "Keep forever" backups
+(`JobRunner::purge_manifests()`), and replaces every `window.confirm()` in the plugin with a real
+modal — typed `DELETE` for the purge. Unit 14 closed I-10 (reopened) and I-15: foreign admin
+notices are stripped on this plugin's screen only, and the card's bottom spacing is fixed in
+`admin.scss`.
 
-Next up: a browser pass over the admin UI (now the largest open item), then the `future-specs/`
-backlog.
+**Two things Unit 13 left open.** Its spec's Completion Notes are still the placeholder, and the
+purge has not been run against cb-test's 892 KB of orphans — the one path in the plugin that
+deletes user files on purpose. Confirm the folder actually empties before treating that unit as
+proven.
+
+Next up: the remaining items in **Next Up** below, then the `future-specs/` backlog.
 
 ## Completed
 
@@ -67,12 +71,13 @@ backlog.
 | 09 | PHPCS actually run for the first time: 784 violations → 0. Dead `safe_mode` check removed, `imagedestroy()` version-gated, SQL annotations fixed (they had never been in effect) | [09-phpcs-compliance.md](specs/done/09-phpcs-compliance.md) |
 | 11 | The four user reports: toasts + no core notice markup (I-10), one storage folder (I-11), resumable cron-driven bulk (I-12), optimized state verified against disk (I-13). Harnesses rebuilt and **committed**, Imagick covered (I-2) | — |
 | 12 | Closed I-14 — one scan-backed dashboard. `ScanRunner` (batched, disk-verified scan), `Coordinator` (scan→optimize→scan chain), `ScanJobRunner` (scheduled rescans), a hand-rolled `ProgressRing`, and the three-card Bulk tab merged into one. Invariant 25 added | [12-centralized-scan-stats.md](specs/done/12-centralized-scan-stats.md) |
+| 13 | Backups tab: `BackupManager::purge_orphans()` sweeps the plugin's own backup root, `JobRunner::purge_manifests()` drops the expiry/status filters that hid "Keep forever" rows, and `Modal`/`ConfirmDialog` replace every `window.confirm()` — typed `DELETE` for the purge | [13-backup-purge-confirm-modal.md](specs/done/13-backup-purge-confirm-modal.md) |
+| 14 | Closed I-10 (reopened) and I-15 — `ForeignNoticeHandler` strips other plugins' notices on this screen only, whitelisting the plugin's own so the missing-build notice survives; three spacing rules in `admin.scss`. `tests/php/notice-strip-test.php`, 9 assertions against real `WP_Hook` | [14-notices-and-card-spacing.md](specs/done/14-notices-and-card-spacing.md) |
 
 ## Next Up
 
 | What | Why |
 |---|---|
-| **Browser pass over the admin UI (I-3)** | The last thing between here and .org. Units 11 and 12 changed every tab; none of it has been clicked, including Unit 12's merged card and its Playwright spec. |
 | Run `tests/e2e/library-scan.spec.js` for real | Written and confirmed to load/skip cleanly, but never run against a live login — no admin credentials were available in the session that wrote it. Needs `WP_ADMIN_USER` / `WP_ADMIN_PASSWORD`. |
 | Rebuild the upload and media-UI harnesses | Two of the original five were lost and not rewritten; that is the gap between 150 assertions and the old 143 plus what those covered. |
 | Fix the 216 pre-existing `prettier`/`jsdoc` errors `lint:js` now surfaces | First successful `lint:js` run ever (see below) — errors are spread across ~10 files under `resources/`, all pre-existing, none on lines touched by the comment cleanup. Out of scope for that unit; needs its own pass, ideally with `--fix` reviewed file by file since some of those files have other uncommitted work in flight. |
