@@ -372,6 +372,8 @@ class AttachmentConverter {
 		// Only now remove the old files; a failure above leaves them intact.
 		$this->delete_files( $old_files, $target, $after, $attachment_id );
 
+		$manifest = BackupManager::encode_manifest( $backup, $attachment_id );
+
 		OptimizationLog::upsert(
 			$attachment_id,
 			array(
@@ -381,8 +383,8 @@ class AttachmentConverter {
 				'original_mime'  => $mime,
 				'optimized_file' => wp_basename( $target ),
 				'optimized_size' => $optimized['optimized_size'],
-				'backup_path'    => wp_json_encode( $backup ),
-				'backup_expires' => $backup['expires'],
+				'backup_path'    => $manifest,
+				'backup_expires' => '' !== $manifest ? $backup['expires'] : 0,
 				'url_map'        => $url_map,
 				'engine'         => $optimized['engine'],
 				'conversion_ms'  => isset( $optimized['duration_ms'] ) ? (int) $optimized['duration_ms'] : 0,

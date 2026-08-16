@@ -1,7 +1,7 @@
 /** Backups tab. */
 
 import { useState } from '@wordpress/element';
-import { __, sprintf } from '@wordpress/i18n';
+import { __, _n, sprintf } from '@wordpress/i18n';
 import {
 	Button,
 	ConfirmDialog,
@@ -26,8 +26,42 @@ const BackupsPage = () => {
 	const [ bytes, setBytes ] = useState( config.backupBytes || 0 );
 	const [ busy, setBusy ] = useState( false );
 	const [ confirming, setConfirming ] = useState( false );
+	const [ repairing, setRepairing ] = useState( false );
 	const [ error, setError ] = useState( '' );
 	const toast = useToast();
+
+	const repair = async () => {
+		setBusy( true );
+		setError( '' );
+		try {
+			const result = await request( 'backups/reconcile', { method: 'POST' } );
+
+			setBytes( result.backup_bytes );
+			setRepairing( false );
+
+			toast.push(
+				result.repaired
+					? sprintf(
+							/* translators: %d: number of images. */
+							_n(
+								'%d image can be restored again.',
+								'%d images can be restored again.',
+								result.repaired,
+								'swift-image-optimizer'
+							),
+							result.repaired
+					  )
+					: __(
+							'Nothing to recover. Every backup on disk is already accounted for.',
+							'swift-image-optimizer'
+					  )
+			);
+		} catch ( e ) {
+			setError( e.message );
+			setRepairing( false );
+		}
+		setBusy( false );
+	};
 
 	const purge = async () => {
 		setBusy( true );
@@ -86,6 +120,19 @@ const BackupsPage = () => {
 					) }
 				</p>
 				<div className="sio-actions">
+					{ /*
+					 * Repair sits before Delete deliberately. The purge sweeps
+					 * the whole backup folder, including the unreferenced files
+					 * this recovers, so the order of the buttons is the order
+					 * the two are safe to press in.
+					 */ }
+					<Button
+						variant="secondary"
+						onClick={ () => setRepairing( true ) }
+						disabled={ busy || ! bytes }
+					>
+						{ busy ? <Spinner /> : __( 'Repair backup records', 'swift-image-optimizer' ) }
+					</Button>
 					<Button
 						variant="secondary"
 						isDestructive
@@ -96,6 +143,29 @@ const BackupsPage = () => {
 					</Button>
 				</div>
 			</Section>
+
+			{ repairing && (
+				<ConfirmDialog
+					title={ __( 'Repair backup records?', 'swift-image-optimizer' ) }
+					confirmLabel={ __( 'Repair records', 'swift-image-optimizer' ) }
+					busy={ busy }
+					onConfirm={ repair }
+					onCancel={ () => setRepairing( false ) }
+				>
+					<p>
+						{ __(
+							'This looks for originals still on disk that no image points at any more, and makes them restorable again. No file is deleted or changed.',
+							'swift-image-optimizer'
+						) }
+					</p>
+					<p>
+						{ __(
+							'Run this before deleting backups. Deleting removes the same files this would recover.',
+							'swift-image-optimizer'
+						) }
+					</p>
+				</ConfirmDialog>
+			) }
 
 			{ confirming && (
 				<ConfirmDialog

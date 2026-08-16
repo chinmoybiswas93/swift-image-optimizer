@@ -51,7 +51,8 @@ app/
 │   ├── Scheduler/JobRunner.php   Daily purge of expired backups
 │   ├── Scheduler/BulkJobRunner.php  Advances an active bulk run from cron
 │   ├── Scheduler/ScanJobRunner.php  Advances a running scan + the scan_frequency schedule
-│   └── CLI/Commands.php    wp swift-image-optimizer optimize|restore|stats|diagnostics|logs|requeue
+│   └── CLI/Commands.php    wp swift-image-optimizer optimize|restore|stats|diagnostics|logs|
+│                           requeue|rescan|repair-backups
 ├── Http/
 │   ├── Controllers/        Controller (base), Optimize, Bulk, Backup, Diagnostics, Log, Stats
 │   ├── Policies/           Policy (base), AdminPolicy (manage_options), MediaPolicy (upload_files+edit_posts)
@@ -125,6 +126,7 @@ so treat them as non-negotiable.
 | 23 | **A batch persists its pending rewrite map before applying it.** `Runner` parks `pending_rewrite`, rewrites, then clears it; the next batch flushes anything left behind. | Conversion writes a terminal log row per image but repoints references once per batch. A death in between leaves those images marked done forever with references pointing at filenames that no longer exist — `Scanner` never revisits a terminal row. Tolerable when a batch was one foreground request; not once cron runs batches unattended. |
 | 24 | **The server owns whether a bulk run is active.** `start()` is idempotent, `cancel()` keeps the cursor, and the client reconciles from `state()` rather than computing its own. | Two clients doing their own arithmetic over different snapshots is why progress figures disagreed, and an unguarded `start()` let a second tab reset a run mid-flight — which surfaced as "already running" from a button that looked available. |
 | 25 | **The library scan observes; it never writes to the log table.** A row claiming `optimized` whose file is missing is bucketed `pending` in the published snapshot and left exactly as it was. Deleting the row is `Scanner::rescan()`'s job, not the scan's. | The scan runs unattended on a schedule (invariant 13 already rules out a loopback trigger, so this has to be true for the same reason). A routine that mutates the log table while nobody is watching is a routine that can silently destroy the one record that makes Restore possible. |
+| 26 | **A file with no row pointing at it is not evidence there is nothing to restore.** The converse of invariant 22. `BackupManager::reconcile()` rebuilds manifests from files still on disk, driven from the log rows rather than a directory walk; it writes pointers and deletes nothing. Repair runs before any sweep — in the route list, in the Backups tab, and in the docs. | Backup files outlive their pointer routinely: a purge clears it, an encode fails, or a conversion dies between copying the originals and writing the row (the copy is first precisely so a death there is survivable). Until this existed, the only routine that touched an unreferenced backup was `purge_orphans()`, which deletes it — so the recovery path and the demolition path were the same button. Deleting is not a repair. |
 
 ## The upload path (Feature 1)
 

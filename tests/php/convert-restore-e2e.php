@@ -26,6 +26,7 @@ use SwiftImageOptimizer\App\Services\AttachmentConverter;
 use SwiftImageOptimizer\App\Services\Backup\BackupManager;
 use SwiftImageOptimizer\App\Services\Bulk\Scanner;
 use SwiftImageOptimizer\App\Http\Controllers\BackupController;
+use SwiftImageOptimizer\App\Hooks\Scheduler\JobRunner;
 use SwiftImageOptimizer\App\Services\Engine\EngineFactory;
 
 harness_require_site();
@@ -330,6 +331,113 @@ Harness::same(
 );
 
 /* ================================================================ */
+Harness::suite( 'Retention expiry collects aged backups via the cron hook' );
+
+/*
+ * I-9. Everything else in this file exercises BackupController::purge(), which
+ * deliberately drops the expiry and status filters - so the retention query
+ * itself (`backup_expires > 0 AND backup_expires < time()`) had never been run
+ * by a test at all. This suite drives the real cron hook rather than calling
+ * JobRunner::purge() directly, so a purge that works but is not wired to its
+ * action still fails here.
+ *
+ * A backup cannot be genuinely aged inside a test without waiting out the
+ * retention window, so the timestamp is moved into the past. What is real is
+ * everything else: a real conversion, a real backup on disk, a real expiry
+ * written by BackupManager::expiry(), and the real hook firing.
+ */
+Harness::ok(
+	has_action( JobRunner::HOOK ) !== false,
+	'the purge is actually hooked to ' . JobRunner::HOOK
+);
+Harness::ok( wp_next_scheduled( JobRunner::HOOK ) !== false, 'and the daily event is scheduled' );
+
+harness_set_baseline_settings(
+	array(
+		'convert_png'      => true,
+		'backup_retention' => 30,
+	)
+);
+
+$aged_id   = harness_import_attachment( harness_make_jpeg( 400, 300 ) );
+$created[] = $aged_id;
+
+harness_make_converter()->convert( $aged_id );
+
+$aged_row      = OptimizationLog::find( $aged_id );
+$aged_manifest = json_decode( (string) $aged_row['backup_path'], true );
+$aged_expires  = (int) $aged_row['backup_expires'];
+
+Harness::ok( is_array( $aged_manifest ), 'the conversion stored a manifest' );
+Harness::ok( $aged_expires > time(), 'with a real future expiry from the retention setting' );
+
+$aged_dir   = trailingslashit( BackupManager::root() ) . ltrim( (string) $aged_manifest['relative_dir'], '/' );
+$aged_first = trailingslashit( $aged_dir ) . ( (array) $aged_manifest['files'] )[0];
+
+Harness::ok( file_exists( $aged_first ), 'and its files on disk' );
+
+// A "keep forever" backup must survive the retention purge. purge() filters on
+// backup_expires > 0 precisely so it cannot reach these; purge_manifests() is
+// the one that ignores retention, and this proves the two stay different.
+harness_set_baseline_settings(
+	array(
+		'convert_png'      => true,
+		'backup_retention' => 0,
+	)
+);
+
+$forever_id = harness_import_attachment( harness_make_jpeg( 360, 240 ) );
+$created[]  = $forever_id;
+
+harness_make_converter()->convert( $forever_id );
+
+$forever_row      = OptimizationLog::find( $forever_id );
+$forever_manifest = json_decode( (string) $forever_row['backup_path'], true );
+$forever_first    = trailingslashit( trailingslashit( BackupManager::root() ) . ltrim( (string) $forever_manifest['relative_dir'], '/' ) )
+	. ( (array) $forever_manifest['files'] )[0];
+
+Harness::same( 0, (int) $forever_row['backup_expires'], 'a kept-forever backup expires at 0' );
+
+// Fire the hook while nothing has aged yet. A wrong comparison here - the
+// mistake this query is most likely to contain - collects both backups.
+do_action( JobRunner::HOOK );
+
+Harness::ok( file_exists( $aged_first ), 'an unexpired backup survives a cron run' );
+Harness::ok(
+	'' !== (string) OptimizationLog::find( $aged_id )['backup_path'],
+	'and keeps its pointer'
+);
+
+// Now age it. This is the one thing the test cannot do for real.
+OptimizationLog::update( $aged_id, array( 'backup_expires' => time() - DAY_IN_SECONDS ) );
+
+do_action( JobRunner::HOOK );
+
+$aged_after = OptimizationLog::find( $aged_id );
+
+Harness::ok( ! file_exists( $aged_first ), 'an aged backup is deleted from disk by the cron hook' );
+Harness::same( '', (string) $aged_after['backup_path'], 'its pointer is cleared' );
+Harness::same( 0, (int) $aged_after['backup_expires'], 'and its expiry reset' );
+Harness::same(
+	OptimizationLog::STATUS_OPTIMIZED,
+	$aged_after['status'],
+	'while the image still counts toward the savings stats'
+);
+Harness::ok(
+	! BackupManager::manifest_is_intact( $aged_after['backup_path'] ),
+	'so Restore is correctly refused afterwards'
+);
+
+Harness::ok( file_exists( $forever_first ), 'the kept-forever backup is untouched by the retention purge' );
+Harness::same(
+	$forever_row['backup_path'],
+	OptimizationLog::find( $forever_id )['backup_path'],
+	'and keeps its manifest intact'
+);
+
+harness_set_baseline_settings( array( 'convert_png' => true ) );
+
+/* ================================================================ */
 Harness::suite( 'Backup purge deletes files, not just records' );
 
 /*
@@ -371,6 +479,148 @@ $harness_foreign_backups = static function () use ( $backup_root ) {
 
 	return $foreign;
 };
+
+/*
+ * I-8: a backup on disk that no row points at. The purge below proves it can
+ * be reclaimed; this proves it can be recovered first, which is the half that
+ * gets the user's originals back rather than deleting them.
+ */
+harness_set_baseline_settings(
+	array(
+		'convert_png'      => true,
+		'backup_retention' => 30,
+	)
+);
+
+$orphan_id = harness_import_attachment( harness_make_jpeg( 640, 400 ) );
+$created[] = $orphan_id;
+
+harness_make_converter()->convert( $orphan_id );
+
+$before_row      = OptimizationLog::find( $orphan_id );
+$before_manifest = is_array( $before_row ) && ! empty( $before_row['backup_path'] )
+	? json_decode( $before_row['backup_path'], true )
+	: null;
+
+Harness::ok( is_array( $before_manifest ), 'the conversion stored a manifest before it was lost' );
+
+$orphan_dir   = trailingslashit( BackupManager::root() ) . ltrim( (string) $before_manifest['relative_dir'], '/' );
+$orphan_files = (array) $before_manifest['files'];
+
+// Exactly what a purge, a failed encode, or a death mid-conversion leaves:
+// the files untouched, the pointer gone.
+OptimizationLog::update(
+	$orphan_id,
+	array(
+		'backup_path'    => '',
+		'backup_expires' => 0,
+	)
+);
+
+$lost_row = OptimizationLog::find( $orphan_id );
+
+Harness::same( '', (string) $lost_row['backup_path'], 'the row no longer points at its backup' );
+Harness::ok(
+	! BackupManager::manifest_is_intact( $lost_row['backup_path'] ),
+	'and Restore is correctly refused while the pointer is gone'
+);
+Harness::ok(
+	file_exists( trailingslashit( $orphan_dir ) . $orphan_files[0] ),
+	'but the original is still sitting on disk'
+);
+
+// Measured off the folder itself: the harness's own files are excluded from
+// $harness_foreign_backups(), so counting that would prove nothing here.
+$bytes_before_repair = BackupManager::disk_usage();
+$repair              = ( new BackupController() )->reconcile()->get_data();
+
+Harness::ok( $repair['repaired'] >= 1, 'reconcile rebuilds at least one manifest' );
+Harness::ok( $bytes_before_repair > 0, 'there were backup bytes on disk to protect' );
+Harness::same(
+	$bytes_before_repair,
+	BackupManager::disk_usage(),
+	'and reconcile deletes nothing while doing it'
+);
+
+$repaired_row = OptimizationLog::find( $orphan_id );
+
+Harness::ok(
+	BackupManager::manifest_is_intact( $repaired_row['backup_path'] ),
+	'the rebuilt manifest passes the same disk check the Restore button asks'
+);
+
+$repaired_manifest = json_decode( $repaired_row['backup_path'], true );
+
+Harness::same(
+	$before_manifest['relative_dir'],
+	$repaired_manifest['relative_dir'],
+	'the rebuilt manifest names the same directory'
+);
+Harness::ok(
+	in_array( $repaired_row['original_file'], (array) $repaired_manifest['files'], true ),
+	'and names the original itself, without which a restore is pointless'
+);
+
+sort( $orphan_files );
+$rebuilt_files = (array) $repaired_manifest['files'];
+sort( $rebuilt_files );
+
+Harness::same( $orphan_files, $rebuilt_files, 'every file the original manifest named is found again' );
+
+// The assertion that matters: not that the column looks right, but that the
+// user actually gets their image back.
+$repaired_restore = harness_make_converter()->restore( $orphan_id );
+
+Harness::ok( ! is_wp_error( $repaired_restore ), 'a recovered backup can actually be restored' );
+
+$restored_path = get_attached_file( $orphan_id );
+
+Harness::ok(
+	$restored_path && file_exists( $restored_path ),
+	'and the original file is back in the uploads directory'
+);
+Harness::same(
+	$repaired_row['original_file'],
+	wp_basename( (string) $restored_path ),
+	'under its original name'
+);
+
+// The other direction: a row with no pointer AND no files must stay skipped
+// rather than being given a manifest that would fail at restore time.
+$gone_id   = harness_import_attachment( harness_make_jpeg( 320, 240 ) );
+$created[] = $gone_id;
+
+harness_make_converter()->convert( $gone_id );
+
+$gone_row      = OptimizationLog::find( $gone_id );
+$gone_manifest = json_decode( (string) $gone_row['backup_path'], true );
+
+BackupManager::delete( $gone_manifest['relative_dir'], (array) $gone_manifest['files'] );
+
+OptimizationLog::update(
+	$gone_id,
+	array(
+		'backup_path'    => '',
+		'backup_expires' => 0,
+	)
+);
+
+$second_repair = ( new BackupController() )->reconcile()->get_data();
+
+Harness::ok( $second_repair['skipped'] >= 1, 'a row whose files are genuinely gone is skipped' );
+
+// Asserted on this row rather than on the totals: reconcile is site-wide, so
+// a site that genuinely has other recoverable backups would make a global
+// "repaired == 0" fail for the right reason and look like the wrong one.
+Harness::same(
+	'',
+	(string) OptimizationLog::find( $gone_id )['backup_path'],
+	'and is left claiming no backup rather than being given a manifest that would fail'
+);
+Harness::ok(
+	! BackupManager::manifest_is_intact( OptimizationLog::find( $gone_id )['backup_path'] ),
+	'so Restore stays correctly refused for it'
+);
 
 $foreign_before = $harness_foreign_backups();
 

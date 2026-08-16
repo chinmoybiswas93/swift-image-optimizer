@@ -85,6 +85,9 @@ $router->withPolicy('AdminPolicy')->group(function ( Router $router ) {
     });
 
     $router->prefix('backups')->group(function ( Router $router ) {
+        // Repair before destroy, in both the route list and the UI: the purge
+        // sweeps exactly the unreferenced files reconcile recovers.
+        $router->post('reconcile', [ BackupController::class, 'reconcile' ]);
         $router->post('purge', [ BackupController::class, 'purge' ]);
     });
 
