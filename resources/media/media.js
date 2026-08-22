@@ -119,6 +119,102 @@ const el = ( tag, className, text ) => {
 	return node;
 };
 
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+/**
+ * The plugin's bolt mark, inline, matching resources/admin/Icons/index.jsx's
+ * IconBolt so the grid toolbar reads as the same product as the dashboard.
+ * This bundle carries no React, so it is built with the DOM API rather than
+ * imported as a component.
+ *
+ * @return {SVGElement} The icon.
+ */
+function boltIcon() {
+	const svg = document.createElementNS( SVG_NS, 'svg' );
+	svg.setAttribute( 'class', 'sio-btn__icon' );
+	svg.setAttribute( 'width', '14' );
+	svg.setAttribute( 'height', '14' );
+	svg.setAttribute( 'viewBox', '0 0 24 24' );
+	svg.setAttribute( 'aria-hidden', 'true' );
+	svg.setAttribute( 'focusable', 'false' );
+
+	const path = document.createElementNS( SVG_NS, 'path' );
+	path.setAttribute( 'd', 'M13.6 3 5.8 13.8h5.1L10.2 21l8-10.8h-5.2z' );
+	path.setAttribute( 'fill', 'none' );
+	path.setAttribute( 'stroke', 'currentColor' );
+	path.setAttribute( 'stroke-width', '1.7' );
+	path.setAttribute( 'stroke-linecap', 'round' );
+	path.setAttribute( 'stroke-linejoin', 'round' );
+
+	svg.appendChild( path );
+
+	return svg;
+}
+
+/**
+ * The plugin's logo mark, inline, matching resources/admin/Icons/index.jsx's
+ * LogoMark — same rounded tile and bolt, same gradient — so the panel this
+ * bundle injects into the media modal is legible as Swift Image Optimizer's,
+ * not an unlabeled box of numbers.
+ *
+ * @return {SVGElement} The mark.
+ */
+function logoMark() {
+	const svg = document.createElementNS( SVG_NS, 'svg' );
+	svg.setAttribute( 'class', 'sio-panel__mark' );
+	svg.setAttribute( 'width', '16' );
+	svg.setAttribute( 'height', '16' );
+	svg.setAttribute( 'viewBox', '0 0 38 38' );
+	svg.setAttribute( 'aria-hidden', 'true' );
+	svg.setAttribute( 'focusable', 'false' );
+
+	const defs = document.createElementNS( SVG_NS, 'defs' );
+	const gradient = document.createElementNS( SVG_NS, 'linearGradient' );
+	gradient.setAttribute( 'id', 'sio-panel-mark-gradient' );
+	gradient.setAttribute( 'x1', '0' );
+	gradient.setAttribute( 'y1', '0' );
+	gradient.setAttribute( 'x2', '1' );
+	gradient.setAttribute( 'y2', '1' );
+
+	const stop1 = document.createElementNS( SVG_NS, 'stop' );
+	stop1.setAttribute( 'offset', '0%' );
+	stop1.setAttribute( 'stop-color', '#5b76f2' );
+
+	const stop2 = document.createElementNS( SVG_NS, 'stop' );
+	stop2.setAttribute( 'offset', '100%' );
+	stop2.setAttribute( 'stop-color', '#2c3fc0' );
+
+	gradient.appendChild( stop1 );
+	gradient.appendChild( stop2 );
+	defs.appendChild( gradient );
+	svg.appendChild( defs );
+
+	const rect = document.createElementNS( SVG_NS, 'rect' );
+	rect.setAttribute( 'width', '38' );
+	rect.setAttribute( 'height', '38' );
+	rect.setAttribute( 'rx', '11' );
+	rect.setAttribute( 'fill', 'url(#sio-panel-mark-gradient)' );
+	svg.appendChild( rect );
+
+	const path = document.createElementNS( SVG_NS, 'path' );
+	path.setAttribute( 'd', 'M21.4 8.2 12.2 21.1h5.2l-1.1 8.7 9.4-13.3h-5.4z' );
+	path.setAttribute( 'fill', '#fff' );
+	svg.appendChild( path );
+
+	return svg;
+}
+
+/**
+ * Status → (dot modifier, heading) for every row this panel can describe.
+ * Keys match OptimizationLog::STATUS_*.
+ */
+const STATUS_META = {
+	optimized: { dot: 'is-success', label: __( 'Image Optimized', 'swift-image-optimizer' ) },
+	skipped: { dot: 'is-muted', label: __( 'Not Optimized', 'swift-image-optimizer' ) },
+	failed: { dot: 'is-danger', label: __( 'Optimization Failed', 'swift-image-optimizer' ) },
+	restored: { dot: 'is-muted', label: __( 'Restored to Original', 'swift-image-optimizer' ) },
+};
+
 /**
  * Build the optimization panel for an attachment.
  *
@@ -139,95 +235,62 @@ function buildPanel( data, onAction ) {
 
 	const panel = el( 'div', 'sio-panel' );
 
-	if ( optimized ) {
-		panel.classList.add( 'is-optimized' );
+	const brand = el( 'div', 'sio-panel__brand' );
+	brand.appendChild( logoMark() );
+	brand.appendChild( el( 'span', null, __( 'Swift Image Optimizer', 'swift-image-optimizer' ) ) );
+	panel.appendChild( brand );
+
+	const meta = STATUS_META[ data.status ];
+
+	if ( meta ) {
+		panel.classList.add( `is-${ data.status }` );
 
 		const head = el( 'div', 'sio-panel__head' );
-		head.appendChild( el( 'span', 'sio-panel__dot' ) );
-		head.appendChild( el( 'strong', null, __( 'Image Optimized', 'swift-image-optimizer' ) ) );
-		panel.appendChild( head );
+		head.appendChild( el( 'span', `sio-panel__dot ${ meta.dot }` ) );
+		head.appendChild( el( 'strong', null, meta.label ) );
 
-		const saved = el( 'div', 'sio-panel__saved' );
-		saved.appendChild(
-			el(
-				'span',
-				'sio-panel__percent',
-				sprintf(
-					/* translators: %s: percentage saved. */
-					__( 'Saved %s%%', 'swift-image-optimizer' ),
-					data.percent
-				)
-			)
-		);
-		saved.appendChild(
-			el(
-				'span',
-				'sio-panel__bytes',
-				sprintf(
-					/* translators: %s: formatted file size. */
-					__( '(-%s)', 'swift-image-optimizer' ),
-					formatBytes( data.savedBytes )
-				)
-			)
-		);
-		panel.appendChild( saved );
-
-		const rows = el( 'ul', 'sio-panel__rows' );
-
-		const addRow = ( label, value ) => {
-			const row = el( 'li' );
-			row.appendChild( el( 'span', 'sio-panel__label', label ) );
-			row.appendChild( el( 'span', 'sio-panel__value', value ) );
-			rows.appendChild( row );
-		};
-
-		addRow( __( 'Original:', 'swift-image-optimizer' ), formatBytes( data.originalSize ) );
-		addRow( __( 'Optimized:', 'swift-image-optimizer' ), `↓ ${ formatBytes( data.optimizedSize ) }` );
-		panel.appendChild( rows );
-
-		const meta = el( 'ul', 'sio-panel__meta' );
-
-		meta.appendChild(
-			el(
-				'li',
-				null,
-				sprintf(
-					/* translators: %s: image format, for example WebP. */
-					__( 'Converted to %s', 'swift-image-optimizer' ),
-					formatFormat( data.currentMime )
-				)
-			)
-		);
-
-		if ( data.engine ) {
-			meta.appendChild(
+		if ( optimized ) {
+			head.appendChild(
 				el(
-					'li',
-					null,
+					'span',
+					'sio-panel__percent',
 					sprintf(
-						/* translators: %s: conversion engine name. */
-						__( 'Engine: %s', 'swift-image-optimizer' ),
-						data.engine
+						/* translators: %s: percentage saved. */
+						__( 'Saved %s%%', 'swift-image-optimizer' ),
+						data.percent
 					)
 				)
 			);
+		}
+
+		panel.appendChild( head );
+	}
+
+	if ( optimized ) {
+		panel.appendChild(
+			el(
+				'div',
+				'sio-panel__sizes',
+				sprintf(
+					/* translators: 1: original file size, 2: optimized file size. */
+					__( '%1$s → %2$s', 'swift-image-optimizer' ),
+					formatBytes( data.originalSize ),
+					formatBytes( data.optimizedSize )
+				)
+			)
+		);
+
+		const metaParts = [ formatFormat( data.currentMime ) ];
+
+		if ( data.engine ) {
+			metaParts.push( data.engine );
 		}
 
 		if ( data.conversionMs > 0 ) {
-			meta.appendChild(
-				el(
-					'li',
-					null,
-					sprintf(
-						/* translators: %s: formatted duration. */
-						__( 'Done in %s', 'swift-image-optimizer' ),
-						formatDuration( data.conversionMs )
-					)
-				)
-			);
+			metaParts.push( formatDuration( data.conversionMs ) );
 		}
 
-		panel.appendChild( meta );
+		panel.appendChild( el( 'div', 'sio-panel__meta', metaParts.join( ' · ' ) ) );
 
 		if ( data.canRestore ) {
 			const restore = el( 'button', 'sio-btn sio-btn--tertiary sio-panel__restore', __( 'Restore original', 'swift-image-optimizer' ) );
@@ -618,6 +681,7 @@ function registerToolbar() {
 		render() {
 			Button.prototype.render.apply( this, arguments );
 			this.$el.addClass( 'swift-optimize-mode-button sio-btn sio-btn--secondary' );
+			this.el.insertBefore( boltIcon(), this.el.firstChild );
 			this.toggleVisible();
 			return this;
 		},
@@ -657,6 +721,7 @@ function registerToolbar() {
 			Button.prototype.render.apply( this, arguments );
 
 			this.$el.addClass( 'swift-optimize-selected-button sio-btn sio-btn--primary' );
+			this.el.insertBefore( boltIcon(), this.el.firstChild );
 
 			if ( ! this.controller.isModeActive( 'select' ) ) {
 				this.$el.addClass( 'hidden' );
@@ -686,6 +751,12 @@ function registerToolbar() {
 			new OptimizeModeButton( {
 				text: __( 'Bulk Optimize', 'swift-image-optimizer' ),
 				controller: this.controller,
+				// Core's Button defaults to size 'large', which adds a
+				// `button-large` class fighting our own sizing at equal CSS
+				// specificity to `.wp-filter .button`. An empty size keeps
+				// that class off, so this button sizes the same 32px core
+				// gives "Bulk select" right next to it.
+				size: '',
 				priority: -65,
 			} ).render()
 		);
@@ -694,6 +765,7 @@ function registerToolbar() {
 			'swiftOptimizeSelected',
 			new OptimizeSelectedButton( {
 				style: 'primary',
+				size: '',
 				disabled: true,
 				text: __( 'Optimize', 'swift-image-optimizer' ),
 				controller: this.controller,

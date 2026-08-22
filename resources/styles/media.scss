@@ -14,98 +14,92 @@
 /* -------------------------------------------------------------------------- */
 
 .sio-panel {
-	margin: 12px 0;
-	padding: 12px 14px;
+	margin: 8px 0;
+	padding: 8px 10px;
 	border: 1px solid #e0e0e0;
+	border-left: 3px solid #3858e9;
 	border-radius: 4px;
 	background: #fff;
 	font-size: 12px;
-	line-height: 1.6;
+	line-height: 1.4;
+
+	&__brand {
+		display: flex;
+		align-items: center;
+		gap: 5px;
+		margin-bottom: 6px;
+		font-size: 10px;
+		font-weight: 600;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: #3858e9;
+	}
+
+	&__mark {
+		flex: 0 0 auto;
+		border-radius: 4px;
+	}
 
 	&__head {
 		display: flex;
 		align-items: center;
-		gap: 8px;
-		margin-bottom: 8px;
+		gap: 6px;
+		margin-bottom: 4px;
 	}
 
 	&__dot {
-		width: 8px;
-		height: 8px;
+		width: 7px;
+		height: 7px;
 		border-radius: 50%;
-		background: #008a20;
 		flex: 0 0 auto;
-	}
 
-	&__saved {
-		display: flex;
-		align-items: baseline;
-		gap: 6px;
-		margin-bottom: 10px;
+		&.is-success {
+			background: #008a20;
+		}
+
+		&.is-muted {
+			background: #757575;
+		}
+
+		&.is-danger {
+			background: #d63638;
+		}
 	}
 
 	&__percent {
-		font-size: 18px;
+		margin-left: auto;
 		font-weight: 600;
 		color: #008a20;
 	}
 
-	&__bytes {
-		color: #757575;
-	}
-
-	&__rows {
-		margin: 0 0 10px;
-		padding: 0 0 10px;
-		border-bottom: 1px solid #f0f0f0;
-		list-style: none;
-
-		li {
-			display: flex;
-			justify-content: space-between;
-			margin: 0;
-			padding: 2px 0;
-		}
-	}
-
-	&__label {
-		color: #757575;
-	}
-
-	&__value {
+	&__sizes {
+		margin-bottom: 2px;
 		font-weight: 600;
 	}
 
 	&__meta {
 		margin: 0;
-		list-style: none;
 		color: #757575;
-
-		li {
-			margin: 0;
-			padding: 1px 0;
-		}
 	}
 
 	&__reason {
-		margin: 0 0 8px;
+		margin: 0;
 		color: #757575;
 	}
 
 	&__error {
-		margin: 8px 0 0;
+		margin: 6px 0 0;
 		color: #d63638;
 	}
 
 	&__note {
-		margin: 10px 0 0;
+		margin: 6px 0 0;
 		color: #757575;
 		font-style: italic;
 	}
 
 	&__restore {
-		margin-top: 10px;
-		padding-left: 0;
+		margin-top: 6px;
 		color: #d63638;
 
 		&:hover,
@@ -115,7 +109,7 @@
 	}
 
 	&__optimize {
-		margin-top: 2px;
+		margin-top: 6px;
 	}
 }
 
@@ -126,6 +120,27 @@
 .swift-optimize-mode-button.hidden,
 .swift-optimize-selected-button.hidden {
 	display: none;
+}
+
+/*
+ * These two buttons are core wp.media.view.Button instances sitting next to
+ * WordPress's own "Bulk select" (.select-mode-toggle-button, unmodified
+ * core markup). Measured in the browser, core's own toolbar button computes
+ * to 32px min-height / 0 12px padding / 2px radius — the same box our
+ * .sio-btn already uses except for corner radius, so only that needs
+ * pinning here. The `.media-toolbar` scope keeps it local to the grid
+ * toolbar; `.sio-btn` everywhere else (the modal panel, the dashboard) is
+ * untouched.
+ */
+.media-toolbar .sio-btn {
+	border-radius: 2px;
+}
+
+.sio-btn__icon {
+	flex: 0 0 auto;
+	width: 14px;
+	height: 14px;
+	color: currentColor;
 }
 
 /*

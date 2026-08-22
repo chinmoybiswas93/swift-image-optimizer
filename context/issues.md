@@ -1,0 +1,21 @@
+# Open issues
+
+Unverified paths, environment limits and untested surfaces. Nothing here is a known live bug.
+
+Closed issues and the reasoning behind each closure: [memory/fixed-issues.md](memory/fixed-issues.md).
+
+> **A short list means nobody has looked recently, not that nothing is wrong.** Unit 10 closed
+> fourteen defects that were never listed here — three of them destroyed user data — and every one
+> was found by reading the conversion path, not by a test or an entry below.
+
+| # | Issue | What would close it |
+|---|---|---|
+| 1 | **`repair-backups` has never run against real orphans.** I-8 closed on synthetic ones only: cb-test's backup folder was already empty, so every stranded backup tested was harness-created. The routine reports "nothing to recover" there — correct and uninformative. | Run it on the first site that has real orphans, *before* anything sweeps them. |
+| 2 | **`notice-strip-test` is missing from `web-runner.php`'s suite allowlist.** Unit 14 added the harness but never registered it for web mode, so `tests/php/run.sh --web` reports SUITE FAILED with "no such suite" while the CLI run passes. | A considered one-line change — it is a deliberate security allowlist, not an oversight to patch reflexively. |
+| 3 | **Empty `relative_dir` when year/month upload folders are off.** `backup()` derives the dir from the attachment's own folder; with "Organize into month- and year-based folders" disabled that is the uploads basedir, so `relative_dir` is `''` — and `manifest_is_intact()` treats that as no manifest. Restore is never offered on such a site. `reconcile()` skips those rows rather than papering over it. | Decide whether `''` is a legitimate manifest value, then fix `backup()` and the guard together. |
+| 4 | **`tests/e2e/library-scan.spec.js` has never run against a real login.** Confirmed only to load and skip cleanly without credentials. | `WP_ADMIN_USER` / `WP_ADMIN_PASSWORD` and a real run. |
+| 5 | **The CLI suite has one site's evidence.** I-4 closed on cb-test alone. `run-cli.sh` is site-agnostic and `--smoke` is safe anywhere. | A run on a site with a different PHP version. |
+| 6 | **`lint:js` reports ~220 pre-existing `prettier`/`jsdoc` errors** across ~10 files under `resources/`. All predate any recent work. | Its own pass, with `--fix` reviewed file by file. |
+| 7 | **The Troubleshoot tab is only partly browser-verified.** The Enable Log toggle is confirmed live. The diagnostics table, log viewer, Download, Reset, Requeue and Clean up buttons have not been clicked. | A browser pass over the remaining controls. |
+| 8 | **Multisite is inferred, not tested.** Both tables are built from `$wpdb->prefix`, so they should follow the per-site pattern — but that is inference. `readme.txt` says nothing either way. | A multisite install, or an explicit "single site only" line in `readme.txt`. |
+| 9 | **`AttachmentConverter::do_convert()` is not crash-safe.** The rename to WebP and `update_attached_file()` (`AttachmentConverter.php:302-319`) run *before* `wp_generate_attachment_metadata()` (`:323`, core's own subsize regeneration — the memory-hungriest step) and *before* the `post_mime_type` update (`:341`) and `OptimizationLog::upsert()` (`:377`). A PHP OOM fatal during metadata regen — confirmed live on cb-test attachment #656 (`benjamin-chambon-zO0le9E7Ono-unsplash`) — kills the request after the destructive rename but before any bookkeeping: the file is already `.webp` on disk, `post_mime_type` still reads the old format, and no log row exists. The next Optimize attempt then treats the file as untouched and re-encodes the already-converted WebP a second time, and `original_file` in the resulting row points at that crash-artifact WebP instead of the true original — so **Restore original silently restores to the wrong file** while the real original sits orphaned, unreferenced, in the backup folder. `has_memory_for()`'s pre-check (invariant 7) only guards the plugin's own decode; it says nothing about core's subsize regeneration afterward. | Move the `post_mime_type` update and `OptimizationLog::upsert()` earlier (or ahead of metadata regen with a "pending" status), or wrap `wp_generate_attachment_metadata()` in a shutdown-function safety net that can still record what happened. |
