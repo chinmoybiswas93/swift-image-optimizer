@@ -1,20 +1,13 @@
 # Unit 03 — Backups & Retention
 
+> **Names below are historical.** `RetentionCron` became
+> `App\Hooks\Scheduler\JobRunner`, and the `src/` paths were replaced in the 2026-08-10
+> restructure. The graph still surfaces `RetentionCron` from this file — it does not exist in code.
+
 ## Goal
 
 Make destructive conversion reversible. Nothing in Unit 04 or 05 may be written until this
 unit exists, because those units delete user originals.
-
-## Read first
-
-- `src/Database.php` — the `backup_path` and `backup_expires` columns
-
-## Files changed
-
-| File | Purpose |
-|---|---|
-| `src/Backup/BackupManager.php` | Store, restore, delete, disk usage |
-| `src/Backup/RetentionCron.php` | Daily purge of expired backups |
 
 ## Layout
 

@@ -8,17 +8,8 @@ systems with a single **disk-verified scan snapshot** that every figure on the s
 merge the tab's three cards into one, and make scanning and bulk optimization run in the
 background so neither can freeze a request.
 
-Reported as I-11 in `current-issues/issues.md`, renumbered here to **I-14** — Unit 11 already
+Reported as I-11, renumbered here to **I-14** — Unit 11 already
 used I-11 for the storage-folder fix.
-
-## Read first
-
-- `context/architecture.md` — the 24 invariants. This unit lands on 9, 13, 18, 22, 23 and 24
-- `app/Services/Bulk/Scanner.php`, `app/Services/Bulk/Runner.php`, `app/Services/Lock.php`
-- `app/Hooks/Scheduler/BulkJobRunner.php` — the pattern every new cron driver here copies
-- `app/Http/Routes/api.php`, `app/Http/Controllers/BulkController.php`, `app/Http/Requests/BulkStartRequest.php`
-- `api/StoreSettings.php`, `app/Models/OptimizationLog.php`
-- `resources/admin/Pages/BulkPage.jsx`, `resources/admin/App.jsx`, `resources/admin/Partials/HeroStats.jsx`
 
 ## The three defects this unit closes
 
@@ -54,32 +45,6 @@ Two deviations from the literal request, both flagged to the user and accepted:
   `disabled={ running && ! stalled }`, reusing `Runner::STALL_AFTER`.
 - **The ring draws a second muted arc** for the permanently-skipped share, so it closes visually
   to 100% while the headline number stays `optimized / total_images`. No number changes.
-
-## Files changed
-
-| File | Purpose |
-|---|---|
-| `app/Services/Bulk/ScanRunner.php` | **New.** The batched, disk-verified scan engine |
-| `app/Services/Bulk/Coordinator.php` | **New.** The scan → optimize → scan chain |
-| `app/Hooks/Scheduler/ScanJobRunner.php` | **New.** Batch tick + recurring schedule + monthly interval |
-| `app/Http/Controllers/ScanController.php` | **New.** start/status/batch/cancel/snapshot |
-| `app/Http/Requests/ScanStartRequest.php` | **New.** One `force` boolean |
-| `app/Models/OptimizationLog.php` | `attachmentScanPage()`, `countScannableAttachments()` |
-| `app/Services/Bulk/Runner.php` | Fire the completion action; recompute `total` in `state()` |
-| `app/Http/Routes/api.php` | The `library` prefix group; `bulk/run` and `bulk/phase` |
-| `app/Http/Controllers/BulkController.php` | `run()` and `phase()` |
-| `boot/bindings.php` | `scanner` and `coordinator` singletons + aliases |
-| `app/Hooks/actions.php` | Register `ScanJobRunner` and `Coordinator` |
-| `app/Hooks/Handlers/ActivationHandler.php` | Schedule the recurring scan, kick a first one |
-| `app/Hooks/Handlers/DeactivationHandler.php` | Unschedule both scan hooks |
-| `app/Hooks/Handlers/MenuHandler.php` | Localize `snapshot` and `scanFrequency` |
-| `api/StoreSettings.php`, `config/optimizer.php` | The `scan_frequency` setting |
-| `uninstall.php` | Delete the four new options, clear both hooks |
-| `resources/admin/Components/ProgressRing.jsx` | **New.** Hand-rolled SVG ring |
-| `resources/admin/Partials/{LibraryCard,ScanSummary,RunProgress,DryRunPanel}.jsx` | **New.** The merged card |
-| `resources/admin/{App.jsx,Pages/BulkPage.jsx,Pages/SettingsPage.jsx,Partials/HeroStats.jsx,Components/index.js}` | Snapshot state, source switch, frequency select |
-| `resources/styles/{admin.scss,_controls.scss}` | `.sio-ring`, `.sio-library`, `.sio-scanmeta`, `.sio-phase` |
-| `tests/php/bulk-e2e.php`, `tests/e2e/library-scan.spec.js` | Coverage |
 
 ## The scan data model
 

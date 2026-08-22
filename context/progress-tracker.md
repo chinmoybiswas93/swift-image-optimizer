@@ -1,162 +1,36 @@
-# Progress Tracker
+# Progress tracker
 
-Update this file after every meaningful implementation change. Keep entries short — full
-implementation detail belongs in each unit's spec file (`context/specs/done/NN-*.md`,
-"## Completion Notes"), not here.
+Where the project is now. Finished units and their reasoning are in
+[memory/units.md](memory/units.md); open issues in [issues.md](issues.md).
 
-## Current Phase
+Keep this file short. When a section here becomes history, move it to `memory/`.
 
-**Post-v1.1.0 — hardening before WordPress.org submission**
+## Phase
 
-## Current Goal
+**Post-v1.1.0 — hardening before WordPress.org submission.** Both release blockers are closed and
+the dashboard has had a real browser pass. Units 01–14 are done.
 
-Units 01–08 built both features. **Unit 10 closed fourteen defects** found in a full read of the
-conversion path — three of which destroyed user data silently — and added the Troubleshoot tab,
-file-based logging and server diagnostics. Version bumped to **1.1.0**.
+## Where things stand
 
-**Unit 09 and Unit 11 are done.** `phpcs` has now actually been run (784 → 0), Imagick is
-exercised by the suite for the first time, and the four user-reported issues (I-10…I-13) are
-fixed. Both release blockers are closed.
+The last three closures were all corrections to entries that were themselves wrong, which is the
+useful pattern to carry forward:
 
-**Unit 12 is done.** Closed I-14 (renumbered from I-11, which collided with Unit 11's own I-11).
-The Bulk Optimize tab's numbers never reconciled because they came from two unrelated
-computations — `Scanner::summary()`'s live mime count (which loses an image from its own totals
-the moment that image is optimized, since its mime becomes `image/webp`) and `StatsResource`'s
-log-table aggregate. Replaced both with one stored, disk-verified scan snapshot (`ScanRunner`,
-cron-driven, invariant 25) that the merged card's ring, the hero and the tiles all read. Bulk
-Optimize now chains scan → optimize → scan via `Coordinator`. Scheduled rescans
-(manual/daily/weekly/monthly) via `ScanJobRunner`. 131 PHP assertions passing (up from 68), 0
-`phpcs` errors/warnings, `owasp-security-review` clean on the five new routes.
+- **I-4** — the CLI's bulk flags had never run. The conversion was never the untested part; flag
+  parsing, the clamps and the `WP_CLI::error` exit codes were, and none of them exist when you
+  call a `Commands` method directly.
+- **I-8** — the entry blamed TEXT truncation, which cannot happen at these sizes. The real causes
+  were an unchecked `wp_json_encode()` return and the gap between copying backup files and writing
+  the row. `BackupManager::reconcile()` closes it, and invariant 26 records the ordering it
+  depends on: **repair before sweep**, because the purge deletes exactly what repair recovers.
+- **I-9** — the entry said coverage was thin. There was none: every backup assertion ran through
+  the variant that deliberately drops the expiry filter.
 
-**I-3 is closed — the dashboard has been tested in a browser** (2026-08-16). That was the last
-release gate standing between here and a .org submission, and it also carried the two claims
-Unit 14 could only prove in source: that foreign notices are actually gone from the screen, and
-that the card boxes were merely touching rather than overlapping. Unit 12's
-`tests/e2e/library-scan.spec.js` is still a separate item — it has never been run against a real
-login, only confirmed to load and to skip cleanly without credentials.
-
-**Units 13 and 14 are done**, and their specs have moved to `specs/done/`. Unit 13 closed the
-Backups tab reports: "Delete all backups now" confirmed, toasted and updated the number without
-deleting a file, because deletion was manifest-driven only and on cb-test *every* log row has an
-empty `backup_path` while 892 KB sits in the folder. It adds a guarded sweep of the plugin's own
-backup root (`BackupManager::purge_orphans()`), drops the `backup_expires > 0` /
-`status = 'optimized'` filters that also excluded "Keep forever" backups
-(`JobRunner::purge_manifests()`), and replaces every `window.confirm()` in the plugin with a real
-modal — typed `DELETE` for the purge. Unit 14 closed I-10 (reopened) and I-15: foreign admin
-notices are stripped on this plugin's screen only, and the card's bottom spacing is fixed in
-`admin.scss`.
-
-**Unit 13's two open items are settled.** Its purge has now run against a real folder — the
-`convert-restore-e2e` harness drives `BackupController::purge()` end to end and asserts the
-folder reaches 0 bytes, the guard files survive, and a symlink's target outside the root is not
-touched. cb-test's backup folder is empty and `stats` reports `Backups on disk: 0 B`. Unit 13's
-spec Completion Notes are still the placeholder; the reasoning that matters ended up in the I-8
-closure detail instead.
-
-**I-8 is closed (2026-08-16, no unit).** `BackupManager::reconcile()` rebuilds manifests for
-originals still on disk that no row points at, driven from the log rows rather than a directory
-walk, writing pointers and deleting nothing. `encode_manifest()` closes the silent-`false` hole
-in `wp_json_encode()` on both write paths. Surfaced as `POST backups/reconcile`, a **Repair
-backup records** button placed above the purge, and `wp swift-image-optimizer repair-backups`.
-New invariant 26 in `architecture.md`: repair runs before any sweep, because the purge deletes
-exactly what repair recovers. Unit 13's spec claims it closed I-8 — it closed the reclaim half
-and left the recover half, which is what this does. Full reasoning in
-[current-issues/issues.md](current-issues/issues.md) under "I-8 closure detail".
-
-**I-9 is closed (2026-08-16, no unit).** The retention cron now has 15 assertions in
-`convert-restore-e2e`, fired through `do_action( JobRunner::HOOK )` rather than by calling
-`purge()` directly. It had no coverage at all before — every existing backup assertion went
-through `purge_manifests()`, which deliberately drops the expiry filter — so the
-`backup_expires > 0 AND backup_expires < time()` query had never run under test. It works. The
-assertion worth keeping is that an *unexpired* backup survives a cron run: a wrong comparison
-there wipes every backup on the site, and nothing else in the suite would have caught it.
-
-**`current-issues/issues.md` is now empty of open items.** Per its own Unit 10 caution, that means
-nobody has looked recently — not that nothing is wrong. Unit 10 found fourteen defects, three of
-them data-destroying, none of which were listed there.
-
-Next up: the remaining items in **Next Up** below, then the `future-specs/` backlog.
-
-## Completed
-
-> One line per unit. Full detail lives in each unit's spec under "## Completion Notes".
-
-| Unit | Summary | Spec |
-|---|---|---|
-| 01 | Bootstrap, PSR-4 autoloader, `Database` log table, `Settings`, engine abstraction + detection (Imagick → cwebp → GD) | [01-foundation.md](specs/done/01-foundation.md) |
-| 02 | `Optimizer` + `Upload\Interceptor` — Feature 1. Converts at `wp_handle_upload` so WordPress builds every subsize as WebP itself | [02-upload-optimization.md](specs/done/02-upload-optimization.md) |
-| 03 | `BackupManager` + `RetentionCron` — protected backup dir, path-traversal guard, daily expiry purge | [03-backup-retention.md](specs/done/03-backup-retention.md) |
-| 04 | `UrlMap` + `DatabaseRewriter` + `Fallback404` — serialization-safe rewriting across 5 tables, with dry run | [04-url-rewriting.md](specs/done/04-url-rewriting.md) |
-| 05 | `AttachmentConverter` + `Media\ListTable` — Feature 2 convert/restore, Media Library column, row actions, bulk actions | [05-attachment-conversion.md](specs/done/05-attachment-conversion.md) |
-| 06 | `Bulk\Scanner` + `Bulk\Runner` + `Rest\Controller` + `Bulk\Cli` — adaptive batching, resumable progress, 8 REST routes, 3 WP-CLI commands | [06-bulk-rest-cli.md](specs/done/06-bulk-rest-cli.md) |
-| 07 | React admin — Bulk / Settings / Backups tabs, `@wordpress/scripts` build, custom webpack entry | [07-react-admin.md](specs/done/07-react-admin.md) |
-| 08 | Media Library UI — grid-view Bulk Optimize button, selection runner with progress, modal panel; schema v2 (`conversion_ms`) | [08-media-library-ui.md](specs/done/08-media-library-ui.md) |
-| 10 | Hardening — 14 defects closed, `Logging\Logger`, `Diagnostics\EnvironmentReport`, `Support\Lock`, Troubleshoot tab, engine chain, schema v3 (URL lookup table) | [10-hardening-troubleshoot.md](specs/done/10-hardening-troubleshoot.md) |
-| 09 | PHPCS actually run for the first time: 784 violations → 0. Dead `safe_mode` check removed, `imagedestroy()` version-gated, SQL annotations fixed (they had never been in effect) | [09-phpcs-compliance.md](specs/done/09-phpcs-compliance.md) |
-| 11 | The four user reports: toasts + no core notice markup (I-10), one storage folder (I-11), resumable cron-driven bulk (I-12), optimized state verified against disk (I-13). Harnesses rebuilt and **committed**, Imagick covered (I-2) | — |
-| 12 | Closed I-14 — one scan-backed dashboard. `ScanRunner` (batched, disk-verified scan), `Coordinator` (scan→optimize→scan chain), `ScanJobRunner` (scheduled rescans), a hand-rolled `ProgressRing`, and the three-card Bulk tab merged into one. Invariant 25 added | [12-centralized-scan-stats.md](specs/done/12-centralized-scan-stats.md) |
-| 13 | Backups tab: `BackupManager::purge_orphans()` sweeps the plugin's own backup root, `JobRunner::purge_manifests()` drops the expiry/status filters that hid "Keep forever" rows, and `Modal`/`ConfirmDialog` replace every `window.confirm()` — typed `DELETE` for the purge | [13-backup-purge-confirm-modal.md](specs/done/13-backup-purge-confirm-modal.md) |
-| 14 | Closed I-10 (reopened) and I-15 — `ForeignNoticeHandler` strips other plugins' notices on this screen only, whitelisting the plugin's own so the missing-build notice survives; three spacing rules in `admin.scss`. `tests/php/notice-strip-test.php`, 9 assertions against real `WP_Hook` | [14-notices-and-card-spacing.md](specs/done/14-notices-and-card-spacing.md) |
-
-## Next Up
-
-| What | Why |
-|---|---|
-| Run `tests/e2e/library-scan.spec.js` for real | Written and confirmed to load/skip cleanly, but never run against a live login — no admin credentials were available in the session that wrote it. Needs `WP_ADMIN_USER` / `WP_ADMIN_PASSWORD`. |
-| Run `npm run test:cli` on a second Local site | I-4 was closed on cb-test alone. The runner is site-agnostic and `--smoke` is safe anywhere, so a second site costs little; a site on a different PHP (`ff-test` is 8.3.23) is the one worth spending it on. |
-| Rebuild the upload and media-UI harnesses | Two of the original five were lost and not rewritten; that is the gap between 150 assertions and the old 143 plus what those covered. |
-| Run `repair-backups` against a folder with real orphans | I-8 closed on synthetic orphans only — cb-test's backup folder was already empty when it landed, so every stranded backup tested was one the harness created. The routine reports "nothing to recover" there, which is correct and uninformative. |
-| Add `notice-strip-test` to `web-runner.php`'s suite allowlist | Unit 14 added the harness but never registered it for web mode, so `tests/php/run.sh --web` reports SUITE FAILED with "no such suite" while the CLI run passes. Deliberate allowlist, so it wants a considered one-line change, not a reflex. |
-| Fix the 220 pre-existing `prettier`/`jsdoc` errors `lint:js` now surfaces | First successful `lint:js` run ever (see below) — errors are spread across ~10 files under `resources/`, all pre-existing, none on lines touched by the comment cleanup. Out of scope for that unit; needs its own pass, ideally with `--fix` reviewed file by file since some of those files have other uncommitted work in flight. |
-
-### 2026-08-16 — WP-CLI bulk paths verified, closing I-4 (no spec)
-
-Unit 10 left the bulk half of the CLI unexercised: `optimize --all`, `optimize --dry-run`,
-`restore --all` and the `--limit` / `--batch` flags — the route the plugin actually recommends for
-large libraries. `tests/php/cli-bulk-e2e.php` closes it with **42 assertions, all passing** on
-cb-test.local, driving the real `wp` binary through `proc_open` rather than calling `Commands`
-methods. The flag parsing, the clamps and the `WP_CLI::error` exit codes are the part that had
-never run, and none of them exist when you call the method directly. Nothing broke, including
-`--batch=0` (clamps to 1) and `--batch` larger than the queue.
-
-`tests/php/run-cli.sh` runs it against **any** Local site: socket, the site's *own* PHP version
-and the expected domain all come from Local's `sites.json`, looked up by the site that owns the
-checkout. `--sites` lists them; `--smoke` runs only the read-only commands, which is the safe
-first thing to try on an unfamiliar site. Three guards, given the two-database history above: the
-runner refuses if `option get siteurl` disagrees with the domain Local has on record, refuses a
-`--site` naming a different site than the one these files live in, and the harness refuses if the
-library holds any pending or restorable image it did not create — `--all` acts on the whole
-library, not just fixtures. `SIO_CLI_ALLOW_DIRTY=1` overrides the last one.
-
-Not wired into `npm run test:php`'s default suite on purpose: a suite that converts and then
-restores an entire media library should not run by accident alongside the others. It has its own
-`npm run test:cli`. Note it uses PHP **8.2.27**, cb-test's actual version — `run.sh` pins 8.2.29,
-which no site on this machine runs.
-
-Deliberately not done: closing I-4 required one site's evidence, and one site is one data point.
-
-### 2026-08-11 — comment cleanup (no spec, too small to warrant one)
-
-Reworded 5 vacuous `Constructor.` docblocks (`Hooks/CLI/Commands.php`,
-`Services/AttachmentConverter.php`, `Services/Bulk/Coordinator.php`, `Services/Bulk/Runner.php`,
-`Services/Upload/Interceptor.php`) and removed 4 decorative ASCII banner comments in
-`resources/media/media.js`. Added a standing "no decorative banners / no placeholder docblocks / no
-commented-out code" rule to `context/code-standards.md` under `## Comments`. No behavior changed.
-
-`phpcs` now runs clean (0 errors/warnings, all 75 files) using the WPCS install already present at
-`~/.wpcs` per `specs/done/09-phpcs-compliance.md` — just needed that `vendor/bin` on `PATH`.
-
-`lint:js` was crashing outright before this unit, unrelated to the comment cleanup: the committed
-`package-lock.json` let a floating `typescript` peer dependency resolve to `7.0.2`, which
-`@typescript-eslint@6.21.0` (pulled in by `@wordpress/eslint-plugin`) cannot load — a version
-`@typescript-eslint` was never designed to see. Pinned via a `"typescript": "^5.4.5"` entry in
-`package.json`'s new `overrides` block (dev-only, doesn't affect `build/` output), then
-`rm -rf node_modules && npm install`. `lint:js` now runs for the first time and reports 216
-pre-existing `prettier`/`jsdoc` errors, unrelated to this unit — see Next Up.
+Nothing is in progress. Next work comes off [issues.md](issues.md) or the `future-specs/` backlog.
 
 ## Verified behaviour
 
-Measured on cb-test.local (WP 7.0.3):
+Measured on cb-test.local (WP 7.0.3). This table is evidence, not narrative — it is the one record
+of what the plugin actually did on real files.
 
 | Case | Result |
 |---|---|
@@ -170,217 +44,46 @@ Measured on cb-test.local (WP 7.0.3):
 | Grid toolbar + modal panel | Verified live in the browser, zero console errors |
 | Portrait JPEG, EXIF Orientation=6, via the plugin | → **800x400 upright**, engine `gd` (chain declined cwebp) |
 | The same file through cwebp directly | → **400x800 sideways** — the bug, reproduced beside its fix |
-| Upload path with `backup_uploads` on | `backup_path` populated, manifest intact, image **restored** — impossible before Unit 10 |
-| Converter path with logging on | Full trail: lock, backup (7 files, 53836 B), encode (cwebp, 71ms), rename, metadata, 7 deletions by absolute path, done |
-| Convert → restore, schema v3 | 7 URL lookup rows created, 0 after restore; file, mime and dimensions all reverted |
+| Upload path with `backup_uploads` on | Manifest intact, image **restored** — impossible before Unit 10 |
+| Convert → restore, schema v3 | 7 URL lookup rows created, 0 after restore; file, mime and dimensions reverted |
 | Temp sweep | Abandoned file removed, in-flight file left alone |
+| Backup purge | Folder reaches 0 bytes, guard files survive, a symlink's target outside the root untouched |
+| Retention cron | Unexpired backup survives; aged one collected; "keep forever" untouched |
 
-**Engine availability differs between CLI and web, and it matters:**
+## Architectural decisions
 
-| Context | Imagick | Selected |
-|---|---|---|
-| Local CLI PHP (7.4 → 8.4) | no | `cwebp` |
-| The site's web request | **yes** | `imagick` |
+Why the code is shaped the way it is. These are not recoverable by reading it.
 
-So the harnesses exercise cwebp while the site runs Imagick. Tracked as **I-2**.
-
-## Architectural decisions made during the build
-
-1. **No `JsonRewriter` class.** The original plan called for one to handle Elementor/Bricks
-   escaped-slash JSON. It turned out to be unnecessary: `UrlMap::with_escaped_slashes()` adds
-   the `https:\/\/` form to the plain map, so a `strtr` over the raw string handles JSON
-   without decoding it. Simpler and safer than parse-modify-reencode.
-
-2. **React source lives in `admin/`, not `src/`.** `src/` is PHP. `wp-scripts` insists on
-   `src/index.js` by default, so `webpack.config.js` overrides the entry point rather than
-   mixing JS into the PHP tree.
-
-3. **Backup expiry does not change `status`.** Originally it set a `backup_expired` status,
-   which silently removed that image from the savings stats. Availability is now signalled by
-   an empty `backup_path`. The `STATUS_BACKUP_EXPIRED` constant was removed.
-
-4. **Soft-error classification is centralized** in `AttachmentConverter::soft_errors()` — split
-   in Unit 10 into `PERMANENT_SKIPS` and `RETRYABLE_SKIPS`, still a single definition. It was
-   duplicated across `Runner`, `Cli` and `log_failure()` and had already drifted out of sync.
-
-5. **The rewriter fetches the filter column in its main SELECT.** It originally ran a separate
-   query per matched row to check the skip list — tens of thousands of round trips on a real
-   library. The skip check also moved *before* the counting, so dry-run numbers now match what
-   a real run would do.
-
+1. **No `JsonRewriter` class.** The plan called for one to handle Elementor/Bricks escaped-slash
+   JSON. Unnecessary: `UrlMap::with_escaped_slashes()` adds the `https:\/\/` form to the plain map,
+   so a `strtr` over the raw string handles JSON without decoding it — simpler and safer than
+   parse-modify-reencode.
+2. **React source lives outside the PHP tree.** `wp-scripts` insists on `src/index.js` by default,
+   so `webpack.config.js` overrides the entry point rather than mixing JS into PHP directories.
+3. **Backup expiry does not change `status`.** It originally set a `backup_expired` status, which
+   silently removed that image from the savings stats. Availability is signalled by an empty
+   `backup_path` instead.
+4. **Soft-error classification is centralized** in `AttachmentConverter::soft_errors()`. It was
+   duplicated across three call sites and had already drifted out of sync.
+5. **The rewriter fetches the filter column in its main SELECT.** It used to run a separate query
+   per matched row — tens of thousands of round trips on a real library. The skip check also moved
+   *before* the counting, so dry-run numbers match what a real run would do.
 6. **Custom toolbar buttons rely on core skipping `.media-button`.** `SelectModeToggle`'s
-   show/hide never touches elements carrying that class, in either direction
-   (`media-grid.js:337` and `:350`). That is what allows an always-visible button beside "Bulk
-   select" without patching core — and why both new buttons manage their own `hidden` class.
-
-7. ~~**Upload-optimized images have no backup.**~~ **Resolved in Unit 10.** The open product
-   question was settled with the user: uploads are backed up too, behind a `backup_uploads`
-   setting defaulting to on. `Interceptor` writes the manifest in the same shape the converter
-   path uses, so Restore works for uploads without a single change to the restore code. The
-   storage cost is real and is now stated plainly in `readme.txt` rather than left implicit.
-
-8. **Engine selection is a chain, not a choice** (Unit 10). `EngineFactory::get()` used to
-   return one engine and a file it could not handle became a failure. It now returns the first
-   of a chain, and `Optimizer` walks it — which is what lets cwebp decline an EXIF-rotated JPEG
-   it would write sideways, and lets a CMYK JPEG that stops GD dead fall through to Imagick. An
-   explicit engine preference moves that engine to the front rather than replacing the chain,
-   so the fallbacks still apply.
-
-9. **Locks are options, not transients** (Unit 10). `get_transient()` then `set_transient()` is
-   check-then-set: two simultaneous requests both see "unlocked". `Support\Lock` uses
-   `add_option()`, whose unique key on `option_name` makes the database arbitrate. The stored
-   value is the acquisition time, so a lock orphaned by a fatal can be broken rather than
-   blocking that image for good.
-
-10. **The rewriter invalidates precisely** (Unit 10). It used to call `wp_cache_flush()` once
-    per batch, which on a site with a persistent object cache discards everything every few
-    seconds — on exactly the large sites that can least afford it. Table descriptors now carry
-    an `object` column and a cache `group`, collected in the existing SELECT, so only what was
-    rewritten is dropped.
-
-## Bugs found and fixed during the build
-
-| Bug | Impact | Where |
-|---|---|---|
-| Soft-error list duplicated and out of sync | 496 images reported as **failed** that were correctly logged as **skipped** | `Bulk\Runner`, `Bulk\Cli` |
-| `Cli::optimize_ids()` called but never defined | `wp swift-image-optimizer optimize --id=N` would fatal | `Bulk\Cli` |
-| Per-row query for the skip check | Tens of thousands of extra queries during bulk | `Rewrite\DatabaseRewriter` |
-| Backup expiry zeroed savings stats | Stats under-reported over time | `Backup\RetentionCron` |
-
-## Unit 10 — fourteen defects found by reading the conversion path
-
-Found by reading, not by a failing test. Every one failed silently, which is why the logger was
-built before any of them were fixed. Full detail in
-[specs/done/10-hardening-troubleshoot.md](specs/done/10-hardening-troubleshoot.md).
-
-**Destroyed data:**
-
-| Bug | Impact | Where |
-|---|---|---|
-| Upload deleted the original with no backup | A 6000px camera JPEG became a 2560px lossy WebP permanently, with no Restore | `Upload\Interceptor` |
-| cwebp never rotated, and stripped the EXIF that said to | Every portrait photo written sideways, permanently — and cwebp is the engine the harnesses actually exercise (**I-2**) | `Engine\CwebpEngine` |
-| `array_flip()` on a non-injective url_map | Restore rewrote full-size references to a *thumbnail* filename and reported success | `AttachmentConverter::restore` |
-
-**Correctness:**
-
-| Bug | Impact | Where |
-|---|---|---|
-| Skips and failures were terminal forever | An image skipped for `insufficient-memory` was never retried, even after raising the limit | `Bulk\Scanner` |
-| No disk check before backing up | `copy()` failing halfway leaves a truncated file that looks like a valid backup | `Backup\BackupManager` |
-| Rewrite matched on filename alone | An attachment literally named `photo-300x200.jpg` collides with another's thumbnail; converting one broke the other | `AttachmentConverter` |
-| Comments never scanned | An image embedded in a comment kept pointing at a deleted file | `Rewrite\DatabaseRewriter` |
-| Check-then-set locks | Two requests could both convert the same image | `AttachmentConverter`, `Bulk\Runner` |
-
-**Performance and hygiene:**
-
-| Bug | Impact | Where |
-|---|---|---|
-| `wp_cache_flush()` per batch | Whole object cache discarded every few seconds during a bulk run | `Rewrite\DatabaseRewriter` |
-| ~50 unindexable LIKE terms per batch | Two full scans of `postmeta` per five images | `Rewrite\DatabaseRewriter` |
-| 404 fallback was `LIKE` over LONGTEXT, basename-only | Unindexed query per 404 under a bot sweep; wrong image across month folders | `Rewrite\Fallback404` |
-| Memory estimate applied to cwebp | Large images refused on hosts that would have handled them, out of process | `Optimizer` |
-| Temp files written beside the source | A killed process stranded `swift-tmp-*.webp` in month folders, picked up by media scanners and backups | `Optimizer` |
-| APNG flattened, CMYK JPEG marked failed | Animation lost silently; CMYK recorded as a hard failure rather than falling through | `Optimizer`, `Engine\GdEngine` |
-
-## Corrections to earlier reporting
-
-Two findings were reported confidently in this tracker and were both **wrong**. Recorded here
-so they are not repeated:
-
-1. **"496 orphaned attachments"** — an artifact of running harnesses against cb-test's *files*
-   with TuFlamenco's *database* (Local names every DB `local`; only the socket differs).
-   cb-test has 62 attachments and **0** with missing files. The Unit 10 spec built on this has
-   been deleted, and the plugin's table/options were removed from TuFlamenco. No content there
-   was modified.
-
-2. **"Imagick has never executed"** — drawn from a CLI check. The site's web PHP *does* have
-   Imagick, and it is the active engine in production. The real problem is different and
-   narrower: the harnesses run under CLI PHP, so they exercise cwebp while users get Imagick
-   (**I-2**).
-
-A test harness also **destroyed 54 real backups** with a glob-based cleanup. See the incident
-note in [current-issues/fix-plan.md](current-issues/fix-plan.md).
-
-## Unit 11 — the four user reports, and what they turned up
-
-Each report had a cause that was one line of misplaced trust, and two of them exposed something
-worse than what was reported:
-
-| Reported | Actual cause | Also found |
-|---|---|---|
-| WP notice on the plugin's page | The plugin emitted core's `notice` class itself, and hooked `admin_notices` on **every** admin screen | `BackupsPage` showed failures in a success-styled notice |
-| Three folders in uploads | Three sibling constants, never one parent | — |
-| Bulk stops on tab change, restarts from scratch | `start()` overwrote live run state; the UI never reconciled `running` on mount | **A crash between "files renamed" and "references repointed" broke those references permanently** — the batch marks images done before rewriting |
-| Restored site shows all processed | `already-optimized` trusted the status column with no disk check | Clearing the row does not re-queue for bulk: mime is already `image/webp` |
-
-The pattern in three of the four is the same one `manifest_is_intact()` was written for in Unit
-10: **a database column and the thing it describes are two different facts.** Worth looking for
-wherever else the plugin trusts a column.
-
-## Open Questions
-
-1. ~~**The suite never exercises Imagick.**~~ Closed. `tests/php/run.sh --web` runs the harnesses
-   under the site's php-fpm, where Imagick exists; `SIO_TEST_ENGINE` forces one per run and the
-   harness asserts on the engine actually recorded, so "used" is proven rather than assumed.
-2. ~~**Should uploads be backed up?**~~ Settled in Unit 10: yes, behind `backup_uploads`,
-   default on.
-3. **Dry-run extrapolation is a sample.** `Runner::dry_run()` inspects 25 attachments and
-   scales linearly. Acceptable as a "roughly how much will change" signal; do not present it as
-   exact.
-4. **Multisite is unconsidered.** No testing, no per-site table handling reviewed. Unit 10 added
-   a second table (`swift_image_optimizer_urls`) built from `$wpdb->prefix`, so it follows the
-   same per-site pattern as the log table — but that is inference, not testing.
-5. **The Troubleshoot tab is only partly browser-verified.** The Enable Log toggle is confirmed
-   working live (the transition hook's `MARK` line is in the log). The diagnostics table, log
-   viewer, Download, Reset, Requeue and Clean up buttons have not been clicked.
-
-## Restructure 2026-08-09: feature folders → layered folders
-
-Reorganized `src/` from feature-based folders (`Admin/`, `Rest/`, `Backup/`, `Bulk/`, `Rewrite/`,
-`Upload/`, `Engine/`) to layered folders (`Http/`, `Services/`, `Repositories/`, `Providers/`,
-`Hooks/`), matching the sibling `swiftlisting` plugin's architectural style. Pure restructure —
-no hook names, REST routes, WP-CLI commands, or DB schema changed. Full mapping in
-`context/architecture.md`'s "Class map".
-
-Key moves: `Admin\Settings` → `Repositories\SettingsRepository`, `Stats` →
-`Repositories\StatsRepository`, `Rest\Controller` → `Http\Controllers\Controller`,
-`Media\ListTable` → `Http\Admin\ListTable`, `Database` (root) → sibling `database/Database.php`
-(namespace `SwiftImageOptimizer\Database`), everything else moved under `Services\` or
-`Hooks\Scheduler\` with namespaces unchanged in name, only in location.
-
-**Added, dependency-free:** `Support\Container` / `Support\App` (minimal DI container + static
-facade) and `Providers\ServiceProvider` / `Providers\PluginBootstrapper`, imitating the *shape*
-of `swiftlisting`'s framework (`register()` on every provider, then `boot()` on every provider)
-without depending on it — no Composer was added, the plugin still boots via its own hand-rolled
-PSR-4-lite autoloader in `swift-image-optimizer.php` (now mapping two roots: `src/` and, for the
-`Database` namespace only, the sibling `database/`). `Plugin.php` is now a thin
-`PluginBootstrapper::create()->providers([...])->boot()` call instead of a constructor that
-directly `new`s every component.
-
-One deliberate deviation from `swiftlisting`'s exact `PluginBootstrapper` behavior: swiftlisting
-defers every provider's `boot()` to a `plugins_loaded` hook because its bootstrapper runs at
-plugin-file top level. This plugin's entry point (`swift_image_optimizer()`) is *itself* already
-hooked to `plugins_loaded`, so deferring boot() to another `plugins_loaded` add_action would be
-unreliable (that hook may already be mid-fire). `PluginBootstrapper::boot()` here runs
-register-then-boot on every provider synchronously instead — same two-phase ordering guarantee,
-correct for this plugin's actual call site.
-
-Verified via `php -l` on every touched file, three structural sweeps (no corrupted/stale FQCNs,
-every `use` import resolves to a real file, every class/namespace matches its file path), and a
-full runtime smoke test that boots the plugin end-to-end with stubbed WordPress functions —
-every hook fired in the same order as the original code. `swiftlisting` itself was never
-modified — reference only.
-
-Also added `bin/build-dist.sh` (modeled on `swiftlisting`'s own build script, minus the Composer
-steps this plugin doesn't need) to produce an org-ready `dist/swift-image-optimizer-<version>.zip`.
-
-## Tooling added 2026-08-08
-
-- **Knowledge graph** at `graphify-out/` (391 nodes, 498 edges, 56 communities) covering all
-  59 source/doc files. Query with `graphify query "..."` before reading files directly — see
-  "Graph-first research" in `context/ai-workflow-rules.md`. Re-run `/graphify --update` after
-  units that add/change files.
-- **Playwright** added as a devDependency for browser-level e2e testing (`npm run test:e2e`),
-  config at `playwright.config.js`, tests in `tests/e2e/`. Complements the four PHP harnesses,
-  which don't touch the admin UI. See "Browser (e2e) testing with Playwright" in
-  `context/ai-workflow-rules.md`.
+   show/hide never touches elements carrying that class, in either direction. That is what allows
+   an always-visible button beside "Bulk select" without patching core — and why both buttons
+   manage their own `hidden` class.
+7. **Uploads are backed up too**, behind `backup_uploads`, default on. `Interceptor` writes the
+   manifest in the same shape the converter path uses, so Restore works for uploads with no
+   separate restore code. The storage cost is real and is stated in `readme.txt`.
+8. **Engine selection is a chain, not a choice.** `EngineFactory::get()` returns the first of a
+   chain and `Optimizer` walks it — which lets cwebp decline an EXIF-rotated JPEG it would write
+   sideways, and lets a CMYK JPEG that stops GD dead fall through to Imagick. An explicit
+   preference moves that engine to the front rather than replacing the chain.
+9. **Locks are options, not transients.** `get_transient()` then `set_transient()` is
+   check-then-set: two simultaneous requests both see "unlocked". `add_option()`'s unique key makes
+   the database arbitrate. The stored value is the acquisition time, so a lock orphaned by a fatal
+   can be broken rather than blocking that image forever.
+10. **The rewriter invalidates precisely.** It used to call `wp_cache_flush()` once per batch,
+    discarding a persistent object cache every few seconds — worst on the large sites that can
+    least afford it. Descriptors carry an `object` column and a cache `group`, collected in the
+    existing SELECT, so only what was rewritten is dropped.

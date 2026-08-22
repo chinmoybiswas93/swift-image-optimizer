@@ -8,19 +8,6 @@ serialized meta, page-builder JSON, and options — without corrupting anything.
 **This is the most dangerous code in the plugin.** It is built and verified in complete
 isolation before Unit 05 calls it.
 
-## Read first
-
-- `src/Database.php` — the `url_map` column
-- WordPress's `is_serialized()` in `wp-includes/functions.php`
-
-## Files changed
-
-| File | Purpose |
-|---|---|
-| `src/Rewrite/UrlMap.php` | Builds old→new pairs for every size and URL form |
-| `src/Rewrite/DatabaseRewriter.php` | Serialization-safe replace across 5 tables |
-| `src/Rewrite/Fallback404.php` | Serves the WebP when an old URL is requested |
-
 ## The rule everything else follows
 
 **Never run a plain string replace over serialized data.**

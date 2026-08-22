@@ -5,20 +5,6 @@
 Run Unit 05's conversion across an entire Media Library without timing out, and expose it over
 REST for the admin UI and over WP-CLI for libraries too large for a browser.
 
-## Read first
-
-- `src/AttachmentConverter.php` — particularly the `$defer_rewrite` parameter
-- `src/Database.php` — the log table drives the "what is left" query
-
-## Files changed
-
-| File | Purpose |
-|---|---|
-| `src/Bulk/Scanner.php` | Finds outstanding work |
-| `src/Bulk/Runner.php` | Batching, locking, resumable progress, dry run |
-| `src/Bulk/Cli.php` | `optimize` / `restore` / `stats` commands |
-| `src/Rest/Controller.php` | 8 routes under `swift-image-optimizer/v1` |
-
 ## Scanner
 
 A `LEFT JOIN` from `posts` against the log table, filtering on convertible mime types and

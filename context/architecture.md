@@ -2,21 +2,19 @@
 
 ## Class map
 
-Restructured 2026-08-10 from the layered `src/` + `Providers/` + `Repositories/` arrangement to a
-FluentCart-style layout: Composer PSR-4 with an `app/` root, a small plugin-owned kernel at its own
-`framework/` root, and a React front end built with `@wordpress/scripts`. Composer carries **no runtime dependencies** — the
-`vendor/` directory holds only the generated autoloader, committed because WordPress.org runs no
-build step on the destination server.
+A FluentCart-style layout: Composer PSR-4 with an `app/` root and a small plugin-owned kernel at
+its own `framework/` root. `framework/` sits outside `app/` because `app/` is application code and
+`framework/` is the machinery underneath it — container, config, view, router, and nothing else.
 
-`wpfluent/framework`, which produces this layout in FluentCart itself, is not installable: the
-whole `wpfluent` GitHub organisation is private and the package is absent from Packagist. The
-~1,200 lines under `framework/` reproduce the parts the plugin actually uses — container, config,
-view, router — and nothing else. It sits outside `app/` for the same reason FluentCart's does:
-`app/` is application code, `framework/` is the machinery underneath it.
+Composer carries **no runtime dependencies**: `vendor/` holds only the generated autoloader,
+committed because WordPress.org runs no build step on the destination server.
 
 React, `apiFetch` and `i18n` all come from WordPress's own registered scripts. `@wordpress/scripts`
 externalizes them and records the handles in `build/*.asset.php`, so the plugin ships no React of
 its own. **None of WordPress's UI components are used** — every control is the plugin's own.
+
+> This is the second layout. Specs for units 01–07 still describe a `src/` tree that no longer
+> exists — trust this file over any spec's file list. See [memory/units.md](memory/units.md).
 
 ```
 swift-image-optimizer.php   IIFE bootstrap: constants, then boot/app.php + vendor/autoload.php

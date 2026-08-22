@@ -1,7 +1,7 @@
-# Code Standards
+# Code standards
 
-Target: **WordPress.org public repository**. Everything below is written to survive .org review
-without a hardening pass later.
+Written to survive WordPress.org review without a hardening pass later. Where this file and
+`agent.md` disagree, `agent.md` wins.
 
 ## Every PHP file
 
@@ -20,20 +20,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 ```
 
-- Tabs for indentation, not spaces
-- **Long array syntax** `array()`, never `[]` — WordPress standard, and the IDE will suggest
-  otherwise. Ignore it.
-- Yoda conditions for comparisons against literals
-- Full docblocks on every class, method and property, with `@param` / `@return`
-- No `?>` closing tag
-
-## PHP version floor
-
-**PHP 7.4.** Verified by linting every file against 7.4, 8.2 and 8.4. That means:
-
-- No union types, no constructor promotion, no `match`, no enums, no readonly
-- No named arguments
-- `??` and `?->` are fine at 7.4? — `??` yes, `?->` **no** (8.0+)
+Tabs, Yoda conditions against literals, full docblocks, no closing `?>`. **Long array syntax
+`array()`, never `[]`** — the IDE will suggest otherwise; ignore it.
 
 ## Security
 
@@ -41,87 +29,69 @@ if ( ! defined( 'ABSPATH' ) ) {
 |---|---|
 | Escape at output: `esc_html()`, `esc_attr()`, `esc_url()`, `wp_kses_post()` | Every echo/print |
 | Sanitize at input: `absint()`, `sanitize_key()`, `sanitize_text_field()`, `sanitize_file_name()` | Every `$_GET` / `$_POST` / REST arg |
-| Nonce + capability on every write path | Admin actions, REST routes |
+| Nonce **and** capability on every write path | Admin actions, REST routes |
 | `$wpdb->prepare()` for every value | All direct queries |
 | `escapeshellarg()` on every shell argument | `CwebpEngine` only |
 | Validate paths against their root before touching them | `BackupManager::safe_path()` |
 
-Capabilities used:
+Capabilities, and they are not interchangeable:
 
-- `manage_options` — settings, bulk operations, backup purge
+- `manage_options` — settings, bulk operations, backup purge and repair
 - `upload_files` + `edit_posts` — single-image optimize/restore
 - `edit_post` (per object) — Media Library row and bulk actions
 
 ## Database access
 
-There is no ORM here. Direct `$wpdb` is expected, but every such call carries a phpcs
-justification comment naming why:
+Go through `app/Models/`. The two deliberate exceptions are `Services/Rewrite/DatabaseRewriter`
+and `database/DataBackfills`, where serialization-safe multi-table SQL cannot. Inside a model or
+an exception, every direct call carries a phpcs justification naming *why*:
 
 ```php
 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Plugin-owned table; result cached below.
 $row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE attachment_id = %d", $id ), ARRAY_A );
 ```
 
-Rules:
-
-- Table and column identifiers are built internally or come from `$wpdb->posts` etc. — never
-  from user input
-- Every **value** goes through a placeholder
-- Long scans page by primary key with `LIMIT`, never `OFFSET`
-- Anything expensive and repeated gets a transient (see `Stats::get()`)
+- Identifiers are built internally or come from `$wpdb->posts` — **never** from user input.
+- Every **value** goes through a placeholder.
+- Long scans page by primary key with `LIMIT`, never `OFFSET`.
+- Anything expensive and repeated gets a transient — see `api/Resource/StatsResource.php`.
 
 ## Error handling
 
-Return `WP_Error` with a **machine-readable code**, never `false` or `null`, and never throw
-out of a public method. Codes are used for control flow, so they matter:
+Return `WP_Error` with a **machine-readable code**, never `false` or `null`, and never throw out
+of a public method. Codes drive control flow, so they matter:
 
 ```php
 return new WP_Error( 'skipped-larger', __( 'Human readable.', 'swift-image-optimizer' ) );
 ```
 
-Whether a code counts as a skip or a failure is decided in exactly one place —
-`AttachmentConverter::soft_errors()`, built from `PERMANENT_SKIPS` plus `RETRYABLE_SKIPS`. Never
-re-list those codes anywhere else. The split matters: a permanent skip is a property of the
-image, a retryable one a property of the server at that moment, and only the latter may be
-returned to the queue by `Scanner::requeue()`.
+Whether a code is a skip or a failure is decided in exactly one place —
+`AttachmentConverter::soft_errors()`, built from `PERMANENT_SKIPS` plus `RETRYABLE_SKIPS`. **Never
+re-list those codes anywhere else**; they were duplicated once and drifted, which is how 496 images
+got reported as failed when they had been correctly skipped. The split matters: a permanent skip
+is a property of the image, a retryable one a property of the server at that moment, and only the
+latter may be returned to the queue by `Scanner::requeue()`.
 
 ## Filesystem
 
-- `wp_mkdir_p()` to create directories
-- `wp_delete_file()` to delete — never bare `unlink()`
-- `wp_is_writable()` before writing
-- `wp_unique_filename()` for any new filename
-- Silence errors only where the failure is explicitly handled on the next line, with a phpcs
-  justification
+- `wp_mkdir_p()` to create, `wp_is_writable()` before writing, `wp_unique_filename()` for new names
+- **`wp_delete_file()` to delete — never bare `unlink()`**
+- Silence errors only where the failure is handled on the very next line, with a justification
 
 ## i18n
 
-- Text domain `swift-image-optimizer` on every string, PHP and JS
-- `/* translators: */` comments above every `sprintf` with placeholders
-- Numbered placeholders `%1$s` when there is more than one
-- `_n()` for anything countable
-- `wp_set_script_translations()` for the React bundle
-
-## JavaScript
-
-- `@wordpress/*` packages only — no external runtime libraries
-- `@wordpress/element` (not bare `react`)
-- **Never `@wordpress/components`.** Every control is the plugin's own, in `resources/admin/Components/`.
-  This reverses an earlier version of this line — see `agent.md` and `architecture.md`'s invariants,
-  which govern where the two disagree. `build/admin.asset.php` is the check: it must list
-  `wp-element` and `wp-api-fetch`, and must never list `wp-components`.
-- All CSS classes prefixed `sio-`
-- All strings through `__()` / `sprintf()` from `@wordpress/i18n`
+Text domain `swift-image-optimizer` on every string, PHP and JS. `/* translators: */` above every
+`sprintf` with placeholders, numbered `%1$s` when there is more than one, `_n()` for anything
+countable, `wp_set_script_translations()` for the React bundle.
 
 ## Naming
 
 | Kind | Convention | Example |
 |---|---|---|
-| Class | StudlyCase, namespaced | `SwiftImageOptimizer\Services\Bulk\Runner` |
+| Class | StudlyCase, namespaced | `SwiftImageOptimizer\App\Services\Bulk\Runner` |
 | Method / variable | snake_case | `process_batch()`, `$attachment_id` |
-| Constant | UPPER_SNAKE | `PERMANENT_SKIPS`, `PROGRESS_OPTION` |
-| Hook | `swift_image_optimizer_` prefix | `swift_image_optimizer_urls_rewritten` |
-| DB / option | `swift_image_optimizer_` prefix | `swift_image_optimizer_settings` |
+| Constant | UPPER_SNAKE | `PERMANENT_SKIPS` |
+| Hook, DB table, option | `swift_image_optimizer_` prefix | `swift_image_optimizer_settings` |
 | CSS class | `sio-` prefix, BEM-ish | `sio-progress__fill` |
 
 ## Comments
@@ -139,29 +109,10 @@ Explain **why**, never what. The codebase's own examples:
 // guarantee when one filename is a prefix of another.
 ```
 
-Do not add comments that restate the code. Applies to PHP, JS/JSX and SCSS alike:
+Applies to PHP, JS/JSX and SCSS alike:
 
-- No decorative banner/divider comments (`/* ---- Section ---- */`) — a named function, component
-  or section heading already does that job.
-- No placeholder docblock summaries (`Constructor.`, `Getter.`, `Returns the value.`) — the summary
-  line must say something the method/class name doesn't already say, or should describe the *why*
-  instead of restating the signature.
-- No commented-out code and no `TODO`/`FIXME`/`XXX`/`HACK` markers left in source — record the open
-  item in `progress-tracker.md` under Open Questions instead.
-
-## Verification before calling anything done
-
-```bash
-# Parse under the version floor and the current stable
-for v in 7.4 8.2 8.4; do find src -name '*.php' -exec php -l {} \; ; done
-
-# Coding standards (requires WPCS installed)
-composer install && phpcs --standard=phpcs.xml.dist -s
-
-# Build must succeed and land in build/
-npm run build
-```
-
-There are four test harnesses in the scratchpad pattern described in
-`ai-workflow-rules.md`. **107 assertions currently pass.** Anything touching `Rewrite/` must
-re-run the rewriter suite before being considered complete.
+- No decorative banner comments (`/* ---- Section ---- */`) — a named function already does that.
+- No placeholder docblocks (`Constructor.`, `Getter.`). The summary must say something the name
+  does not, or describe the why.
+- No commented-out code, and no `TODO`/`FIXME`/`HACK` markers — record the open item in
+  [issues.md](issues.md) instead.

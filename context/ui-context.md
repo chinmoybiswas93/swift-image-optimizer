@@ -4,20 +4,18 @@
 
 | Location | What | Built by |
 |---|---|---|
-| **Media → Bulk Optimize** | The React dashboard: Bulk / Settings / Backups / Troubleshoot tabs | `Http\Admin\SettingsPage` + `admin/index.js` |
-| **Media Library, list view** | "Optimization" column | `Http\Admin\ListTable::render_column()` |
-| **Media Library, row hover** | Optimize / Restore original links | `Http\Admin\ListTable::add_row_actions()` |
-| **Media Library, bulk dropdown** | Optimize images / Restore originals | `Http\Admin\ListTable::add_bulk_actions()` |
-| **Media modal, grid view** | Optimization info in the sidebar | Data exposed; **JS view not built yet** (Unit 09) |
-| **Plugins screen** | "Settings" action link | `Http\Admin\SettingsPage::action_links()` |
-| **Any admin screen** | "No conversion engine" error notice | `Http\Admin\Notices` |
+| **Media → Bulk Optimize** | The React dashboard: Bulk / Settings / Backups / Troubleshoot tabs | `Hooks\Handlers\MenuHandler` + `resources/admin/` |
+| **Media Library, list view** | "Optimization" column | `MediaLibraryHandler::column_state()` |
+| **Media Library, row hover** | Optimize / Restore original links | `MediaLibraryHandler::add_row_actions()` |
+| **Media Library, bulk dropdown** | Optimize images / Restore originals | `MediaLibraryHandler` |
+| **Media modal, grid view** | Optimization panel in the attachment sidebar | `resources/media/media.js` (Unit 08) |
+| **Plugins screen** | "Settings" action link | `Hooks\Handlers\MenuHandler` |
+| **This plugin's screen** | Other plugins' notices stripped, ours kept | `Hooks\Handlers\ForeignNoticeHandler` |
 
 ## Design rules
 
-**Stale claim, corrected:** the line below used to say every control was a stock
-`@wordpress/components` control. That was reversed before this file was last touched — see
-`agent.md` and `architecture.md`'s invariants, which govern. **No control is `@wordpress/components`.**
-Every one is the plugin's own, in `resources/admin/Components/` — `Toggle`, `Range`, `Select`,
+**No control is `@wordpress/components`.** Every one is the plugin's own, in
+`resources/admin/Components/` — `Toggle`, `Range`, `Select`,
 `NumberInput`, `Button`, `Notice`, `Spinner`, plus `ProgressRing` added in Unit 12. `Card` /
 `CardHeader` / `CardBody` are the plugin's own too, not core's.
 
@@ -131,8 +129,10 @@ is asked to open when they report a problem, so nothing on it assumes prior know
 
 ## Interaction rules
 
-- **Confirm before anything destructive.** Starting a bulk run and purging backups both use
-  `window.confirm()` with a message that says plainly what will happen.
+- **Confirm before anything destructive**, through the plugin's own `ConfirmDialog` — there is no
+  `window.confirm()` left anywhere, including the Backbone media surface, which uses
+  `resources/media/confirm.js` to build the same markup. The backup purge additionally requires
+  typing `DELETE`. Repair, which deletes nothing, deliberately does not.
 - **The loop is driven from wherever is watching, with cron as the floor.** An open tab still
   pumps batches directly (each is one REST call, continuing while `state.running`), which is
   faster than waiting on WP-Cron — but since Unit 11/12, cron advances the same run on its own via
@@ -141,8 +141,8 @@ is asked to open when they report a problem, so nothing on it assumes prior know
 - **Stop must be immediate.** A `useRef` flag breaks the loop without waiting for a re-render.
 - **Progress survives a closed tab.** State lives in an option; the dashboard calls
   `bulk/status` on mount and resumes if a run is live.
-- **Never show a bare error code.** `ListTable::reason_label()` maps every internal code to a
-  sentence, e.g. `skipped-larger` → "Already efficient, WebP would be larger".
+- **Never show a bare error code.** `MediaLibraryHandler::reason_label()` maps every internal code
+  to a sentence, e.g. `skipped-larger` → "Already efficient, WebP would be larger".
 - **Disable, don't hide.** Start is disabled when no engine exists or nothing is pending.
 
 ## Copy guidelines
@@ -160,10 +160,7 @@ State what will happen before it happens, and never imply an irreversible action
 The bulk confirmation names the three facts that matter: it converts, it updates references,
 originals are backed up first.
 
-## Screens not yet built
+## Not built
 
-- **Media grid modal panel** (Unit 09) — `wp_prepare_attachment_for_js` already attaches a
-  `swiftImageOptimizer` key with status, sizes, reason and `canRestore`. Nothing consumes it
-  yet; the list view is the only place optimization status is visible.
-- **Before/after preview** — no visual quality comparison anywhere. Worth considering given
-  the plugin permanently replaces the original.
+- **Before/after preview** — no visual quality comparison anywhere. Worth considering given the
+  plugin permanently replaces the original. Scoped in `future-specs/before-after-preview.md`.

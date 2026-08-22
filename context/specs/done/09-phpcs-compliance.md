@@ -8,39 +8,6 @@ Actually run the WordPress Coding Standards against this plugin and fix what the
 has ever confirmed it — WPCS is not installed in this environment. Until this unit runs,
 "WordPress.org compliant" is an intention, not a fact.
 
-## Read first
-
-- `phpcs.xml.dist` — the ruleset, written in Unit 01 but never executed
-- `code-standards.md` — the conventions the code claims to follow
-
-## Setup
-
-WPCS is installed **outside the plugin tree**, and deliberately not as a `require-dev` here:
-
-```bash
-# Anywhere except the plugin directory.
-mkdir -p ~/.wpcs && cd ~/.wpcs
-composer config --no-plugins allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
-composer require \
-  wp-coding-standards/wpcs \
-  phpcompatibility/phpcompatibility-wp \
-  dealerdirect/phpcodesniffer-composer-installer
-
-# Then, from the plugin root:
-~/.wpcs/vendor/bin/phpcs --standard=phpcs.xml.dist -s .
-```
-
-Put that `vendor/bin` on `PATH` and `npm run lint:php` works; without it the script prints a
-pointer back to this file rather than failing obscurely.
-
-> **Why not `composer require --dev` inside the plugin?** Because this plugin's `vendor/` is
-> **committed** and must contain nothing but the generated PSR-4 autoloader — architecture
-> invariant 12, and the reason `.gitignore` explicitly does *not* ignore it. WordPress.org runs
-> no Composer step on the destination server, so the autoloader ships as-is. Installing WPCS
-> into that directory would put ~7 dev packages into the released plugin unless every future
-> build remembered `--no-dev` first. An earlier draft of this spec said to add `vendor/` to
-> `.gitignore` "(already done)"; that was wrong on both counts and has been corrected.
-
 ## Expected findings
 
 Predicted from writing the code, in rough order of likely volume:
@@ -77,10 +44,19 @@ Predicted from writing the code, in rough order of likely volume:
 - The plugin header's `Requires PHP` and `Requires at least` match reality
 - Every file parses under PHP 7.4
 
-## Files changed
+## Completion Notes
 
-Potentially any file under `app/`, `api/`, `framework/` or `database/`, plus `phpcs.xml.dist` and `readme.txt`. `composer.json` is deliberately NOT changed - see Setup.
+**784 violations → 0**, the first time `phpcs` had ever been run on this plugin.
 
-## Done when
+Three of the fixes were real bugs rather than style:
 
-`phpcs --standard=phpcs.xml.dist -s .` exits clean, and all 143 assertions still pass.
+- A dead `safe_mode` check — removed; the ini setting has not existed since PHP 5.4.
+- `imagedestroy()` called unconditionally — version-gated; it is a no-op and deprecated at 8.0+.
+- **The SQL annotations had never been in effect.** The `phpcs:ignore` comments on the direct
+  queries named sniffs that did not match, so every one of those queries had been unreviewed the
+  whole time. They were rewritten to name the sniffs that actually fire, which is why the exact
+  comment format is now pinned in `code-standards.md`.
+
+WPCS is installed **outside** the plugin, at `~/.wpcs`, and needs its `vendor/bin` on `PATH`.
+It is deliberately not a `require-dev` here: the committed `vendor/` must stay autoloader-only
+(invariant 12), because .org ships the plugin with no build step on the destination server.

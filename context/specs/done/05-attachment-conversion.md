@@ -5,20 +5,6 @@
 Convert an image that is already in the Media Library, repoint everything that references it,
 and be able to put it all back.
 
-## Read first
-
-- `src/Optimizer.php` — reused unchanged from Unit 02
-- `src/Backup/BackupManager.php` — Unit 03
-- `src/Rewrite/UrlMap.php` and `DatabaseRewriter.php` — Unit 04
-- `wp-admin/includes/image.php` — `wp_generate_attachment_metadata()`
-
-## Files changed
-
-| File | Purpose |
-|---|---|
-| `src/AttachmentConverter.php` | The orchestrator: convert + restore |
-| `src/Media/ListTable.php` | Column, row actions, bulk actions, modal data |
-
 ## Convert pipeline
 
 ```
