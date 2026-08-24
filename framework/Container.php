@@ -145,6 +145,7 @@ class Container {
         }
 
         if ( ! class_exists($abstract)) {
+            // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Developer-facing; the message carries a binding key from code, never request data.
             throw new RuntimeException("Nothing bound for '{$abstract}'.");
         }
 
@@ -176,12 +177,14 @@ class Container {
     private function build( $concrete ) {
         if (isset($this->building[ $concrete ])) {
             $chain = implode(' -> ', array_keys($this->building)) . ' -> ' . $concrete;
+            // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Developer-facing; the chain is built from class names, never request data.
             throw new RuntimeException("Circular dependency while resolving: {$chain}");
         }
 
         $reflector = new ReflectionClass($concrete);
 
         if ( ! $reflector->isInstantiable()) {
+            // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Developer-facing; the message carries a class name from code, never request data.
             throw new RuntimeException("Class '{$concrete}' is not instantiable.");
         }
 

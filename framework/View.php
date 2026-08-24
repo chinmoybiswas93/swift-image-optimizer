@@ -84,6 +84,7 @@ class View {
         $path = $this->resolve($view);
 
         if ( ! $path) {
+            // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Developer-facing; the view name comes from a render() call site, never request data.
             throw new RuntimeException("View '{$view}' not found in {$this->root}");
         }
 

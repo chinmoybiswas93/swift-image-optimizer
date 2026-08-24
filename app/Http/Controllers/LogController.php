@@ -53,7 +53,7 @@ class LogController extends Controller {
         header('Content-Disposition: attachment; filename="swift-image-optimizer-' . gmdate('Ymd-His') . '.log"');
         header('Content-Length: ' . filesize($file));
 
-        // phpcs:ignore WordPress.WP.AlternativeFunctions.readfile_readfile -- Streaming a plain text file the plugin itself wrote; WP_Filesystem would load it entirely into memory.
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile -- Streaming a plain text file the plugin itself wrote; WP_Filesystem would load it entirely into memory.
         readfile($file);
 
         exit;

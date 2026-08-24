@@ -54,8 +54,7 @@ function swift_image_optimizer_remove_dir( $name ) {
 		}
 	}
 
-	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- Removing the plugin's own now-empty directory during uninstall.
-	@rmdir( $dir ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- A directory left behind by a failed removal is harmless.
+	@rmdir( $dir ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir, WordPress.PHP.NoSilencedErrors.Discouraged -- Removing the plugin's own now-empty directory during uninstall; a directory left behind by a failed removal is harmless.
 }
 
 swift_image_optimizer_remove_dir( 'swift-image-optimizer/logs' );

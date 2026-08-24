@@ -270,14 +270,14 @@ class Commands {
 
 		$table = OptimizationLog::table();
 
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Plugin-owned table name cannot be bound; the status value is prepared. CLI maintenance command.
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Plugin-owned table name cannot be bound; the status value is prepared. CLI maintenance command.
 		$ids = $wpdb->get_col(
 			$wpdb->prepare(
 				"SELECT attachment_id FROM {$table} WHERE status = %s AND backup_path != ''",
 				OptimizationLog::STATUS_OPTIMIZED
 			)
 		);
-		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
 
 		if ( empty( $ids ) ) {
 			WP_CLI::success( 'Nothing to restore.' );

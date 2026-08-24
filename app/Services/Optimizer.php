@@ -355,8 +355,7 @@ class Optimizer {
 	 * @return bool
 	 */
 	private function is_animated_png( $file ) {
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- Reading the first few bytes of a header; WP_Filesystem has no partial read.
-		$handle = @fopen( $file, 'rb' ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Handled by the false check.
+		$handle = @fopen( $file, 'rb' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen, WordPress.PHP.NoSilencedErrors.Discouraged -- Reading the first few bytes of a header; WP_Filesystem has no partial read. Failure handled by the false check.
 
 		if ( ! $handle ) {
 			return false;
@@ -364,9 +363,9 @@ class Optimizer {
 
 		// The acTL chunk must appear before IDAT, and PNG headers are small,
 		// so a fixed window is enough without reading a large file.
-		$header = fread( $handle, 8192 );
+		$header = fread( $handle, 8192 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread -- Paired with the fopen above; WP_Filesystem has no partial read.
 
-		fclose( $handle );
+		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Closing the handle opened above.
 
 		if ( ! is_string( $header ) ) {
 			return false;

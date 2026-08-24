@@ -312,6 +312,7 @@ class Router {
             $class = false === strpos($policy, '\\') ? $namespace . $policy : $policy;
 
             if ( ! class_exists($class)) {
+                // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Developer-facing; the policy name comes from the route definition, never request data.
                 throw new RuntimeException("Policy '{$class}' not found.");
             }
 

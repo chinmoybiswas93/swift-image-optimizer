@@ -265,7 +265,7 @@ class Interceptor {
 		$target = $this->optimizer->target_path( $upload['file'] );
 
 		// Move the converted file into its final place.
-		if ( ! @rename( $result['temp_file'], $target ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Failure is handled by keeping the original.
+		if ( ! @rename( $result['temp_file'], $target ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename, WordPress.PHP.NoSilencedErrors.Discouraged -- Atomic move of the plugin's own temp file into a path it resolved; WP_Filesystem::move() is neither atomic nor credential-free. Failure is handled by keeping the original.
 			wp_delete_file( $result['temp_file'] );
 
 			if ( ! empty( $backup['relative_dir'] ) ) {
@@ -365,7 +365,7 @@ class Interceptor {
 
 		$target = $this->optimizer->target_path( $upload['file'] );
 
-		if ( ! @rename( $result['temp_file'], $target ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Failure is handled by keeping the original.
+		if ( ! @rename( $result['temp_file'], $target ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename, WordPress.PHP.NoSilencedErrors.Discouraged -- Atomic move of the plugin's own temp file into a path it resolved; WP_Filesystem::move() is neither atomic nor credential-free. Failure is handled by keeping the original.
 			wp_delete_file( $result['temp_file'] );
 
 			Logger::error( 'rename', 'move-failed: could not move the WebP to ' . $target . '. The original was kept.', $attachment_id );
