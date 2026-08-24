@@ -313,7 +313,7 @@ class AttachmentConverter {
 
 		$target = $this->optimizer->target_path( $file );
 
-		if ( ! @rename( $optimized['temp_file'], $target ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Handled by the rollback below.
+		if ( ! @rename( $optimized['temp_file'], $target ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename, WordPress.PHP.NoSilencedErrors.Discouraged -- Atomic move of the plugin's own temp file into a path it resolved; WP_Filesystem::move() is neither atomic nor credential-free. Failure handled by the rollback below.
 			wp_delete_file( $optimized['temp_file'] );
 			BackupManager::delete( $backup['relative_dir'], $backup['files'] );
 

@@ -60,7 +60,7 @@ class StatsResource extends BaseResourceApi {
 
 		$table = OptimizationLog::table();
 
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Plugin-owned table name cannot be bound; every status value is prepared. Result is cached in a transient below.
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Plugin-owned table name cannot be bound; every status value is prepared. Result is cached in a transient below.
 		$row = $wpdb->get_row(
 			$wpdb->prepare(
 				"SELECT
@@ -78,7 +78,7 @@ class StatsResource extends BaseResourceApi {
 			),
 			ARRAY_A
 		);
-		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
 
 		$original  = isset( $row['original_bytes'] ) ? (int) $row['original_bytes'] : 0;
 		$optimized = isset( $row['optimized_bytes'] ) ? (int) $row['optimized_bytes'] : 0;

@@ -267,6 +267,38 @@ those references permanently**, because the batch marks images done before rewri
 
 Three sibling constants, never one parent. Now one folder with subdirectories.
 
+## Plugin Check reported 26 findings that `npm run lint:php` called clean
+
+Not filed as an I-number; it came in as a Plugin Check report against the shipped zip.
+
+`phpcs.xml.dist` had excluded `WordPress.WP.AlternativeFunctions` wholesale and scoped
+`EscapeOutput.ExceptionNotEscaped` away from `/framework/*`. **Plugin Check never reads that
+file** — it runs its own rulesets plus sniffs its check classes invoke directly, and honours only
+inline `phpcs:ignore`. So the local lint was proving something about itself, not about the gate.
+
+Worse, the blanket exclude hid that the inline suppressions underneath it were broken:
+`readfile_readfile` was not a real sniff code, three sites had a preceding-line directive silently
+overridden by a trailing one on the same line (PHPCS honours one per line, and the trailing one
+wins), and no `rename()`, `fread()` or `fclose()` call had ever been annotated at all.
+
+The fix moved every justification onto correct inline ignores and **narrowed `phpcs.xml.dist` to
+exactly the three exclusions Plugin Check itself applies**. That narrowing is the point of the
+change — restoring the blanket exclude as a "cleanup" would re-hide the same class of defect.
+Also: `bin/build-dist.sh` was shipping `agent.md`, three stray `.yml` files and `.playwright-cli/`
+while excluding `composer.json` next to a shipped `vendor/`; it now has an explicit top-level
+allowlist that fails the build on anything unexpected.
+
+**The build zip was then installed over the plugin folder**, which is the git working tree.
+WordPress deletes the existing directory before unpacking, so `.git`, `context/`, `bin/`, `tests/`,
+`resources/`, `phpcs.xml.dist` and `dist/` (including the zip) went with it. Everything that had
+been pushed was recovered from the remote; the uncommitted doc and tooling edits had to be redone
+from scratch. `build-dist.sh` now prints a warning at the end, and `agent.md` carries the rule.
+None of this is recoverable locally — there are no Time Machine destinations and no APFS snapshots
+on this machine.
+
+Still unproven: everything in [../pre-release-checks.md](../pre-release-checks.md) #7 — the runtime
+checks and the zip itself were never put through `wp plugin check`.
+
 ## I-2 — Suite tested cwebp while the site runs Imagick (Unit 11)
 
 CLI PHP here has no Imagick; the site's web PHP does, and it is the production engine. So every

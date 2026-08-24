@@ -90,7 +90,7 @@ class DBMigrator {
 		global $wpdb;
 
 		foreach ( array( OptimizationLog::table(), UrlLookup::table() ) as $table ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is built internally; uninstall routine.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Table name is built internally; dropping the plugin's own tables is the entire point of the uninstall routine.
 			$wpdb->query( "DROP TABLE IF EXISTS {$table}" );
 		}
 

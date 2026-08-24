@@ -55,15 +55,18 @@
 		-->
 		<exclude name="Universal.NamingConventions.NoReservedKeywordParameterNames"/>
 		<!--
-			This plugin's whole job is reading and writing image bytes, plus a
-			file-based log it must be able to append to and tail. WP_Filesystem
-			is built for plugin/theme installs: it can require credentials, has
-			no streaming read, and round-trips binary content through methods
-			that are not appropriate for image data. Every direct call here is
-			to a path the plugin itself created and validated - see
-			`BackupManager::safe_path()` for the traversal guard.
+			Only the three exclusions Plugin Check itself applies, so a clean
+			run here means a clean run there. Plugin Check does not read this
+			file; it runs its own ruleset
+			(plugin-check/phpcs-rulesets/plugin-check.ruleset.xml) and honours
+			only inline `phpcs:ignore` comments. Excluding the whole sniff, as
+			this block used to, hid thirteen findings that surfaced at review -
+			so every legitimate direct filesystem call now carries its own
+			inline ignore with the reason, and this list must not grow.
 		-->
-		<exclude name="WordPress.WP.AlternativeFunctions"/>
+		<exclude name="WordPress.WP.AlternativeFunctions.json_encode_json_encode"/>
+		<exclude name="WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents"/>
+		<exclude name="WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents"/>
 		<!--
 			The plugin namespaces its own hooks with slashes
 			(`swift_image_optimizer/activated`), the convention the surrounding
@@ -83,17 +86,6 @@
 	-->
 	<rule ref="PHPCompatibility.Keywords.ForbiddenNamesAsDeclared">
 		<exclude-pattern>/api/Resource/*</exclude-pattern>
-	</rule>
-
-	<!--
-		The framework layer throws on programmer error - an unresolvable
-		binding, a missing view, a route with no policy. Those messages are
-		developer-facing and contain no request data; they are not output to a
-		browser by this plugin. Escaping still applies everywhere user data
-		reaches a page.
-	-->
-	<rule ref="WordPress.Security.EscapeOutput.ExceptionNotEscaped">
-		<exclude-pattern>/framework/*</exclude-pattern>
 	</rule>
 
 	<rule ref="WordPress-Docs">

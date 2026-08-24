@@ -212,6 +212,17 @@ version:
   namespace/path mismatch is a fatal at call time, not at load.
 - **Changed JS?** `npm run build`, and confirm `build/admin.asset.php` still excludes
   `wp-components`.
+- **Plugin Check is the release gate, and it does not read `phpcs.xml.dist`.** It runs its own
+  ruleset (`plugins/plugin-check/phpcs-rulesets/`) plus sniffs invoked directly by its check
+  classes, and it honours **only inline `phpcs:ignore` comments** — a `<exclude>` in our ruleset is
+  invisible to it. Any change that adds a direct filesystem call, a `$wpdb` interpolation, or a
+  `throw` with an interpolated message earns a run. `phpcs.xml.dist` is now kept deliberately
+  narrow so `npm run lint:php` fails on what Plugin Check fails on — do not widen it back.
+  **Never install the built zip over this directory.** The plugin folder is the git working tree,
+  and WordPress deletes the existing folder before unpacking. Doing it once already destroyed
+  `.git`, `context/`, `bin/`, `tests/`, `resources/` and the zip in `dist/`; everything committed
+  was recoverable from the remote, everything uncommitted was not. Test the zip on a throwaway
+  site.
 - **Everything else** — `npm run lint:php`, `/security-review`, `owasp-security-review`,
   `npm run test:e2e`, `graphify update .` — when it's asked for, or when your judgement says the
   change earns it. Not by default, and never on a doc edit or a one-line fix.

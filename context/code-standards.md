@@ -34,6 +34,31 @@ Tabs, Yoda conditions against literals, full docblocks, no closing `?>`. **Long 
 | `escapeshellarg()` on every shell argument | `CwebpEngine` only |
 | Validate paths against their root before touching them | `BackupManager::safe_path()` |
 
+### Suppressions
+
+Two rules, both learned the hard way — between them they produced thirteen findings that
+`npm run lint:php` reported as clean.
+
+**Directives do not stack.** A `// phpcs:ignore` on its own line applies to the line below, and a
+trailing one applies to its own line — but PHPCS honours **one directive per line**, and the
+trailing one wins. This silently discards the other:
+
+```php
+// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- never applied
+$handle = @fopen( $file, 'rb' ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+```
+
+Name every sniff that fires on the line, in **one** comment:
+
+```php
+$handle = @fopen( $file, 'rb' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen, WordPress.PHP.NoSilencedErrors.Discouraged -- Partial header read; WP_Filesystem has no partial read. Failure handled by the false check.
+```
+
+**A wrong code is a dead directive**, and nothing warns you. `readfile_readfile` sat in
+`LogController` for months suppressing nothing, because the real code is
+`file_system_operations_readfile`. Copy codes from `phpcs -s` output, never from memory. Every
+`phpcs:disable` needs a matching `phpcs:enable` listing the *same* codes.
+
 Capabilities, and they are not interchangeable:
 
 - `manage_options` — settings, bulk operations, backup purge and repair
@@ -47,9 +72,14 @@ and `database/DataBackfills`, where serialization-safe multi-table SQL cannot. I
 an exception, every direct call carries a phpcs justification naming *why*:
 
 ```php
-// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Plugin-owned table; result cached below.
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Plugin-owned table; result cached below.
 $row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE attachment_id = %d", $id ), ARRAY_A );
 ```
+
+`PluginCheck.Security.DirectDB.UnescapedDBParameter` has **no WPCS equivalent** — it ships with
+Plugin Check and flags any interpolated identifier reaching `$wpdb`, even one already inside
+`prepare()`, and it cannot follow `$query = $wpdb->prepare( … )` across an assignment. It belongs on
+every one of these comments, or the finding reappears at review no matter how correct the query is.
 
 - Identifiers are built internally or come from `$wpdb->posts` — **never** from user input.
 - Every **value** goes through a placeholder.
@@ -77,6 +107,21 @@ latter may be returned to the queue by `Scanner::requeue()`.
 - `wp_mkdir_p()` to create, `wp_is_writable()` before writing, `wp_unique_filename()` for new names
 - **`wp_delete_file()` to delete — never bare `unlink()`**
 - Silence errors only where the failure is handled on the very next line, with a justification
+
+Raw PHP filesystem calls are permitted where no WordPress wrapper does the job — partial reads
+(`fopen`/`fread`/`fclose` on a header or a log tail), streaming (`readfile`), and atomic moves
+(`rename`). `WP_Filesystem` can demand credentials, has no partial read, and round-trips binary
+image data. Each such call needs its own inline
+`WordPress.WP.AlternativeFunctions.<group>_<function>` ignore stating why. The group is not the
+function name — the real ones here are:
+
+| Call | Code |
+|---|---|
+| `fopen`, `fread`, `fclose`, `fwrite`, `readfile`, `rmdir`, `mkdir`, `touch`, `is_writable` | `file_system_operations_<function>` |
+| `rename` | `rename_rename` |
+| `unlink` | `unlink_unlink` — but use `wp_delete_file()` instead |
+
+`file_put_contents` and `file_get_contents` need no ignore; Plugin Check excludes both.
 
 ## i18n
 

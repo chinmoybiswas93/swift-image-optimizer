@@ -369,7 +369,7 @@ class Logger {
 			wp_delete_file( $previous );
 		}
 
-		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- A failed rotation must not interrupt a conversion; the next write simply appends to the existing file.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename, WordPress.PHP.NoSilencedErrors.Discouraged -- Rotating the plugin's own log file in place; WP_Filesystem::move() can demand credentials mid-conversion. A failed rotation must not interrupt a conversion; the next write simply appends to the existing file.
 		@rename( $file, $previous );
 	}
 
@@ -505,8 +505,7 @@ class Logger {
 			return $out;
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen, WordPress.WP.AlternativeFunctions.file_get_contents_fopen -- Seeking backwards from the end is the point; WP_Filesystem cannot read a partial file.
-		$handle = @fopen( $file, 'rb' ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Handled by the false check.
+		$handle = @fopen( $file, 'rb' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen, WordPress.PHP.NoSilencedErrors.Discouraged -- Seeking backwards from the end is the point; WP_Filesystem cannot read a partial file. Failure handled by the false check.
 
 		if ( ! $handle ) {
 			return $out;
@@ -521,10 +520,10 @@ class Logger {
 			$offset -= $read;
 
 			fseek( $handle, $offset );
-			$buffer = fread( $handle, $read ) . $buffer;
+			$buffer = fread( $handle, $read ) . $buffer; // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread -- Paired with the fopen above; WP_Filesystem cannot read a partial file.
 		}
 
-		fclose( $handle );
+		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Closing the handle opened above.
 
 		$all = preg_split( '/\R/', trim( $buffer ) );
 
