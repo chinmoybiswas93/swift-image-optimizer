@@ -18,5 +18,6 @@ module.exports = {
 	entry: {
 		admin: path.resolve( __dirname, 'resources/admin/bootstrap/app.jsx' ),
 		media: path.resolve( __dirname, 'resources/media/media.js' ),
+		editor: path.resolve( __dirname, 'resources/editor/index.jsx' ),
 	},
 };

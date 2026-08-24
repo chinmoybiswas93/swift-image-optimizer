@@ -20,7 +20,9 @@ import { Button, Notice, Spinner } from '../Components';
  */
 const DryRunPanel = ( { report, busy, disabled, onRun } ) => (
 	<details className="sio-dryrun__panel">
-		<summary>{ __( 'Preview what would change', 'swift-image-optimizer' ) }</summary>
+		<summary>
+			{ __( 'Preview what would change', 'swift-image-optimizer' ) }
+		</summary>
 
 		<p className="sio-lede">
 			{ __(
@@ -29,8 +31,16 @@ const DryRunPanel = ( { report, busy, disabled, onRun } ) => (
 			) }
 		</p>
 
-		<Button variant="secondary" onClick={ onRun } disabled={ busy || disabled }>
-			{ busy ? <Spinner /> : __( 'Run dry run', 'swift-image-optimizer' ) }
+		<Button
+			variant="secondary"
+			onClick={ onRun }
+			disabled={ busy || disabled }
+		>
+			{ busy ? (
+				<Spinner />
+			) : (
+				__( 'Run dry run', 'swift-image-optimizer' )
+			) }
 		</Button>
 
 		{ report && (
@@ -58,11 +68,13 @@ const DryRunPanel = ( { report, busy, disabled, onRun } ) => (
 					) }
 				</p>
 				<ul className="sio-tablecounts">
-					{ Object.entries( report.by_table || {} ).map( ( [ table, count ] ) => (
-						<li key={ table }>
-							<code>{ table }</code> <span>{ count }</span>
-						</li>
-					) ) }
+					{ Object.entries( report.by_table || {} ).map(
+						( [ table, count ] ) => (
+							<li key={ table }>
+								<code>{ table }</code> <span>{ count }</span>
+							</li>
+						)
+					) }
 				</ul>
 				{ report.skipped > 0 && (
 					<Notice status="warning" isDismissible={ false }>

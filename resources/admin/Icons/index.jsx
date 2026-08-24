@@ -42,10 +42,7 @@ export const LogoMark = () => (
 			</linearGradient>
 		</defs>
 		<rect width="38" height="38" rx="11" fill="url(#sio-mark-gradient)" />
-		<path
-			d="M21.4 8.2 12.2 21.1h5.2l-1.1 8.7 9.4-13.3h-5.4z"
-			fill="#fff"
-		/>
+		<path d="M21.4 8.2 12.2 21.1h5.2l-1.1 8.7 9.4-13.3h-5.4z" fill="#fff" />
 	</svg>
 );
 
@@ -121,7 +118,13 @@ export const IconDocument = () => (
 );
 
 export const IconTrendDown = () => (
-	<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+	<svg
+		width="14"
+		height="14"
+		viewBox="0 0 24 24"
+		aria-hidden="true"
+		focusable="false"
+	>
 		<g { ...stroke } strokeWidth={ 2.2 }>
 			<path d="M12 4.5v14.2M6.4 13.1 12 18.9l5.6-5.8" />
 		</g>

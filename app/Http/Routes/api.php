@@ -51,6 +51,7 @@ $router->withPolicy('AdminPolicy')->group(function ( Router $router ) {
     $router->post('dry-run', [ OptimizeController::class, 'dryRun' ]);
     $router->post('requeue', [ OptimizeController::class, 'requeue' ]);
     $router->post('rescan', [ OptimizeController::class, 'rescan' ]);
+    $router->post('reconcile-mime', [ OptimizeController::class, 'reconcileMime' ]);
     $router->post('cleanup', [ BackupController::class, 'cleanup' ]);
     $router->get('diagnostics', [ DiagnosticsController::class, 'index' ]);
 

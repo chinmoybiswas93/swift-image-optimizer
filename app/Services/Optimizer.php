@@ -82,8 +82,18 @@ class Optimizer {
 		// The memory estimate models an in-process decode. It says nothing
 		// about an engine that shells out to a separate binary, and applying
 		// it to one would refuse images that engine handles comfortably.
-		if ( $engines[0]->decodes_in_process() && ! $this->has_memory_for( $file ) ) {
-			return new WP_Error( 'insufficient-memory', __( 'The image is too large to process within the available memory limit.', 'swift-image-optimizer' ) );
+		if ( $engines[0]->decodes_in_process() ) {
+			// Raised here, immediately before the only check that depends on
+			// it - not earlier, so an image rejected above for an unrelated
+			// reason (unsupported format, PNG disabled, no engine) never
+			// pays for a raise it gets no benefit from. Moved out of
+			// optimize(), which used to raise it only after this check had
+			// already run against the unraised base memory_limit.
+			wp_raise_memory_limit( 'image' );
+
+			if ( ! $this->has_memory_for( $file, $this->effective_max_dimension() ) ) {
+				return new WP_Error( 'insufficient-memory', __( 'The image is too large to process within the available memory limit.', 'swift-image-optimizer' ) );
+			}
 		}
 
 		return true;
@@ -136,8 +146,6 @@ class Optimizer {
 				'maxdim'  => (int) $options['max_dimension'],
 			)
 		);
-
-		wp_raise_memory_limit( 'image' );
 
 		$temp = $this->temp_path( $file );
 
@@ -275,14 +283,24 @@ class Optimizer {
 	/**
 	 * Whether enough memory remains to decode this image.
 	 *
-	 * A decoded truecolour image costs roughly four bytes per pixel, plus a
-	 * working copy during resize. Checking up front turns the most common
-	 * shared-host fatal into a logged skip.
+	 * A decoded truecolour image costs roughly four bytes per pixel. The peak
+	 * is the source frame plus the resized working copy held alongside it, so
+	 * the second frame is charged at the size it will actually be - the
+	 * dimension the encoder constrains to - rather than at full size. Charging
+	 * two full frames refused 40-megapixel photos outright on a 256M limit,
+	 * even though every engine downscales to max_dimension before encoding and
+	 * WordPress keeps only its own -scaled copy anyway.
 	 *
-	 * @param string $file Absolute path to the image.
+	 * Called from can_optimize() after wp_raise_memory_limit('image') has
+	 * already run, so `memory_limit` here reads the raised, not the base,
+	 * value - an image only counts as too large once it would not fit even
+	 * with that headroom.
+	 *
+	 * @param string $file          Absolute path to the image.
+	 * @param int    $max_dimension Longest edge the encoder will constrain to, 0 when unconstrained.
 	 * @return bool
 	 */
-	private function has_memory_for( $file ) {
+	private function has_memory_for( $file, $max_dimension = 0 ) {
 		$info = @getimagesize( $file ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Handled by the false check.
 
 		if ( ! $info ) {
@@ -298,8 +316,20 @@ class Optimizer {
 
 		$pixels = (int) $info[0] * (int) $info[1];
 
-		// Source frame plus a resized working copy, with headroom for the encoder.
-		$required = $pixels * 4 * 2;
+		// Source frame plus the resized working copy, at the size that copy
+		// will really be. Mirrors AbstractEngine::constrain(), which is what
+		// every engine applies before encoding.
+		$longest = max( (int) $info[0], (int) $info[1] );
+		$max     = (int) $max_dimension;
+
+		if ( $max > 0 && $longest > $max ) {
+			$ratio  = $max / $longest;
+			$target = (int) round( $pixels * $ratio * $ratio );
+		} else {
+			$target = $pixels;
+		}
+
+		$required  = ( $pixels + $target ) * 4;
 		$available = $limit - memory_get_usage( true );
 
 		/**

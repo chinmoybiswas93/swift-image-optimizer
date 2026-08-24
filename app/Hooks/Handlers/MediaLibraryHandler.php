@@ -127,7 +127,7 @@ class MediaLibraryHandler {
 			case OptimizationLog::STATUS_SKIPPED:
 				return array(
 					'state'   => 'skipped',
-					'primary' => $this->reason_label( $row['reason'] ),
+					'primary' => self::reason_label( $row['reason'] ),
 					'detail'  => '',
 				);
 
@@ -135,7 +135,7 @@ class MediaLibraryHandler {
 				return array(
 					'state'   => 'failed',
 					'primary' => __( 'Failed', 'swift-image-optimizer' ),
-					'detail'  => $this->reason_label( $row['reason'] ),
+					'detail'  => self::reason_label( $row['reason'] ),
 				);
 
 			case OptimizationLog::STATUS_RESTORED:
@@ -152,10 +152,13 @@ class MediaLibraryHandler {
 	/**
 	 * Turn an internal reason code into something readable.
 	 *
+	 * Public so `optimization_payload()` and the REST field callback in
+	 * `RestFieldHandler` can share it instead of duplicating the map.
+	 *
 	 * @param string $reason Reason code.
 	 * @return string
 	 */
-	private function reason_label( $reason ) {
+	public static function reason_label( $reason ) {
 		$labels = array(
 			'skipped-larger'      => __( 'Already efficient, WebP would be larger', 'swift-image-optimizer' ),
 			'insufficient-memory' => __( 'Too large for the available memory', 'swift-image-optimizer' ),
@@ -392,16 +395,39 @@ class MediaLibraryHandler {
 	 * @return array
 	 */
 	public function expose_to_js( $response, $attachment ) {
-		$mime        = get_post_mime_type( $attachment->ID );
+		$payload = self::optimization_payload( $attachment->ID );
+
+		if ( null !== $payload ) {
+			$response['swiftImageOptimizer'] = $payload;
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Build the optimization status payload for one attachment.
+	 *
+	 * The single source of truth for "what does this attachment's
+	 * optimization state look like to a client" - shared by the classic
+	 * media modal (`expose_to_js()`, via `wp_prepare_attachment_for_js`) and
+	 * the REST field `RestFieldHandler` exposes for the block editor, so the
+	 * two never drift out of sync with each other.
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return array|null Null when there is nothing to say (an untouched,
+	 *                     non-convertible format).
+	 */
+	public static function optimization_payload( $attachment_id ) {
+		$mime        = get_post_mime_type( $attachment_id );
 		$convertible = in_array( $mime, Scanner::mime_types(), true );
-		$row         = OptimizationLog::find( $attachment->ID );
+		$row         = OptimizationLog::find( $attachment_id );
 
 		// Nothing to say about a PDF that has never been touched.
 		if ( ! $row && ! $convertible ) {
-			return $response;
+			return null;
 		}
 
-		$editable = current_user_can( 'edit_post', $attachment->ID ) && current_user_can( 'upload_files' );
+		$editable = current_user_can( 'edit_post', $attachment_id ) && current_user_can( 'upload_files' );
 		$status   = $row ? $row['status'] : '';
 
 		/*
@@ -413,18 +439,19 @@ class MediaLibraryHandler {
 		 */
 		$stale = $row
 			&& OptimizationLog::STATUS_OPTIMIZED === $status
-			&& ! AttachmentConverter::optimized_output_exists( $attachment->ID, $row );
+			&& ! AttachmentConverter::optimized_output_exists( $attachment_id, $row );
 
-		if ( $stale ) {
-			$status   = '';
-			$original = 0;
-			$current  = 0;
-		}
-		$original = $row ? (int) $row['original_size'] : 0;
-		$current  = $row ? (int) $row['optimized_size'] : 0;
+		// Zeroed along with the status: reporting a saving next to an empty
+		// status describes a result the modal has just said it does not have.
+		$original = $stale || ! $row ? 0 : (int) $row['original_size'];
+		$current  = $stale || ! $row ? 0 : (int) $row['optimized_size'];
 		$saved    = max( 0, $original - $current );
 
-		$response['swiftImageOptimizer'] = array(
+		if ( $stale ) {
+			$status = '';
+		}
+
+		return array(
 			'status'        => $status,
 			// Offer the button whenever the format is convertible and we have
 			// not already converted it. A previous skip or failure is still
@@ -442,9 +469,7 @@ class MediaLibraryHandler {
 			'currentMime'   => $mime,
 			'engine'        => $row && $row['engine'] ? $row['engine'] : '',
 			'conversionMs'  => $row && isset( $row['conversion_ms'] ) ? (int) $row['conversion_ms'] : 0,
-			'reason'        => $row ? $this->reason_label( $row['reason'] ) : '',
+			'reason'        => $row ? self::reason_label( $row['reason'] ) : '',
 		);
-
-		return $response;
 	}
 }

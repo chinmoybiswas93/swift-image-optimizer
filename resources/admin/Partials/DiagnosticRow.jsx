@@ -9,7 +9,10 @@ const DiagnosticRow = ( { row } ) => (
 				<span className="sio-diagnostics__hint">{ row.hint }</span>
 			) }
 		</span>
-		<span className={ `sio-diagnostics__state is-${ row.state }` } aria-hidden="true" />
+		<span
+			className={ `sio-diagnostics__state is-${ row.state }` }
+			aria-hidden="true"
+		/>
 	</div>
 );
 

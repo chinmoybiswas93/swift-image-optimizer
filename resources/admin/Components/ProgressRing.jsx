@@ -40,7 +40,10 @@ const ProgressRing = ( {
 	// The two arcs share the circle, so the muted one can only occupy what the
 	// value arc has not taken. Without this clamp a rounding disagreement
 	// between them draws one arc over the other.
-	const muted = Math.max( 0, Math.min( 100 - value, Number( mutedPercent ) || 0 ) );
+	const muted = Math.max(
+		0,
+		Math.min( 100 - value, Number( mutedPercent ) || 0 )
+	);
 
 	// Inset by half the stroke, or the ring is clipped by its own viewBox.
 	const radius = ( size - stroke ) / 2;
@@ -86,11 +89,11 @@ const ProgressRing = ( {
 				/>
 
 				{ /*
-				  * Drawn before the value arc and offset past it, so the two sit
-				  * end to end around the circle rather than both starting at 12
-				  * o'clock. The negative offset is how SVG walks a dash pattern
-				  * forward from the path start.
-				  */ }
+				 * Drawn before the value arc and offset past it, so the two sit
+				 * end to end around the circle rather than both starting at 12
+				 * o'clock. The negative offset is how SVG walks a dash pattern
+				 * forward from the path start.
+				 */ }
 				{ muted > 0 && (
 					<circle
 						className="sio-ring__muted"
@@ -99,7 +102,9 @@ const ProgressRing = ( {
 						r={ radius }
 						fill="none"
 						strokeWidth={ stroke }
-						strokeDasharray={ `${ mutedDash } ${ circumference - mutedDash }` }
+						strokeDasharray={ `${ mutedDash } ${
+							circumference - mutedDash
+						}` }
 						strokeDashoffset={ -valueDash }
 						transform={ `rotate(-90 ${ size / 2 } ${ size / 2 })` }
 					/>
@@ -113,19 +118,25 @@ const ProgressRing = ( {
 					fill="none"
 					strokeWidth={ stroke }
 					strokeLinecap="round"
-					strokeDasharray={ `${ valueDash } ${ circumference - valueDash }` }
+					strokeDasharray={ `${ valueDash } ${
+						circumference - valueDash
+					}` }
 					strokeDashoffset={ 0 }
 					transform={ `rotate(-90 ${ size / 2 } ${ size / 2 })` }
 				/>
 			</svg>
 
 			{ /*
-			  * HTML rather than <text>, so the caption inherits the admin font
-			  * stack and a long translation wraps instead of overflowing.
-			  */ }
+			 * HTML rather than <text>, so the caption inherits the admin font
+			 * stack and a long translation wraps instead of overflowing.
+			 */ }
 			<div className="sio-ring__center">
-				<span className="sio-ring__figure">{ label ?? `${ value }%` }</span>
-				{ caption && <span className="sio-ring__caption">{ caption }</span> }
+				<span className="sio-ring__figure">
+					{ label ?? `${ value }%` }
+				</span>
+				{ caption && (
+					<span className="sio-ring__caption">{ caption }</span>
+				) }
 			</div>
 		</div>
 	);

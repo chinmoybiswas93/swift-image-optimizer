@@ -53,6 +53,24 @@ class ImagickEngine extends AbstractEngine {
 	}
 
 	/**
+	 * Imagick decodes outside PHP's memory_limit.
+	 *
+	 * The pixel buffer lives in ImageMagick's own C heap, governed by its
+	 * resource limits - which page to disk rather than fataling - so PHP's
+	 * memory_limit says nothing about whether a decode will survive. Applying
+	 * the in-process estimate here refused 40-megapixel photos that Imagick
+	 * converts comfortably, the same mistake cwebp was exempted from.
+	 *
+	 * Safe to exempt only because convert() sets the `jpeg:size` decode hint,
+	 * which keeps the frame Imagick actually allocates near the output size.
+	 *
+	 * @return bool
+	 */
+	public function decodes_in_process() {
+		return false;
+	}
+
+	/**
 	 * Convert a source image to WebP using Imagick.
 	 *
 	 * @param string $source      Absolute path to the source image.
@@ -67,6 +85,36 @@ class ImagickEngine extends AbstractEngine {
 
 		try {
 			$image = new Imagick();
+
+			/*
+			 * Ask libjpeg to DCT-scale during decode rather than decoding the
+			 * full frame and throwing most of it away in resizeImage() below.
+			 * A 7728px JPEG bound for 2560px decodes at half scale, cutting
+			 * peak decode memory roughly fourfold. libjpeg only ever picks a
+			 * scale that still covers the requested box, so the pixels the
+			 * resize needs are all there. Decoders that do not understand the
+			 * hint ignore it.
+			 *
+			 * The hint is the constrained target, not a square of
+			 * max_dimension, and it is set only when that is genuinely
+			 * smaller than the source. libjpeg scales *up* to reach the box
+			 * it is given - up to 2x - so a square hint enlarged anything
+			 * whose shorter edge fell below max_dimension: the 900x600
+			 * harness fixture came back 1800x1200 and its WebP was bigger
+			 * than the JPEG it came from.
+			 */
+			if ( $options['max_dimension'] > 0 ) {
+				$size = @getimagesize( $source ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Handled by the is_array check; a hint is optional.
+
+				if ( is_array( $size ) ) {
+					list( $hint_width, $hint_height ) = $this->constrain( (int) $size[0], (int) $size[1], $options['max_dimension'] );
+
+					if ( $hint_width < (int) $size[0] ) {
+						$image->setOption( 'jpeg:size', $hint_width . 'x' . $hint_height );
+					}
+				}
+			}
+
 			$image->readImage( $source );
 
 			// Flatten multi-frame sources (for example a layered PNG) to a single frame.

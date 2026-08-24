@@ -2,9 +2,9 @@
 Contributors: wpswift
 Tags: images, webp, optimization, compress, performance
 Requires at least: 6.2
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -92,6 +92,18 @@ In a protected folder inside your uploads directory, under an unguessable filena
 3. Settings
 
 == Changelog ==
+
+= 1.2.0 =
+* New: optimization status now appears in the block editor, in the Image block's settings sidebar — until now it was only visible in the classic media modal
+* Added: support for WordPress 7.1's client-side media processing, where the browser prepares each image size before uploading it
+* Fixed: images uploaded through a block in WordPress 7.1 were converted correctly but reported no status at all
+* Fixed: an image uploaded through a block was processed once per generated size instead of once, which also stored a redundant backup for every size
+* Fixed: large photos were refused with "Too large for the available memory" even when they converted comfortably — the estimate charged for the full-resolution frame twice, so anything past roughly 28 megapixels was skipped on a 256M limit
+* Fixed: Imagick is no longer measured against PHP's memory limit, which it does not allocate from, and now decodes large JPEGs at a reduced scale
+* Fixed: the same photo could be optimized from the Media Library but skipped on upload, because the two paths were measuring different files
+* Fixed: Troubleshoot tools returned "No route was found" on sites using plain permalinks
+* Fixed: a thumbnail or scaled copy re-submitted for an image already converted is no longer converted a second time, which used to leave the file and the database describing different things
+* Added: a repair tool for images left with the wrong file type recorded by that problem, in Troubleshoot and as `wp swift-image-optimizer repair-mime`
 
 = 1.1.0 =
 * New Troubleshoot tab: server diagnostics, an activity log with a viewer, and maintenance tools

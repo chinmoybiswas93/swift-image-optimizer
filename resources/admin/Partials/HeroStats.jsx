@@ -33,13 +33,18 @@ const HeroStats = ( { snapshot } ) => {
 						{ __( 'Total storage saved', 'swift-image-optimizer' ) }
 					</span>
 					<div className="sio-hero__figure">
-						<span className="sio-hero__value">{ formatBytes( stats.saved_bytes ) }</span>
+						<span className="sio-hero__value">
+							{ formatBytes( stats.saved_bytes ) }
+						</span>
 						{ percent > 0 && (
 							<span className="sio-hero__badge">
 								<IconTrendDown />
 								{ sprintf(
 									/* translators: %s: percentage saved. */
-									__( '%s%% smaller', 'swift-image-optimizer' ),
+									__(
+										'%s%% smaller',
+										'swift-image-optimizer'
+									),
 									percent
 								) }
 							</span>
@@ -55,7 +60,10 @@ const HeroStats = ( { snapshot } ) => {
 									),
 									scannedAt
 							  )
-							: __( 'Scan your library to see what it has saved', 'swift-image-optimizer' ) }
+							: __(
+									'Scan your library to see what it has saved',
+									'swift-image-optimizer'
+							  ) }
 					</span>
 				</div>
 
@@ -64,7 +72,10 @@ const HeroStats = ( { snapshot } ) => {
 						icon={ <IconImage /> }
 						tone="blue"
 						value={ stats.optimized ?? 0 }
-						label={ __( 'Images optimized', 'swift-image-optimizer' ) }
+						label={ __(
+							'Images optimized',
+							'swift-image-optimizer'
+						) }
 					/>
 					<Metric
 						icon={ <IconDisk /> }
@@ -76,7 +87,10 @@ const HeroStats = ( { snapshot } ) => {
 						icon={ <IconBolt /> }
 						tone="green"
 						value={ formatBytes( stats.optimized_bytes ) }
-						label={ __( 'Optimized size', 'swift-image-optimizer' ) }
+						label={ __(
+							'Optimized size',
+							'swift-image-optimizer'
+						) }
 					/>
 				</div>
 			</CardBody>

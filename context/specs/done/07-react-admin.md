@@ -5,22 +5,6 @@
 A Media → Bulk Optimize screen that drives the bulk runner, exposes settings, and manages
 backups — built with `@wordpress/components` so it looks like part of WordPress.
 
-## Read first
-
-- `src/Rest/Controller.php` — every route the UI calls
-- `src/Admin/Settings.php` — `show_in_rest` schema, so settings save via `/wp/v2/settings`
-
-## Files changed
-
-| File | Purpose |
-|---|---|
-| `src/Admin/SettingsPage.php` | Media submenu, React mount, `wp_localize_script` |
-| `admin/index.js` | The dashboard |
-| `admin/index.scss` | Styles, all `sio-` prefixed |
-| `package.json` | `@wordpress/scripts` as the only dev dependency |
-| `webpack.config.js` | Entry-point override |
-| `.gitignore` | Ignores `node_modules/`, keeps `build/` |
-
 ## Build setup
 
 `wp-scripts` expects `src/index.js`. `src/` here is PHP, so `webpack.config.js` spreads the

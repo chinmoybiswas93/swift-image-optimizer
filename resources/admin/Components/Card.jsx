@@ -7,14 +7,19 @@
  */
 
 export const Card = ( { className = '', children, ...rest } ) => (
-	<div className={ [ 'sio-card', className ].filter( Boolean ).join( ' ' ) } { ...rest }>
+	<div
+		className={ [ 'sio-card', className ].filter( Boolean ).join( ' ' ) }
+		{ ...rest }
+	>
 		{ children }
 	</div>
 );
 
 export const CardHeader = ( { className = '', children, ...rest } ) => (
 	<div
-		className={ [ 'sio-card__header', className ].filter( Boolean ).join( ' ' ) }
+		className={ [ 'sio-card__header', className ]
+			.filter( Boolean )
+			.join( ' ' ) }
 		{ ...rest }
 	>
 		{ children }
@@ -22,7 +27,12 @@ export const CardHeader = ( { className = '', children, ...rest } ) => (
 );
 
 export const CardBody = ( { className = '', children, ...rest } ) => (
-	<div className={ [ 'sio-card__body', className ].filter( Boolean ).join( ' ' ) } { ...rest }>
+	<div
+		className={ [ 'sio-card__body', className ]
+			.filter( Boolean )
+			.join( ' ' ) }
+		{ ...rest }
+	>
 		{ children }
 	</div>
 );

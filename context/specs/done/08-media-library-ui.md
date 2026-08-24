@@ -11,13 +11,6 @@ Make the plugin visible and usable from the Media Library:
 Grid view is WordPress's default and had nothing at all — no way to optimize, no sign the
 plugin existed. The modal payload was already being emitted by Unit 05 and nothing consumed it.
 
-## Read first
-
-- `wp-includes/js/media-views.js` — `AttachmentsBrowser.createToolbar()` around line 4521
-- `wp-includes/js/media-grid.js` — `DeleteSelectedButton` (236), `SelectModeToggle` (296),
-  `Attachment.Details.TwoColumn` (134)
-- `src/Media/ListTable.php` — `expose_to_js()` and `reason_label()`
-
 ## The core mechanic everything depends on
 
 `wp.media.view.Button` renders with `className: 'media-button'`, and core's
@@ -34,21 +27,6 @@ A `wp.media.view.Button` in the toolbar is therefore never touched by core's sho
 Its visibility is entirely ours to manage. That is what makes an always-visible custom button
 possible without patching core — and it is also why both new buttons have to toggle their own
 `hidden` class on `select:activate` / `select:deactivate`.
-
-## Files changed
-
-| File | Purpose |
-|---|---|
-| `src/Database.php` | Schema v2: `conversion_ms` column |
-| `src/Optimizer.php` | Times the encode, returns `duration_ms` |
-| `src/Upload/Interceptor.php` | Persists `conversion_ms` |
-| `src/AttachmentConverter.php` | Persists `conversion_ms` |
-| `src/Media/ListTable.php` | `expose_to_js()` widened; emits for convertible mimes even with no log row |
-| `src/Admin/Assets.php` *(new)* | Enqueues the bundle wherever the media views are loaded |
-| `src/Plugin.php` | Registers `Assets` |
-| `admin/media.js` *(new)* | Toolbar buttons, progress runner, modal panel |
-| `admin/media.scss` *(new)* | Card and progress styles |
-| `webpack.config.js` | Second entry point |
 
 ## Design notes
 

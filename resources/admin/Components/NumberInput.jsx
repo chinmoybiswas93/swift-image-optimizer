@@ -11,7 +11,15 @@
 
 import Field from './Field';
 
-const NumberInput = ( { label, help, value, onChange, min, max, step = 1 } ) => (
+const NumberInput = ( {
+	label,
+	help,
+	value,
+	onChange,
+	min,
+	max,
+	step = 1,
+} ) => (
 	<Field label={ label } help={ help } className="sio-number">
 		{ ( { id, helpId } ) => (
 			<input
@@ -23,7 +31,9 @@ const NumberInput = ( { label, help, value, onChange, min, max, step = 1 } ) => 
 				max={ max }
 				step={ step }
 				aria-describedby={ helpId }
-				onChange={ ( event ) => onChange && onChange( event.target.value ) }
+				onChange={ ( event ) =>
+					onChange && onChange( event.target.value )
+				}
 			/>
 		) }
 	</Field>

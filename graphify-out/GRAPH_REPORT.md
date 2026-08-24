@@ -1,16 +1,16 @@
 # Graph Report - swift-image-optimizer  (2026-08-16)
 
 ## Corpus Check
-- 162 files · ~327,874 words
+- 161 files · ~645,162 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1861 nodes · 3123 edges · 242 communities (136 shown, 106 thin omitted)
+- 1913 nodes · 3176 edges · 223 communities (128 shown, 95 thin omitted)
 - Extraction: 81% EXTRACTED · 19% INFERRED · 0% AMBIGUOUS · INFERRED: 596 edges (avg confidence: 0.81)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `145601d4`
+- Built from commit: `7049311d`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -81,7 +81,6 @@
 - [[_COMMUNITY_Toasts & App Shell|Toasts & App Shell]]
 - [[_COMMUNITY_Serialization-Safety Invariants|Serialization-Safety Invariants]]
 - [[_COMMUNITY_Framework Kernel & Layout|Framework Kernel & Layout]]
-- [[_COMMUNITY_Unit 01 Foundation Spec|Unit 01 Foundation Spec]]
 - [[_COMMUNITY_Units 12 & 14 NoticesSpacing|Units 12 & 14 Notices/Spacing]]
 - [[_COMMUNITY_Bulk Cron Job Runner|Bulk Cron Job Runner]]
 - [[_COMMUNITY_Stats Endpoint & Payload|Stats Endpoint & Payload]]
@@ -101,18 +100,13 @@
 - [[_COMMUNITY_Resize Existing Images (Future)|Resize Existing Images (Future)]]
 - [[_COMMUNITY_Route Policies|Route Policies]]
 - [[_COMMUNITY_URL Lookup Persistence|URL Lookup Persistence]]
-- [[_COMMUNITY_Bulk Page Client Logic|Bulk Page Client Logic]]
-- [[_COMMUNITY_Build & Test Config|Build & Test Config]]
 - [[_COMMUNITY_Static Facade & Layout Constraints|Static Facade & Layout Constraints]]
 - [[_COMMUNITY_Graphify-First & Data-Loss Rules|Graphify-First & Data-Loss Rules]]
-- [[_COMMUNITY_Client Bulk Pump Loop|Client Bulk Pump Loop]]
 - [[_COMMUNITY_Logging & Diagnostics Spec|Logging & Diagnostics Spec]]
 - [[_COMMUNITY_CLI Harness Internals|CLI Harness Internals]]
 - [[_COMMUNITY_Testing & DB Confirmation|Testing & DB Confirmation]]
-- [[_COMMUNITY_Uninstall Sweep|Uninstall Sweep]]
 - [[_COMMUNITY_Unit 10 Decisions|Unit 10 Decisions]]
 - [[_COMMUNITY_Abstract Controller|Abstract Controller]]
-- [[_COMMUNITY_Boot & Config Files|Boot & Config Files]]
 - [[_COMMUNITY_Model Query Helpers|Model Query Helpers]]
 - [[_COMMUNITY_Metric & Stat Components|Metric & Stat Components]]
 - [[_COMMUNITY_Harness Runner & Socket Pinning|Harness Runner & Socket Pinning]]
@@ -123,10 +117,6 @@
 - [[_COMMUNITY_Loggersuffix (unguessable filename)|Logger::suffix (unguessable filename)]]
 - [[_COMMUNITY_build-dist.sh|build-dist.sh]]
 - [[_COMMUNITY_permissions|permissions]]
-- [[_COMMUNITY_Comments|Comments]]
-- [[_COMMUNITY_Before writing any conversion code|Before writing any conversion code]]
-- [[_COMMUNITY_Graph-first research (saves ~20x tokens — always do this ...|Graph-first research (saves ~20x tokens — always do this ...]]
-- [[_COMMUNITY_Skills — what is installed and when to reach for it|Skills — what is installed and when to reach for it]]
 - [[_COMMUNITY_Restructure 2026-08-09 feature folders → layered folders|Restructure 2026-08-09: feature folders → layered folders]]
 - [[_COMMUNITY_OptimizerTEMP_DIRNAME scratch directory|Optimizer::TEMP_DIRNAME scratch directory]]
 - [[_COMMUNITY_webpack.config.js|webpack.config.js]]
@@ -215,27 +205,18 @@
 - [[_COMMUNITY_Community 215|Community 215]]
 - [[_COMMUNITY_Community 216|Community 216]]
 - [[_COMMUNITY_Community 217|Community 217]]
-- [[_COMMUNITY_Community 218|Community 218]]
 - [[_COMMUNITY_Community 221|Community 221]]
 - [[_COMMUNITY_Community 222|Community 222]]
 - [[_COMMUNITY_Community 223|Community 223]]
-- [[_COMMUNITY_Community 224|Community 224]]
 - [[_COMMUNITY_Community 225|Community 225]]
 - [[_COMMUNITY_Community 226|Community 226]]
 - [[_COMMUNITY_Community 227|Community 227]]
 - [[_COMMUNITY_Community 228|Community 228]]
 - [[_COMMUNITY_Community 229|Community 229]]
 - [[_COMMUNITY_Community 230|Community 230]]
-- [[_COMMUNITY_Community 231|Community 231]]
-- [[_COMMUNITY_Community 232|Community 232]]
 - [[_COMMUNITY_Community 233|Community 233]]
-- [[_COMMUNITY_Community 234|Community 234]]
 - [[_COMMUNITY_Community 235|Community 235]]
-- [[_COMMUNITY_Community 236|Community 236]]
-- [[_COMMUNITY_Community 237|Community 237]]
 - [[_COMMUNITY_Community 238|Community 238]]
-- [[_COMMUNITY_Community 239|Community 239]]
-- [[_COMMUNITY_Community 240|Community 240]]
 - [[_COMMUNITY_Community 241|Community 241]]
 
 ## God Nodes (most connected - your core abstractions)
@@ -266,31 +247,39 @@
 - **The evidence that closed I-4** — php_cli_bulk_e2e_harness, php_run_cli_runner, php_package_test_cli_script, current_issues_i4_closed, progress_tracker_cli_entry [EXTRACTED 1.00]
 - **Guards that refuse rather than guess** — php_cli_dirty_library_guard, php_run_cli_siteurl_guard, php_run_cli_cross_site_refusal, fix_plan_two_database_trap, fix_plan_backup_incident [INFERRED 0.85]
 
-## Communities (242 total, 106 thin omitted)
+## Communities (223 total, 95 thin omitted)
 
 ### Community 0 - "Kernel & Container"
 Cohesion: 0.12
-Nodes (9): Scanner, Scanner, LogMigrator, Model::replaceRow, OptimizationLog::defaults, OptimizationLog, OptimizationLog model, harness_cleanup() (+1 more)
+Nodes (8): Scanner, Scanner, LogMigrator, Model::replaceRow, OptimizationLog::defaults, OptimizationLog, OptimizationLog model, harness_cleanup()
 
 ### Community 1 - "Router, Config & Views"
 Cohesion: 0.24
 Nodes (10): Hard rule: every input handler needs capability check, nonce, sanitize on input, escape on output, DatabaseRewriter, Invariant 1 — Never str_replace over serialized data, Invariant 11 — Never rewrite derived caches, flush them, Invariant 19 — Invalidate only the objects touched, never the whole cache, Invariant 2 — Unserialize with allowed_classes => false, Invariant 3 — Use strtr(), not str_replace(), for the map, UrlMap (+2 more)
 
 ### Community 2 - "Admin Menu & Asset Enqueue"
-Cohesion: 0.19
-Nodes (7): AttachmentConverter, The destructive-path rule (AttachmentConverter, Rewrite/, Backup/), Invariant 4 — Back up before the first destructive operation, Invariant 6 — Never delete old files until metadata regeneration succeeds, untrailingslashit(), Decision: no non-destructive mode, AttachmentConverter
+Cohesion: 0.17
+Nodes (6): AttachmentConverter, Invariant 4 — Back up before the first destructive operation, Invariant 6 — Never delete old files until metadata regeneration succeeds, untrailingslashit(), Decision: no non-destructive mode, AttachmentConverter
 
 ### Community 3 - "Early Unit Specs (03-04)"
-Cohesion: 0.11
-Nodes (22): App.jsx root component, Single shared snapshot state design, Runtime From WordPress, UI Is Ours, App::getInstance, App::router, App::view, ScanRunner::snapshot(), ScanRunner::snapshot_is_stale() (+14 more)
+Cohesion: 0.18
+Nodes (12): Runtime From WordPress, UI Is Ours, App::getInstance, App::router, App::view, chunkSize = 3 Timeout Guard, AssetHandler::enqueue, Enqueue By media-views Presence, Not Screen List, MediaLibraryHandler::column_state (+4 more)
+
+### Community 4 - "Backup Manager"
+Cohesion: 0.09
+Nodes (5): Commands, LogController, LogController, Logger, Logger
 
 ### Community 5 - "Upload Interceptor & Logging"
-Cohesion: 0.22
-Nodes (10): Invariant 24: The server owns whether a bulk run is active, Invariant 25: The library scan observes, never writes to the log table, Architecture invariants (25 rules), Invariant 18 — Cross-request locks use add_option(), not transients, Invariant 23: a batch persists its pending rewrite map before applying it, Invariant 8 — Soft errors are defined once, Services\Lock, Services\Bulk\Runner (+2 more)
+Cohesion: 0.12
+Nodes (16): Fixed issues, I-10 — Foreign admin notices on this plugin's screen (Unit 11, reopened, closed Unit 14), I-11 — Three storage folders in uploads (Unit 11), I-12 — Bulk stopped on tab change and restarted from scratch (Unit 11), I-13 — Restored site reported every image as optimized (Unit 11), I-14 — Bulk optimize and stats never reconciled (Unit 12), I-15 — Card bottom had no spacing (Unit 14), I-1 — PHPCS never run (Unit 09) (+8 more)
 
 ### Community 6 - "Packaging & Shipped Metadata"
-Cohesion: 0.18
-Nodes (13): Admin SPA mount template, LogMigrator::migrate, UrlMigrator::migrate, swift_image_optimizer_urls table (indexed 404 fallback map), Media library optimization column partial, Admin notice partial, Plugin-owned admin styling (sio- classes), Swift Image Optimizer readme.txt (+5 more)
+Cohesion: 0.15
+Nodes (15): Admin SPA mount template, LogMigrator::migrate, UrlMigrator::migrate, swift_image_optimizer_urls table (indexed 404 fallback map), Media library optimization column partial, Admin notice partial, Plugin-owned admin styling (sio- classes), Swift Image Optimizer readme.txt (+7 more)
+
+### Community 7 - "Hardening Units & Closed Issues"
+Cohesion: 0.22
+Nodes (8): Data-loss rules, Reporting, The destructive path, The harnesses, Verification is on request, not a ritual, What makes this plugin dangerous, Working rules, Writing a harness
 
 ### Community 8 - "Scanner, CLI & Optimize Routes"
 Cohesion: 0.29
@@ -301,16 +290,16 @@ Cohesion: 0.09
 Nodes (20): Button(), Card(), CardBody(), CardHeader(), Field(), Dismissible notices use a real button for keyboard reach, Notice(), Owning the control instead of __experimentalNumberControl (+12 more)
 
 ### Community 10 - "Encoding Engines & Notices"
-Cohesion: 0.16
-Nodes (11): Hard rule: never touch wp-content/uploads/swift-image-optimizer/backup/, Hard rule: never weaken a guard to make a test pass, BackupManager, BackupManager::ensure_root, BackupManager, Rules for test harnesses (never delete by glob, snapshot/diff, clean up), Invariant 22: a column describing a file is not evidence the file exists — ask the disk, Invariant 9 — status stays 'optimized' when a backup expires (+3 more)
+Cohesion: 0.15
+Nodes (11): Hard rule: never touch wp-content/uploads/swift-image-optimizer/backup/, Hard rule: never weaken a guard to make a test pass, BackupManager, BackupManager::ensure_root, BackupManager, The destructive-path rule (AttachmentConverter, Rewrite/, Backup/), Rules for test harnesses (never delete by glob, snapshot/diff, clean up), Invariant 22: a column describing a file is not evidence the file exists — ask the disk (+3 more)
 
 ### Community 12 - "Scan Runner & Settings Store"
 Cohesion: 0.29
 Nodes (5): mount, package.json Scripts/Deps, { defineConfig }, Webpack Build Config, WordPress-provided vendor externals
 
 ### Community 13 - "Log Model & Harness Fixtures"
-Cohesion: 0.15
-Nodes (16): IconArchive(), IconBolt(), IconDisk(), IconGear(), IconImage(), IconSliders(), IconTrendDown(), LogoMark() (+8 more)
+Cohesion: 0.28
+Nodes (8): IconGear(), IconSliders(), SettingsPage(), Core REST route: /wp/v2/settings, Whole-settings-object save, saveSettings(), SettingsPage, Design rules: no @wordpress/components, custom Tabs
 
 ### Community 14 - "WP-CLI Testing & I-4"
 Cohesion: 0.13
@@ -321,40 +310,40 @@ Cohesion: 0.29
 Nodes (3): BulkController, BulkController, Four Routes Instead Of One {action} Segment
 
 ### Community 16 - "Activation, Cron & Migrations"
-Cohesion: 0.15
-Nodes (15): Action registrations manifest, Coordinator::on_scan_completed(), Runner::start(), ScanRunner::finish(), WP-CLI Commands, Commands (WP-CLI), ProgressRing, Runner::start() is idempotent and resumes rather than restarting (+7 more)
+Cohesion: 0.22
+Nodes (8): Build history, Corrections to earlier reporting, Earlier bugs found during the build, Layout: two restructures, Tooling, Unit 10 — fourteen defects found by reading the conversion path, Unit 11 — the four user reports, and what they turned up, Units
 
 ### Community 17 - "Bulk & Scan REST Routes"
 Cohesion: 0.11
 Nodes (18): description, devDependencies, @playwright/test, @wordpress/scripts, license, name, overrides, typescript (+10 more)
 
 ### Community 19 - "Diagnostics & Response Envelope"
-Cohesion: 0.29
-Nodes (8): BackupManager::disk_usage, BackupManager::purge_orphans, Commands::restore, BackupController, Expire-Then-Reuse-Cron-Purge Strategy, OptimizationLog (swift_image_optimizer_log), backup_path JSON Manifest (relative_dir + files), JobRunner::purge
+Cohesion: 0.17
+Nodes (12): BackupManager::delete, BackupManager::root, BackupManager::safe_path, Commands::restore, Ambiguous Restore Count Reported Plainly, OptimizeController::restore, Restore Offered Only When Manifest Verified On Disk, OptimizationLog (swift_image_optimizer_log) (+4 more)
 
 ### Community 20 - "npm Scripts & Dev Tooling"
-Cohesion: 0.13
-Nodes (12): admin_app.php admin SPA mount view, App(), Settings state lifted to App because Troubleshoot also writes it, .wp-header-end notice anchor, ForeignNoticeHandler, ForeignNoticeHandler::register, ForeignNoticeHandler::strip_foreign_notices, MenuHandler (+4 more)
+Cohesion: 0.07
+Nodes (20): Coordinator::on_bulk_completed(), Coordinator::start_full_run(), Runner::announce_completion(), ScanRunner::is_running(), ScanRunner::start(), WP-Cron last-write-wins race pattern, .wp-header-end notice anchor, AssetHandler (+12 more)
 
 ### Community 21 - "Code Standards"
 Cohesion: 0.08
 Nodes (31): Engine\CwebpEngine, EngineFactory, Environment trap: CLI PHP and web PHP have different extensions (Imagick), Environment trap: Local names every database 'local', only the socket differs, CwebpEngine, EngineInterface, Invariant 16 — Engine selection is a chain, not a choice, Invariant 5 — The Optimizer never touches the database or attachments (+23 more)
 
 ### Community 22 - "Foreign Notice Suppression"
-Cohesion: 0.12
-Nodes (20): CLI PHP vs web PHP engine split, Rationale: replace WordPress admin elements with plugin-owned UI to avoid core/plugin conflicts, I-2 — The test suite exercises a different engine than the site runs, I-8 — A backup manifest can become unreachable, with no repair path, Screenshot: Elementor License Mismatch notice rendered inside the plugin admin page, Screenshot: three sibling wp-content folders swift-image-optimizer-backups/-logs/-tmp, UI element: engine badge and 'Using the imagick engine. Available here: imagick, cwebp, gd.', Current Issues (+12 more)
+Cohesion: 0.15
+Nodes (17): Rationale: replace WordPress admin elements with plugin-owned UI to avoid core/plugin conflicts, I-2 — The test suite exercises a different engine than the site runs, I-8 — A backup manifest can become unreachable, with no repair path, Screenshot: Elementor License Mismatch notice rendered inside the plugin admin page, Screenshot: three sibling wp-content folders swift-image-optimizer-backups/-logs/-tmp, UI element: engine badge and 'Using the imagick engine. Available here: imagick, cwebp, gd.', Current Issues, I-6 Media grid modal shows nothing (+9 more)
 
 ### Community 23 - "React Admin Pages"
-Cohesion: 0.17
-Nodes (16): Backup path-traversal guard, Code Standards, code:php (<?php), code:php (// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery), code:php (return new WP_Error( 'skipped-larger', __( 'Human readable.'), code:bash (# Parse under the version floor and the current stable), Database access, Error handling (+8 more)
+Cohesion: 0.05
+Nodes (46): Dependency-Free Shipping Constraint, FluentCart-Style Plugin Layout, Swift Image Optimizer Agent Instructions, "Research the graph, don't read the tree" (graphify-first policy), Hard rules (data-loss prevention), Stale Knowledge Graph Warning, App (static facade), Class map / FluentCart-style layout (+38 more)
 
 ### Community 24 - "Unit 05 Conversion Spec"
 Cohesion: 0.26
 Nodes (12): Rationale: make bulk optimization asynchronous, server-driven and resumable so closing the page does not terminate it, UI element: four-tab dashboard — Bulk Optimize, Settings, Backups, Troubleshoot, Problem: bulk run stops on tab/page change, restarts from the first item, and can report 'already running' while the button stays active, Screenshot: Bulk Optimize tab with counters 261/6/255 and progress '25 of 300' annotated in red, Screenshot: same Bulk Optimize tab later showing 7/7/0 and a disabled Start button, Problem: library counters and progress totals are inconsistent between renders, Observation: convertible count collapses from 261 to 7 with 0 still to do on a later load, Observation: progress reads '25 of 300' while the library card claims 261 convertible / 255 still to do (+4 more)
 
 ### Community 26 - "Bulk Coordinator"
-Cohesion: 0.32
-Nodes (3): Coordinator, Coordinator, Listener-not-caller architecture pattern
+Cohesion: 0.07
+Nodes (20): Every Route Needs A Policy, Coordinator, Coordinator::cancel(), Coordinator, Listener-not-caller architecture pattern, ScanRunner::cancel(), BulkController::phase(), ScanController (+12 more)
 
 ### Community 27 - "Database URL Rewriter"
 Cohesion: 0.23
@@ -373,44 +362,52 @@ Cohesion: 0.15
 Nodes (15): agent.md — Swift Image Optimizer agent instructions, Environment pitfalls: per-site MySQL socket, CLI vs web Imagick, Graph-first research policy (graphify before reading files), Hard rules (no global $wpdb, no glob deletes, no weakened guards), Core risk: the plugin rewrites and deletes user media, Unit completion gate (lint, harnesses, security review, graph update), context/ai-workflow-rules.md, The Destructive-Path Rule (+7 more)
 
 ### Community 32 - "Request Validation Schemas"
-Cohesion: 0.16
-Nodes (19): DryRunPanel, formatTimeAgo(), IconDocument(), IconLayers(), IconStethoscope(), LibraryCard, BackupsPage(), CONFIRM_WORD (+11 more)
+Cohesion: 0.14
+Nodes (22): IconArchive(), IconBolt(), IconDisk(), IconDocument(), IconImage(), IconStethoscope(), IconTrendDown(), LogoMark() (+14 more)
 
 ### Community 33 - "Media Library Column & Actions"
-Cohesion: 0.10
-Nodes (10): ProgressRing(), EnvironmentReport, BulkPage(), DryRunPanel(), HeroStats(), LibraryCard(), RunProgress(), ScanSummary() (+2 more)
+Cohesion: 0.13
+Nodes (5): ProgressRing(), EnvironmentReport, EngineNotice(), Masthead(), __()
 
 ### Community 34 - "Dashboard Cards & Formatting"
-Cohesion: 0.26
-Nodes (3): MediaLibraryHandler, MediaLibraryHandler, media-column.php partial
+Cohesion: 0.14
+Nodes (9): BackupManager::manifest_is_intact(), Scanner::rescan(), ScanRunner::classify(), MediaLibraryHandler, optimized_output_exists() verifies log row against file on disk, Scanner::rescan() reconciles records against disk, MediaLibraryHandler, media-column.php partial (+1 more)
 
 ### Community 35 - "Agent Instructions & Env Pitfalls"
-Cohesion: 0.15
-Nodes (18): 2026-08-11 — comment cleanup (no spec, too small to warrant one), 2026-08-16 — WP-CLI bulk paths verified, closing I-4 (no spec), Architectural decisions made during the build, Bugs found and fixed during the build, Completed, Corrections to earlier reporting, Current Goal, Current Phase (+10 more)
+Cohesion: 0.12
+Nodes (21): 2026-08-11 — comment cleanup (no spec, too small to warrant one), 2026-08-16 — WP-CLI bulk paths verified, closing I-4 (no spec), Architectural decisions, Architectural decisions made during the build, Bugs found and fixed during the build, Completed, Corrections to earlier reporting, Current Goal (+13 more)
+
+### Community 36 - "Progress Tracker"
+Cohesion: 0.22
+Nodes (3): Arch invariant 13: no external HTTP, ScanJobRunner, ScanJobRunner
 
 ### Community 37 - "Open Issues & Folder Layout"
 Cohesion: 0.14
 Nodes (14): Engine\GdEngine, Unit 09 — PHPCS actually run (784 → 0 violations), I-1 — PHPCS has never been run (CLOSED), Unit Plan: Plugin Build Plan, Also verify in this unit, code:bash (cd wp-content/plugins/swift-image-optimizer), Done when, Expected findings (+6 more)
 
 ### Community 38 - "Optimizer Config Defaults"
-Cohesion: 0.15
-Nodes (19): Bulk\Scanner, Logging\Logger, Commands::logs, Commands::requeue, BackupController::cleanup, Controller (abstract base), Controller::sendSuccess, DiagnosticsController (+11 more)
+Cohesion: 0.14
+Nodes (21): BackupManager::disk_usage, BackupManager::purge_orphans, Bulk\Scanner, Logging\Logger, Commands::logs, Commands::requeue, BackupController, BackupController::cleanup (+13 more)
 
 ### Community 39 - "Settings & Troubleshoot Pages"
-Cohesion: 0.06
-Nodes (44): Database.php, Unit 03 - Backups & Retention, code:block1 (uploads/swift-image-optimizer-backups/2026/08/photo.jpg), Completion Notes, Cron, Files changed, Goal, Layout (+36 more)
+Cohesion: 0.05
+Nodes (53): Database.php, Unit 03 - Backups & Retention, code:block1 (uploads/swift-image-optimizer-backups/2026/08/photo.jpg), Completion Notes, Cron, Files changed, Goal, Layout (+45 more)
 
 ### Community 40 - "Admin App Entry & Icons"
-Cohesion: 0.18
-Nodes (16): I-5 496 orphaned attachments, Unit 06 - Bulk, REST and WP-CLI, code:block1 (GET  /scan             library summary + engine availability), code:bash (wp swift-image-optimizer optimize --dry-run), Completion Notes, Dry run, Files changed, Goal (+8 more)
+Cohesion: 0.05
+Nodes (47): Invariant 24: The server owns whether a bulk run is active, Invariant 25: The library scan observes, never writes to the log table, Architecture invariants (25 rules), bulk-e2e.php harness, absorb(), onOptimize(), pumpBulk(), pumpScan() (+39 more)
 
 ### Community 41 - "Unit 06 Bulk/REST/CLI Spec"
 Cohesion: 0.13
 Nodes (14): Completion Notes, Cron, Decisions taken with the user before building, Files changed, First load, Goal, Read first, REST routes (+6 more)
 
 ### Community 42 - "Unit 07 React Admin Spec"
-Cohesion: 0.24
-Nodes (3): Optimizer, DiagnosticsController, Optimizer
+Cohesion: 0.10
+Nodes (8): Optimizer, DiagnosticsController, EngineFactory, harness_count_log_rows(), harness_engine_names(), harness_import_attachment(), harness_set_baseline_settings(), Optimizer
+
+### Community 43 - "Bulk Runner State"
+Cohesion: 0.19
+Nodes (3): StoreSettings, StoreSettings, Runner
 
 ### Community 44 - "Optimizer Service"
 Cohesion: 0.23
@@ -421,12 +418,12 @@ Cohesion: 0.29
 Nodes (8): boot/app.php bootstrap closure, config/app.php application config array, Application (plugin kernel), Config (dot-notated config repository), Container (dependency container), Route (single declared REST route value object), Router (fluent REST route registrar), View (plain-PHP template renderer)
 
 ### Community 46 - "Unit 10 Hardening Spec"
-Cohesion: 0.18
-Nodes (15): Unit 10 — Hardening + Troubleshoot Tab, Completion Notes, Decisions taken with the user before building, Goal, Instrumented steps, Part 1 — Logging and diagnostics, Part 2 — The fourteen fixes, Read first (+7 more)
+Cohesion: 0.15
+Nodes (18): CLI PHP vs web PHP engine split, I-2 ImagickEngine never executed, Engine preference order: Imagick > cwebp > GD, Unit 10 — Hardening + Troubleshoot Tab, Completion Notes, Decisions taken with the user before building, Goal, Instrumented steps (+10 more)
 
 ### Community 47 - "Fix Plan & Release Gate"
-Cohesion: 0.19
-Nodes (13): Environment trap — two databases named `local`, cli_binaries() — resolve php, wp, socket, path, url, cli-bulk-e2e.php — WP-CLI bulk harness, Dirty-library refusal (SIO_CLI_ALLOW_DIRTY), cli_run() — invoke wp as a subprocess, npm run test:cli, Cross-site --site refusal, run-cli.sh — site-agnostic CLI runner (+5 more)
+Cohesion: 0.21
+Nodes (12): Environment trap — two databases named `local`, cli_binaries() — resolve php, wp, socket, path, url, cli-bulk-e2e.php — WP-CLI bulk harness, Dirty-library refusal (SIO_CLI_ALLOW_DIRTY), cli_run() — invoke wp as a subprocess, npm run test:cli, Cross-site --site refusal, run-cli.sh — site-agnostic CLI runner (+4 more)
 
 ### Community 48 - "UI Context & Design Rules"
 Cohesion: 0.26
@@ -437,32 +434,32 @@ Cohesion: 0.13
 Nodes (14): `BackupController::purge()`, `BackupManager::purge_orphans()`, Call sites, Completion Notes, Decisions taken with the user before building, Files changed, Goal, Implementation (+6 more)
 
 ### Community 50 - "Disk-Verified State Checks"
-Cohesion: 0.24
-Nodes (3): BackupController, JobRunner, JobRunner
+Cohesion: 0.19
+Nodes (4): BackupController, DeactivationHandler, JobRunner, JobRunner
 
 ### Community 51 - "Data Model & DB Access Rule"
-Cohesion: 0.14
-Nodes (11): BackupManager::delete, BackupManager::manifest_is_intact(), BackupManager::root, BackupManager::safe_path, Scanner::rescan(), ScanRunner::classify(), optimized_output_exists() verifies log row against file on disk, Scanner::rescan() reconciles records against disk (+3 more)
+Cohesion: 0.32
+Nodes (8): App.jsx root component, Single shared snapshot state design, ScanRunner::snapshot(), ScanRunner::snapshot_is_stale(), ScanController::snapshot(), swiftImageOptimizer Localized Bootstrap Payload, Stylesheet Versioned By mtime, Not Asset Hash, MenuHandler::enqueue
 
 ### Community 52 - "Project Overview & Scope"
-Cohesion: 0.22
-Nodes (8): Runner (Bulk), Runner::process_batch(), Commands::optimize, Batched url_map Accumulation Then Rewrite, pending_rewrite map prevents permanently orphaned URL references, DatabaseRewriter::replace(), AttachmentConverter::is_soft_error(), AttachmentConverter::restore()
+Cohesion: 0.18
+Nodes (10): Runner (Bulk), Runner::process_batch(), Commands::optimize, Batched url_map Accumulation Then Rewrite, pending_rewrite map prevents permanently orphaned URL references, Model::db, OptimizationLog::find, DatabaseRewriter::replace() (+2 more)
 
 ### Community 53 - "Unit 12 Scan Dashboard Spec"
-Cohesion: 0.19
-Nodes (14): Backups, Bulk Optimize, code:block1 (sio-app  sio-masthead  sio-masthead__mark  sio-masthead__tit), Copy guidelines, Design rules, Interaction rules, Page furniture, Screens not yet built (+6 more)
+Cohesion: 0.17
+Nodes (15): Backups, Bulk Optimize, code:block1 (sio-app  sio-masthead  sio-masthead__mark  sio-masthead__tit), Copy guidelines, Design rules, Interaction rules, Not built, Page furniture (+7 more)
 
 ### Community 54 - "Schema Migration & Backfills"
-Cohesion: 0.11
-Nodes (14): Every Route Needs A Policy, AdminPolicy, AdminPolicy, MediaPolicy, MediaPolicy, Policy (abstract route policy), Authorization lives in its own class, not on the controller, BulkStartRequest (+6 more)
+Cohesion: 0.15
+Nodes (10): BulkStartRequest, BulkStartRequest, LogQueryRequest (log tail schema), OptimizeRequest (attachment-ID schema), OptimizeRequest::args, OptimizeRequest, OptimizeRequest::sanitizeIds, Admin API route manifest (swift-image-optimizer/v1) (+2 more)
 
 ### Community 55 - "Confirm Modal"
-Cohesion: 0.29
-Nodes (8): BulkPage, client pump + server poll pattern, EngineNotice(), Masthead(), REST route: bulk/batch, REST route: bulk/cancel, REST route: dry-run, config (localized swiftImageOptimizer payload)
+Cohesion: 0.22
+Nodes (9): BulkPage, client pump + server poll pattern, HeroStats, Screenshot: Bulk Optimize tab showing self-contradictory figures — '3 Already processed' next to '369 of 1' progress bar with '366 optimized · 3 skipped', REST route: bulk/batch, REST route: bulk/cancel, REST route: dry-run, REST route: scan (+1 more)
 
 ### Community 56 - "Scheduled Optimization (Future)"
-Cohesion: 0.29
-Nodes (7): formatBytes() (admin), HeroStats, Screenshot: Bulk Optimize tab showing self-contradictory figures — '3 Already processed' next to '369 of 1' progress bar with '366 optimized · 3 skipped', I-14 — Bulk Optimizations and Stats needs to be centralized, formatBytes() (media.js, duplicate), REST route: scan, Scan bucket model (optimized/skipped_permanent/skipped_retryable/failed/pending/unknown)
+Cohesion: 0.15
+Nodes (15): DryRunPanel, formatBytes() (admin), formatTimeAgo(), IconLayers(), LibraryCard, formatBytes() (media.js, duplicate), BulkPage(), DryRunPanel() (+7 more)
 
 ### Community 57 - "Playwright E2E Specs"
 Cohesion: 0.18
@@ -470,23 +467,19 @@ Nodes (11): authors, config, optimize-autoloader, platform, description, license
 
 ### Community 58 - "PHP Harness Suite"
 Cohesion: 0.19
-Nodes (13): 2026-08-08 backup-deletion incident (glob cleanup), After completing any unit, AI Workflow Rules, Before starting any unit, code:bash (graphify query "how does BackupManager expire backups"), code:bash (graphify query "which classes handle REST requests"), Graph-first research (saves ~20x tokens — always do this first), One unit at a time (+5 more)
+Nodes (14): 2026-08-08 backup-deletion incident (glob cleanup), After completing any unit, AI Workflow Rules, Before starting any unit, One unit at a time, `php-pro` is scoped to language questions only, Protected files — never modify without explicit spec instruction, Reporting rules (+6 more)
 
 ### Community 59 - "Workflow Rules & Incidents"
-Cohesion: 0.20
-Nodes (8): consoleErrors, frequency, ring, scanButton, { test, expect }, library-scan.spec.js (Playwright e2e), loginAndOpenDashboard(), Bulk Optimize tab layout
-
-### Community 60 - "Dashboard Screenshots & I-3"
-Cohesion: 0.43
-Nodes (7): Approach, Effort, Future Spec — Scheduled Background Optimization, Idea, Risks, Why, Future Spec — Scheduled Background Optimization
+Cohesion: 0.40
+Nodes (6): CLI PHP and the site's web PHP have different extensions, code:bash (SOCK="$HOME/Library/Application Support/Local/run/aRpCXvFUz/), code:bash (# browser console, on any admin page), Every Local database is named `local`, Graph-first research (saves ~20x tokens — always do this first), The environment lies, in two specific ways
 
 ### Community 61 - "Retention Purge & Settings API"
 Cohesion: 0.14
 Nodes (17): App root component (Masthead, HeroStats, Tabs shell), ConfirmDialog(), Components barrel, FOCUSABLE, Modal(), Toasts replace notices for transient feedback, ToastContext, ToastProvider() (+9 more)
 
 ### Community 62 - "Bulk/CLI Optimize Call Paths"
-Cohesion: 0.25
-Nodes (10): Invariant 13 — No external HTTP requests, ever, Project Overview, Target, Tech constraints, The single most important design fact, What this plugin deliberately does NOT do, What this plugin is, Project Overview (+2 more)
+Cohesion: 0.14
+Nodes (17): Invariant 13 — No external HTTP requests, ever, Constraints, Names — the single source of truth, Project overview, Target, Tech constraints, The design fact everything follows from, The single most important design fact (+9 more)
 
 ### Community 63 - "Toasts & App Shell"
 Cohesion: 0.36
@@ -500,10 +493,6 @@ Nodes (9): FluentCart-style layout (app/ + framework/ roots), Hard rule: @wordpr
 Cohesion: 0.50
 Nodes (4): Hard rule: never global $wpdb in plugin code, Data model, DataBackfills, DBMigrator
 
-### Community 66 - "Unit 01 Foundation Spec"
-Cohesion: 0.14
-Nodes (14): "Research the graph, don't read the tree" (graphify-first policy), A unit is not complete until, Agent Instructions — Swift Image Optimizer, Before writing any code, code:block1 (swift-image-optimizer.php   IIFE bootstrap: require boot/app), code:bash (graphify query "how does BackupManager expire backups"), Context files — query, don't read whole, Hard rules (+6 more)
-
 ### Community 67 - "Units 12 & 14 Notices/Spacing"
 Cohesion: 0.24
 Nodes (9): Engine selection, The Three Architectural Camps, Cimo — the direct inspiration, and why we diverged, Cimo — the direct inspiration, and why we diverged, Competitor Features, Feature comparison, Ideas worth borrowing, The delivery question, and why we answered it differently (+1 more)
@@ -513,12 +502,16 @@ Cohesion: 0.25
 Nodes (9): I-10 Foreign notices on plugin screen (closed Unit 14), I-14 Bulk stats need to be centralized (closed Unit 12), I-15 Card bottom spacing (closed Unit 14), Bulk Optimize screenshot — merged library card, notice flush against Bulk optimize button, Invariant 25 — one stored scan snapshot backs dashboard, Unit 12 — Centralized scan stats, ScanRunner, Coordinator, ScanJobRunner, ProgressRing, Card spacing rules (.sio-actions + .sio-notice, .sio-card__body :last-child, .sio-dryrun__panel), Filter swift_image_optimizer_hide_foreign_notices (escape hatch) (+1 more)
 
 ### Community 69 - "Stats Endpoint & Payload"
-Cohesion: 0.25
-Nodes (8): An empty issues list means nobody has looked, I-4 — WP-CLI bulk paths (closed 2026-08-16), code:bash (PHP="/Applications/Local.app/Contents/Resources/extraResourc), Bulk/Cli.php, Bug: Cli::optimize_ids() called but never defined, Release gate for .org submission, 2026-08-16 — WP-CLI bulk paths verified, Unit 14 — foreign notices and card spacing
+Cohesion: 0.22
+Nodes (9): An empty issues list means nobody has looked, I-4 — WP-CLI bulk paths (closed 2026-08-16), code:bash (PHP="/Applications/Local.app/Contents/Resources/extraResourc), Bulk/Cli.php, Bug: Cli::optimize_ids() called but never defined, Release gate for .org submission, --smoke — read-only commands only, 2026-08-16 — WP-CLI bulk paths verified (+1 more)
 
 ### Community 70 - "Definition of Done"
-Cohesion: 0.18
-Nodes (10): Also verify in this unit, code:bash (# Anywhere except the plugin directory.), Done when, Expected findings, Files changed, Goal, Read first, Rules for fixing (+2 more)
+Cohesion: 0.17
+Nodes (11): Also verify in this unit, code:bash (# Anywhere except the plugin directory.), Completion Notes, Done when, Expected findings, Files changed, Goal, Read first (+3 more)
+
+### Community 72 - "Folder Scanning (Future)"
+Cohesion: 0.26
+Nodes (5): Action registrations manifest, WP-CLI Commands, Commands (WP-CLI), Interceptor, Interceptor
 
 ### Community 73 - "Before/After Preview (Future)"
 Cohesion: 0.36
@@ -565,20 +558,12 @@ Cohesion: 0.20
 Nodes (11): boot/app.php kernel closure, boot/bindings.php container bindings, config/optimizer.php optimizer defaults and constraints, FluentCart-style app/ + framework/ layout, Schema version 3 and the URL lookup table, DataBackfills::backfillUrls, DBMigrator::maybeMigrateDBChanges, DBMigrator::migrateUp (+3 more)
 
 ### Community 85 - "URL Lookup Persistence"
-Cohesion: 0.25
-Nodes (8): Data-Loss-First Design Principle, Swift Image Optimizer Agent Instructions, Hard rules (data-loss prevention), Never Delete By Glob Over Shared Directory, Stale Knowledge Graph Warning, Class map / FluentCart-style layout, Deactivation Preserves Data And Backups, Test harness destroyed 54 real backups via glob-based cleanup
-
-### Community 86 - "Bulk Page Client Logic"
-Cohesion: 0.29
-Nodes (7): Dependency-Free Shipping Constraint, FluentCart-Style Plugin Layout, App (static facade), Framework\Application, Framework\Config, Framework\Router, Framework\View
-
-### Community 87 - "Build & Test Config"
-Cohesion: 0.14
-Nodes (4): EngineFactory, harness_engine_names(), harness_import_attachment(), harness_set_baseline_settings()
+Cohesion: 0.50
+Nodes (4): Data-Loss-First Design Principle, Never Delete By Glob Over Shared Directory, I-8 Multisite unconsidered, Deactivation Preserves Data And Backups
 
 ### Community 88 - "Static Facade & Layout Constraints"
-Cohesion: 0.38
-Nodes (7): No global $wpdb In Plugin Code, Commands::stats, StatsController, Force Fresh Stats Read After A Run, BaseResourceApi::flushCache, StatsResource::CACHE_KEY (shared transient key), StatsResource::get
+Cohesion: 0.32
+Nodes (8): No global $wpdb In Plugin Code, Commands::stats, Controller (abstract base), StatsController, Force Fresh Stats Read After A Run, BaseResourceApi::flushCache, StatsResource::CACHE_KEY (shared transient key), StatsResource::get
 
 ### Community 89 - "Graphify-First & Data-Loss Rules"
 Cohesion: 0.38
@@ -592,21 +577,13 @@ Nodes (11): Fix Plan, code:php (foreach ( glob( BackupManager::root() . '/*/*/*'
 Cohesion: 0.40
 Nodes (3): run_smoke(), sites_query(), wp_run()
 
-### Community 95 - "Uninstall Sweep"
-Cohesion: 0.43
-Nodes (7): bulk-e2e.php harness, Corrected finding: "496 orphaned attachments" was a TuFlamenco/cb-test database-socket mixup, Unit 12: one scan-backed dashboard, closed I-14, Coordinator (scan -> optimize -> scan chain), ScanJobRunner (recurring scan schedule), ScanRunner (batched disk-verified scan engine), Unit 12 spec — One scan-backed dashboard
-
 ### Community 96 - "Unit 10 Decisions"
 Cohesion: 0.25
 Nodes (8): Model::updateWhere, OptimizationLog::flushStatsCache, OptimizationLog::STATS_CACHE_KEY transient, OptimizationLog::update, REST route: backups/purge, Plugin bootstrap IIFE, Uninstall Routine, Backups survive uninstall
 
 ### Community 97 - "Abstract Controller"
-Cohesion: 0.28
-Nodes (9): Before writing any conversion code, Browser (e2e) testing with Playwright, code:bash (npm run test:php                  # the default suite, socke), code:bash (SOCK="$HOME/Library/Application Support/Local/run/aRpCXvFUz/), code:bash (npm run test:e2e                            # tests/e2e agai), code:bash (php -r 'echo "GD: ", extension_loaded("gd")?"y":"n";), code:bash (# from the browser console on any admin page), Confirm the database before trusting any result (+1 more)
-
-### Community 98 - "Boot & Config Files"
-Cohesion: 0.21
-Nodes (6): Coordinator::cancel(), ScanRunner::cancel(), ScanRunner::process_batch(), ScanController, ScanController, ScanJobRunner::schedule
+Cohesion: 0.24
+Nodes (10): Before writing any conversion code, Browser (e2e) testing with Playwright, Browser testing, code:bash (npm run test:php                  # default suite, socket pi), code:bash (npm run test:e2e                            # against WP_BAS), code:bash (npm run test:e2e                            # tests/e2e agai), code:bash (php -r 'echo "GD: ", extension_loaded("gd")?"y":"n";), code:bash (# from the browser console on any admin page) (+2 more)
 
 ### Community 101 - "Harness Runner & Socket Pinning"
 Cohesion: 0.29
@@ -627,22 +604,6 @@ Nodes (4): Optimizer::effective_max_dimension, Interceptor::allow_webp, Intercep
 ### Community 106 - "Logger::suffix (unguessable filename)"
 Cohesion: 0.67
 Nodes (3): Protected uploads subdirectory (.htaccess + index.php hardening), Logger::file, Logger::suffix (unguessable filename)
-
-### Community 109 - "Comments"
-Cohesion: 0.67
-Nodes (3): code:php (// The status stays 'optimized' so the image keeps counting ), code:php (// strtr applies the longest matching key first and never re), Comments
-
-### Community 110 - "Before writing any conversion code"
-Cohesion: 0.40
-Nodes (3): OptimizeRequest::args, OptimizeRequest, OptimizeRequest::sanitizeIds
-
-### Community 111 - "Graph-first research (saves ~20x tokens — always do this ..."
-Cohesion: 0.47
-Nodes (5): absorb(), onOptimize(), pumpBulk(), pumpScan(), startOptimize
-
-### Community 112 - "Skills — what is installed and when to reach for it"
-Cohesion: 0.50
-Nodes (4): `php-pro` is scoped to language questions only, Skills — what is installed and when to reach for it, The security order of operations, `wordpress-pro` is scoped to the WordPress API, not to architecture
 
 ### Community 113 - "Restructure 2026-08-09: feature folders → layered folders"
 Cohesion: 0.67
@@ -676,29 +637,25 @@ Nodes (5): config/app.php application config, Naming rules — the single source
 Cohesion: 0.50
 Nodes (4): Invariant 21 — Uploaded originals are backed up before the source is deleted, Feature 2: individual / bulk optimization, Feature 1: auto-optimize on upload, Fail-closed upload backup
 
-### Community 218 - "Community 218"
-Cohesion: 0.67
-Nodes (3): wp_handle_upload timing insight, Upload/Interceptor.php, Upload happens before wp_insert_attachment (design fact)
-
 ### Community 221 - "Community 221"
-Cohesion: 0.23
-Nodes (5): BulkJobRunner, Arch invariant 13: no external HTTP, Bulk run advanced via WP-Cron, DeactivationHandler, BulkJobRunner
+Cohesion: 0.19
+Nodes (4): BulkJobRunner, Bulk run advanced via WP-Cron, BulkJobRunner, Lock
 
 ### Community 222 - "Community 222"
-Cohesion: 0.21
-Nodes (7): admin_app.php SPA mount template, NoticeHandler, notice.php deliberately emits no WordPress core notice classes, EngineFactory (referenced), NoticeHandler, notice.php partial, Optimizer::optimize()
+Cohesion: 0.11
+Nodes (11): admin_app.php SPA mount template, NoticeHandler, notice.php deliberately emits no WordPress core notice classes, CwebpEngine, CwebpEngine, EngineFactory (referenced), GdEngine, GdEngine (+3 more)
 
 ### Community 223 - "Community 223"
 Cohesion: 0.18
 Nodes (11): APP_NAMESPACE (bare policy/controller resolution root), Application::bindCoreComponents, Route::withPolicy, Router::addRoute, Router::group, Router::makePermissionCallback, A route with no policy denies rather than being public, Bare policy names resolved against the app policy namespace (+3 more)
 
 ### Community 225 - "Community 225"
-Cohesion: 0.20
-Nodes (10): Container bindings (boot/bindings.php), Bulk\Runner, Invariant 24: server is the authority on run state, start() is idempotent, start() is idempotent to survive duplicate-tab clicks, BulkController::start, Ambiguous Restore Count Reported Plainly, OptimizeController::restore, I-7 Dry-run extrapolation is linear estimate (+2 more)
+Cohesion: 0.13
+Nodes (16): Container bindings (boot/bindings.php), Coordinator::on_scan_completed(), Bulk\Runner, Invariant 24: server is the authority on run state, start() is idempotent, Runner::start(), ScanRunner::finish(), ScanRunner::process_batch(), ProgressRing (+8 more)
 
 ### Community 227 - "Community 227"
-Cohesion: 0.31
-Nodes (3): StatsController, StatsResource, StatsResource
+Cohesion: 0.16
+Nodes (8): admin_app.php admin SPA mount view, App(), Settings state lifted to App because Troubleshoot also writes it, StatsController, MenuHandler, MenuHandler, StatsResource, StatsResource
 
 ### Community 228 - "Community 228"
 Cohesion: 0.39
@@ -707,10 +664,6 @@ Nodes (8): Future Spec: Before/After Quality Preview, Constraints, Effort, Futur
 ### Community 229 - "Community 229"
 Cohesion: 0.25
 Nodes (3): Config, Dot notation keyed by config file basename, Config::fromDirectory
-
-### Community 232 - "Community 232"
-Cohesion: 0.29
-Nodes (6): BulkController::phase(), ScanController::start(), ScanStartRequest, ScanStartRequest, AdminPolicy group, Admin API routes (swift-image-optimizer/v1)
 
 ### Community 233 - "Community 233"
 Cohesion: 0.43
@@ -723,10 +676,6 @@ Nodes (7): Application::addRestApiInitAction, Auto-wiring from constructor type 
 ### Community 238 - "Community 238"
 Cohesion: 0.40
 Nodes (3): LogQueryRequest::args, LogQueryRequest, LogQueryRequest::sanitizeLines
-
-### Community 239 - "Community 239"
-Cohesion: 0.33
-Nodes (5): Coordinator::on_bulk_completed(), Coordinator::start_full_run(), Runner::announce_completion(), ScanRunner::is_running(), ScanRunner::start()
 
 ### Community 241 - "Community 241"
 Cohesion: 0.50
@@ -753,9 +702,9 @@ Nodes (4): config/optimizer.php defaults and bounds, Dead-config note: optimizer
   context/progress-tracker.md · relation: conceptually_related_to
 
 ## Knowledge Gaps
-- **348 isolated node(s):** `{ defineConfig }`, `defaultConfig`, `path`, `name`, `version` (+343 more)
+- **386 isolated node(s):** `{ defineConfig }`, `defaultConfig`, `path`, `name`, `version` (+381 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **106 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **95 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_

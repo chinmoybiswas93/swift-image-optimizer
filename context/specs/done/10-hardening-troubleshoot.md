@@ -10,13 +10,6 @@ quietly, and there was no way — for a site owner or for us — to see what had
 specific image. The logger and the Troubleshoot tab were built first so each fix could be
 proven from real output rather than asserted.
 
-## Read first
-
-- `src/Services/Optimizer.php`, `src/Services/AttachmentConverter.php`,
-  `src/Services/Upload/Interceptor.php` — the two conversion paths
-- `src/Services/Rewrite/DatabaseRewriter.php` — the rewrite, and its cost
-- `src/Services/Engine/EngineFactory.php` — engine selection
-
 ## Decisions taken with the user before building
 
 | Decision | Choice |
@@ -110,7 +103,7 @@ unreachable and the person debugging only has SSH.
     rotation runs.
   - Temp sweep: abandoned file removed, in-flight file left alone.
   - Site returned to its exact pre-test state; test files deleted by explicit path, never by
-    glob, per the incident rule in `current-issues/fix-plan.md`.
+    glob, per the incident rule in `context/ai-workflow-rules.md`.
 
 ## Completion Notes
 

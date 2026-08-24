@@ -19,16 +19,16 @@ import config from '../Services/config';
  * Purely presentational: every piece of state and every request lives in
  * BulkPage, so this file stays readable as layout.
  *
- * @param {Object}   props              Component props.
- * @param {Object}   props.phase        Phase payload from bulk/phase.
- * @param {Object}   props.snapshot     Published scan snapshot, or null.
- * @param {boolean}  props.stale        Whether the snapshot predates a settings change.
- * @param {Object}   props.dryRun       Dry-run report, or null.
- * @param {boolean}  props.dryRunBusy   Whether a dry run is in flight.
- * @param {Function} props.onScan       Start a scan.
- * @param {Function} props.onOptimize   Start a full run.
- * @param {Function} props.onCancel     Stop everything.
- * @param {Function} props.onDryRun     Start a dry run.
+ * @param {Object}   props            Component props.
+ * @param {Object}   props.phase      Phase payload from bulk/phase.
+ * @param {Object}   props.snapshot   Published scan snapshot, or null.
+ * @param {boolean}  props.stale      Whether the snapshot predates a settings change.
+ * @param {Object}   props.dryRun     Dry-run report, or null.
+ * @param {boolean}  props.dryRunBusy Whether a dry run is in flight.
+ * @param {Function} props.onScan     Start a scan.
+ * @param {Function} props.onOptimize Start a full run.
+ * @param {Function} props.onCancel   Stop everything.
+ * @param {Function} props.onDryRun   Start a dry run.
  * @return {JSX.Element} The card.
  */
 const LibraryCard = ( {
@@ -78,7 +78,10 @@ const LibraryCard = ( {
 				onScan={ onScan }
 			/>
 
-			<EngineNotice engine={ config.engine } engines={ config.engines || {} } />
+			<EngineNotice
+				engine={ config.engine }
+				engines={ config.engines || {} }
+			/>
 
 			<RunProgress phase={ phase } />
 
@@ -91,11 +94,19 @@ const LibraryCard = ( {
 
 			<div className="sio-actions">
 				{ ! busy ? (
-					<Button variant="primary" onClick={ onOptimize } disabled={ optimizeDisabled }>
+					<Button
+						variant="primary"
+						onClick={ onOptimize }
+						disabled={ optimizeDisabled }
+					>
 						{ __( 'Bulk optimize', 'swift-image-optimizer' ) }
 					</Button>
 				) : (
-					<Button variant="secondary" isDestructive onClick={ onCancel }>
+					<Button
+						variant="secondary"
+						isDestructive
+						onClick={ onCancel }
+					>
 						{ __( 'Stop', 'swift-image-optimizer' ) }
 					</Button>
 				) }
@@ -135,7 +146,8 @@ const LibraryCard = ( {
 					<ul>
 						{ bulk.errors.map( ( item ) => (
 							<li key={ item.id }>
-								<strong>#{ item.id }</strong> { item.title } — { item.message }
+								<strong>#{ item.id }</strong> { item.title } —{ ' ' }
+								{ item.message }
 							</li>
 						) ) }
 					</ul>

@@ -96,7 +96,10 @@ const TroubleshootPage = ( { values, setValues } ) => {
 			toast.push(
 				sprintf(
 					/* translators: %d: number of images returned to the queue. */
-					__( '%d image(s) will be tried again on the next bulk run.', 'swift-image-optimizer' ),
+					__(
+						'%d image(s) will be tried again on the next bulk run.',
+						'swift-image-optimizer'
+					),
 					result.requeued
 				)
 			);
@@ -145,7 +148,10 @@ const TroubleshootPage = ( { values, setValues } ) => {
 			toast.push(
 				sprintf(
 					/* translators: %d: number of leftover files deleted. */
-					__( '%d leftover file(s) removed.', 'swift-image-optimizer' ),
+					__(
+						'%d leftover file(s) removed.',
+						'swift-image-optimizer'
+					),
 					result.removed
 				)
 			);
@@ -163,22 +169,40 @@ const TroubleshootPage = ( { values, setValues } ) => {
 
 		try {
 			await window.navigator.clipboard.writeText( report.text );
-			toast.push( __( 'Diagnostics copied to the clipboard.', 'swift-image-optimizer' ) );
+			toast.push(
+				__(
+					'Diagnostics copied to the clipboard.',
+					'swift-image-optimizer'
+				)
+			);
 		} catch ( e ) {
-			setError( __( 'Could not copy. Select the text and copy it manually.', 'swift-image-optimizer' ) );
+			setError(
+				__(
+					'Could not copy. Select the text and copy it manually.',
+					'swift-image-optimizer'
+				)
+			);
 		}
 	};
 
-	const downloadUrl = `${ config.restUrl }logs/download?_wpnonce=${ encodeURIComponent( config.nonce ) }`;
+	const downloadUrl = `${
+		config.restUrl
+	}logs/download?_wpnonce=${ encodeURIComponent( config.nonce ) }`;
 
 	const visible = filter
-		? log.lines.filter( ( line ) => line.toLowerCase().includes( filter.toLowerCase() ) )
+		? log.lines.filter( ( line ) =>
+				line.toLowerCase().includes( filter.toLowerCase() )
+		  )
 		: log.lines;
 
 	return (
 		<>
 			{ /* Errors stay put: they describe something still wrong. */ }
-			{ error && <Notice status="error" onRemove={ () => setError( '' ) }>{ error }</Notice> }
+			{ error && (
+				<Notice status="error" onRemove={ () => setError( '' ) }>
+					{ error }
+				</Notice>
+			) }
 
 			<Section
 				icon={ <IconStethoscope /> }
@@ -192,7 +216,9 @@ const TroubleshootPage = ( { values, setValues } ) => {
 
 				{ report?.sections?.map( ( section ) => (
 					<div className="sio-diagnostics" key={ section.title }>
-						<h3 className="sio-diagnostics__title">{ section.title }</h3>
+						<h3 className="sio-diagnostics__title">
+							{ section.title }
+						</h3>
 						{ section.rows.map( ( row ) => (
 							<DiagnosticRow row={ row } key={ row.label } />
 						) ) }
@@ -200,7 +226,11 @@ const TroubleshootPage = ( { values, setValues } ) => {
 				) ) }
 
 				<div className="sio-actions">
-					<Button variant="secondary" onClick={ copyReport } disabled={ ! report }>
+					<Button
+						variant="secondary"
+						onClick={ copyReport }
+						disabled={ ! report }
+					>
 						{ __( 'Copy for support', 'swift-image-optimizer' ) }
 					</Button>
 					<Button variant="tertiary" onClick={ loadReport }>
@@ -219,7 +249,10 @@ const TroubleshootPage = ( { values, setValues } ) => {
 			>
 				<Toggle
 					label={ __( 'Enable logging', 'swift-image-optimizer' ) }
-					help={ __( 'Records every step of every optimization: backup, encode, file rename, URL rewrite and file deletion. Failures are always recorded, even with this off. The file is capped at 10MB and never leaves your server.', 'swift-image-optimizer' ) }
+					help={ __(
+						'Records every step of every optimization: backup, encode, file rename, URL rewrite and file deletion. Failures are always recorded, even with this off. The file is capped at 10MB and never leaves your server.',
+						'swift-image-optimizer'
+					) }
 					checked={ enabled }
 					disabled={ 'toggle' === busy }
 					onChange={ toggleLogging }
@@ -229,7 +262,10 @@ const TroubleshootPage = ( { values, setValues } ) => {
 					<input
 						type="search"
 						className="sio-logtoolbar__filter"
-						placeholder={ __( 'Filter lines…', 'swift-image-optimizer' ) }
+						placeholder={ __(
+							'Filter lines…',
+							'swift-image-optimizer'
+						) }
 						value={ filter }
 						onChange={ ( e ) => setFilter( e.target.value ) }
 					/>
@@ -247,13 +283,21 @@ const TroubleshootPage = ( { values, setValues } ) => {
 					{ visible.length === 0 && (
 						<p className="sio-muted">
 							{ enabled
-								? __( 'Nothing recorded yet. Optimize an image and refresh.', 'swift-image-optimizer' )
-								: __( 'Nothing recorded yet. Turn logging on to capture the full detail of each conversion.', 'swift-image-optimizer' ) }
+								? __(
+										'Nothing recorded yet. Optimize an image and refresh.',
+										'swift-image-optimizer'
+								  )
+								: __(
+										'Nothing recorded yet. Turn logging on to capture the full detail of each conversion.',
+										'swift-image-optimizer'
+								  ) }
 						</p>
 					) }
 					{ visible.map( ( line, i ) => (
 						<div
-							className={ `sio-logviewer__line${ line.includes( ' ERROR ' ) ? ' is-error' : '' }${ line.includes( ' WARN ' ) ? ' is-warn' : '' }` }
+							className={ `sio-logviewer__line${
+								line.includes( ' ERROR ' ) ? ' is-error' : ''
+							}${ line.includes( ' WARN ' ) ? ' is-warn' : '' }` }
 							key={ i }
 						>
 							{ line }
@@ -263,7 +307,10 @@ const TroubleshootPage = ( { values, setValues } ) => {
 
 				{ log.rotated && (
 					<p className="sio-muted">
-						{ __( 'The log reached its 10MB limit and rolled over. Only the most recent file is shown; the download includes what is on disk now.', 'swift-image-optimizer' ) }
+						{ __(
+							'The log reached its 10MB limit and rolled over. Only the most recent file is shown; the download includes what is on disk now.',
+							'swift-image-optimizer'
+						) }
 					</p>
 				) }
 
@@ -271,7 +318,11 @@ const TroubleshootPage = ( { values, setValues } ) => {
 					<Button variant="secondary" onClick={ loadLog }>
 						{ __( 'Refresh', 'swift-image-optimizer' ) }
 					</Button>
-					<Button variant="secondary" href={ downloadUrl } disabled={ ! log.size }>
+					<Button
+						variant="secondary"
+						href={ downloadUrl }
+						disabled={ ! log.size }
+					>
 						{ __( 'Download', 'swift-image-optimizer' ) }
 					</Button>
 					<Button
@@ -280,7 +331,11 @@ const TroubleshootPage = ( { values, setValues } ) => {
 						onClick={ () => setConfirming( true ) }
 						disabled={ 'reset' === busy || ! log.size }
 					>
-						{ 'reset' === busy ? <Spinner /> : __( 'Reset log', 'swift-image-optimizer' ) }
+						{ 'reset' === busy ? (
+							<Spinner />
+						) : (
+							__( 'Reset log', 'swift-image-optimizer' )
+						) }
 					</Button>
 				</div>
 			</Section>
@@ -295,12 +350,18 @@ const TroubleshootPage = ( { values, setValues } ) => {
 			>
 				<div className="sio-stats">
 					<Stat
-						label={ __( 'Images worth trying again', 'swift-image-optimizer' ) }
+						label={ __(
+							'Images worth trying again',
+							'swift-image-optimizer'
+						) }
 						value={ report?.retryable ?? '—' }
 						tone={ report?.retryable > 0 ? 'warning' : '' }
 					/>
 					<Stat
-						label={ __( 'Leftover temporary files', 'swift-image-optimizer' ) }
+						label={ __(
+							'Leftover temporary files',
+							'swift-image-optimizer'
+						) }
 						value={ report?.tempFiles ?? '—' }
 						tone={ report?.tempFiles > 0 ? 'warning' : '' }
 					/>
@@ -329,17 +390,42 @@ const TroubleshootPage = ( { values, setValues } ) => {
 						onClick={ requeue }
 						disabled={ 'requeue' === busy || ! report?.retryable }
 					>
-						{ 'requeue' === busy ? <Spinner /> : __( 'Requeue for another attempt', 'swift-image-optimizer' ) }
+						{ 'requeue' === busy ? (
+							<Spinner />
+						) : (
+							__(
+								'Requeue for another attempt',
+								'swift-image-optimizer'
+							)
+						) }
 					</Button>
-					<Button variant="secondary" onClick={ rescan } disabled={ 'rescan' === busy }>
-						{ 'rescan' === busy ? <Spinner /> : __( 'Rescan library against disk', 'swift-image-optimizer' ) }
+					<Button
+						variant="secondary"
+						onClick={ rescan }
+						disabled={ 'rescan' === busy }
+					>
+						{ 'rescan' === busy ? (
+							<Spinner />
+						) : (
+							__(
+								'Rescan library against disk',
+								'swift-image-optimizer'
+							)
+						) }
 					</Button>
 					<Button
 						variant="secondary"
 						onClick={ cleanup }
 						disabled={ 'cleanup' === busy || ! report?.tempFiles }
 					>
-						{ 'cleanup' === busy ? <Spinner /> : __( 'Clean up temporary files', 'swift-image-optimizer' ) }
+						{ 'cleanup' === busy ? (
+							<Spinner />
+						) : (
+							__(
+								'Clean up temporary files',
+								'swift-image-optimizer'
+							)
+						) }
 					</Button>
 				</div>
 			</Section>

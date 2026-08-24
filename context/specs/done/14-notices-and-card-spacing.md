@@ -11,17 +11,6 @@ Two user-reported defects on the **Bulk Optimize** screen
    the Bulk optimize button, and the "Preview what would change" disclosure above it is an
    unstyled `<details>`.
 
-## Read first
-
-- `app/Hooks/Handlers/NoticeHandler.php` — the existing `admin_notices` policy and
-  `is_relevant_screen()`
-- `app/Hooks/Handlers/MenuHandler.php` — `SLUG`, `enqueue()`, `missing_build_notice()`
-- `app/Views/admin/admin_app.php` — the `.wp-header-end` marker and its rationale
-- `resources/admin/Partials/LibraryCard.jsx`, `DryRunPanel.jsx`
-- `resources/styles/admin.scss` — `.sio-card` (282), `.sio-scanmeta__details` (439),
-  `.sio-actions` (525), `.sio-dryrun` (552)
-- `resources/styles/_controls.scss` — `.sio-notice` (297), `sio-focus-ring` (32)
-
 ## I-10 is a reopen, not a regression
 
 Unit 11 fixed the half the plugin owned: it stopped emitting core's `notice` class and stopped
@@ -29,7 +18,7 @@ hooking `admin_notices` on every admin screen. It then added `<hr class="wp-head
 foreign notices stopped being injected *through the middle* of the React masthead — and the
 view's docblock argued explicitly that hiding them "would be its own kind of rude."
 
-`current-issues/image-6.png` is what that decision looks like in practice: PixelYourSite,
+The screenshot behind that decision showed, in practice: PixelYourSite,
 FluentSMTP and Elementor notices, correctly positioned, filling the viewport above the plugin's
 own header. The user has now decided the other way, and that decision supersedes the docblock.
 
@@ -90,19 +79,6 @@ in the order the user chose to keep.
 zero separation, which is what `image-8.png`'s abutting boxes are consistent with. If after the
 rebuild the boxes still overlap rather than merely sit tight, that is a distinct defect needing
 the browser pass (I-3) — say so rather than declaring I-15 closed.
-
-## Files changed
-
-| File | Change |
-|---|---|
-| `app/Hooks/Handlers/ForeignNoticeHandler.php` | New |
-| `app/Hooks/actions.php` | Register it |
-| `app/Views/admin/admin_app.php` | Docblock only — policy changed |
-| `resources/styles/admin.scss` | Three spacing rules |
-| `context/current-issues/issues.md`, `context/progress-tracker.md` | Bookkeeping |
-
-Nothing here touches Unit 13's surface (`BackupsPage.jsx`, `ConfirmDialog.jsx`,
-`BackupManager`), no REST route, no upload path, no shell-out, no backup/restore code.
 
 ## Completion Notes
 

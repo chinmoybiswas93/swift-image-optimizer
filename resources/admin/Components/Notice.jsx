@@ -23,14 +23,21 @@ const Notice = ( {
 	const live = status === 'error' ? 'assertive' : 'polite';
 
 	return (
-		<div className={ classes } role={ status === 'error' ? 'alert' : 'status' } aria-live={ live }>
+		<div
+			className={ classes }
+			role={ status === 'error' ? 'alert' : 'status' }
+			aria-live={ live }
+		>
 			<div className="sio-notice__body">{ children }</div>
 			{ isDismissible && onRemove && (
 				<button
 					type="button"
 					className="sio-notice__dismiss"
 					onClick={ onRemove }
-					aria-label={ __( 'Dismiss this notice', 'swift-image-optimizer' ) }
+					aria-label={ __(
+						'Dismiss this notice',
+						'swift-image-optimizer'
+					) }
 				>
 					<span aria-hidden="true">&times;</span>
 				</button>

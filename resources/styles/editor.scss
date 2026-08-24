@@ -1,0 +1,110 @@
+/**
+ * Block editor integration styles.
+ *
+ * Reuses the same .sio-panel/.sio-btn classes the classic media modal uses
+ * (see media.scss), so the panel this bundle renders inside a block's
+ * InspectorControls reads as the same UI, not a second design.
+ */
+
+@use 'controls';
+@use 'modal';
+
+.sio-panel {
+	margin: 0 0 16px;
+	padding: 8px 10px;
+	border: 1px solid #e0e0e0;
+	border-left: 3px solid #3858e9;
+	border-radius: 4px;
+	background: #fff;
+	font-size: 12px;
+	line-height: 1.4;
+
+	&__brand {
+		display: flex;
+		align-items: center;
+		gap: 5px;
+		margin-bottom: 6px;
+		font-size: 10px;
+		font-weight: 600;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: #3858e9;
+	}
+
+	&__mark {
+		flex: 0 0 auto;
+		border-radius: 4px;
+	}
+
+	&__head {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		margin-bottom: 4px;
+	}
+
+	&__dot {
+		width: 7px;
+		height: 7px;
+		border-radius: 50%;
+		flex: 0 0 auto;
+
+		&.is-success {
+			background: #008a20;
+		}
+
+		&.is-muted {
+			background: #757575;
+		}
+
+		&.is-danger {
+			background: #d63638;
+		}
+	}
+
+	&__percent {
+		margin-left: auto;
+		font-weight: 600;
+		color: #008a20;
+	}
+
+	&__sizes {
+		margin-bottom: 2px;
+		font-weight: 600;
+	}
+
+	&__meta {
+		margin: 0;
+		color: #757575;
+	}
+
+	&__reason {
+		margin: 0;
+		color: #757575;
+	}
+
+	&__error {
+		margin: 6px 0 0;
+		color: #d63638;
+	}
+
+	&__note {
+		margin: 6px 0 0;
+		color: #757575;
+		font-style: italic;
+	}
+
+	&__restore {
+		margin-top: 6px;
+		color: #d63638;
+
+		&:hover,
+		&:focus {
+			color: #d63638;
+		}
+	}
+
+	&__optimize {
+		margin-top: 6px;
+	}
+}

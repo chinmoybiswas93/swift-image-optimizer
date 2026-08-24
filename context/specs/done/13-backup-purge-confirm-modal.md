@@ -10,17 +10,8 @@ Two user-reported defects on the **Backups** tab:
    operator typing `DELETE`. Every other `window.confirm()` in the plugin moves to the same modal
    (without the typed word).
 
-This closes **I-8** in `current-issues/issues.md` — "backup pointer can outlive its files… there
+This claims to close **I-8** — "backup pointer can outlive its files… there
 is no routine that reconciles the two".
-
-## Read first
-
-- `app/Services/Backup/BackupManager.php` — `delete()`, `purge_files()`, `safe_path()`, `disk_usage()`
-- `app/Hooks/Scheduler/JobRunner.php`, `app/Http/Controllers/BackupController.php`
-- `context/current-issues/fix-plan.md:5-22` — the glob incident that destroyed 54 backups
-- `resources/admin/Components/Toast.jsx` (closest structural precedent), `Field.jsx`, `useFieldId.js`
-- `resources/styles/_controls.scss` (tokens, `sio-focus-ring`, `.sio-toasts` z-index rationale)
-- `resources/media/media.js:1-13` — why that surface is deliberately not React
 
 ## Why the purge deletes nothing
 
@@ -112,20 +103,22 @@ selection-optimize actions.
 `BackupsPage`'s toast is rebuilt from `files_removed` and `bytes_freed`: `'%d backups removed.'`
 would have read "0 backups removed" in exactly the orphan-only case this unit exists to fix.
 
-## Files changed
-
-| File | Change |
-|---|---|
-| `app/Services/Backup/BackupManager.php` | `purge_orphans()` |
-| `app/Hooks/Scheduler/JobRunner.php` | `purge_rows()`, `purge_manifests()`; `purge()` unchanged |
-| `app/Http/Controllers/BackupController.php` | `purge()` rewritten |
-| `resources/admin/Components/Modal.jsx`, `ConfirmDialog.jsx`, `index.js` | new |
-| `resources/admin/Pages/{Backups,Bulk,Troubleshoot}Page.jsx` | `window.confirm()` removed |
-| `resources/media/confirm.js`, `resources/media/media.js` | vanilla dialog |
-| `resources/styles/_modal.scss`, `admin.scss`, `media.scss` | modal styles |
-| `tests/php/convert-restore-e2e.php` | purge coverage |
-| `context/ui-context.md`, `context/current-issues/issues.md`, `context/progress-tracker.md` | doctrine, I-8, tracker |
-
 ## Completion Notes
 
-_To be filled in when the unit lands._
+Landed. `purge_orphans()`, `purge_manifests()`, `Modal.jsx` and `ConfirmDialog.jsx` all exist, and
+no `window.confirm()` remains anywhere in the plugin. The purge has since been driven end to end by
+`convert-restore-e2e`, which asserts the folder reaches 0 bytes, the guard files survive, and a
+symlink's target outside the root is not touched.
+
+**One claim in this spec was wrong.** It says it closes I-8. It closed the half the user had
+reported — the folder would not empty — and left the half I-8 was actually about: a backup on disk
+that no row points at was still unreachable, and `purge_orphans()` **deletes** such files rather
+than recovering them. That inverted the risk: for a while the only routine that touched an
+unreferenced backup destroyed it. `BackupManager::reconcile()` closed the recover half later; see
+[memory/fixed-issues.md](../../memory/fixed-issues.md).
+
+The ordering that came out of it is now invariant 26: **repair runs before any sweep**, because the
+purge deletes exactly what repair recovers.
+
+Its Files-changed table also claimed an edit to `ui-context.md` that never happened — that file
+still described `window.confirm()` two units later.

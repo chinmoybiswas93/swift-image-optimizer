@@ -39,7 +39,9 @@ async function loginAndOpenDashboard( page ) {
 	await expect( page.locator( '#swift-image-optimizer-root' ) ).toBeVisible();
 }
 
-test( 'the Bulk Optimize tab renders one card with a progress ring', async ( { page } ) => {
+test( 'the Bulk Optimize tab renders one card with a progress ring', async ( {
+	page,
+} ) => {
 	const consoleErrors = [];
 	page.on( 'console', ( msg ) => {
 		if ( msg.type() === 'error' ) {
@@ -56,7 +58,9 @@ test( 'the Bulk Optimize tab renders one card with a progress ring', async ( { p
 	 */
 	await expect( page.locator( '.sio-library' ) ).toHaveCount( 1 );
 	await expect( page.locator( '.sio-ring' ) ).toHaveCount( 1 );
-	await expect( page.locator( '[role="progressbar"]' ).first() ).toBeVisible();
+	await expect(
+		page.locator( '[role="progressbar"]' ).first()
+	).toBeVisible();
 
 	expect( consoleErrors, consoleErrors.join( '\n' ) ).toHaveLength( 0 );
 } );
@@ -72,7 +76,9 @@ test( 'the ring reports a value between 0 and 100', async ( { page } ) => {
 	expect( Number( value ) ).toBeLessThanOrEqual( 100 );
 } );
 
-test( 'Scan library disables while running and re-enables on completion', async ( { page } ) => {
+test( 'Scan library disables while running and re-enables on completion', async ( {
+	page,
+} ) => {
 	await loginAndOpenDashboard( page );
 
 	const scanButton = page.getByRole( 'button', { name: 'Scan library' } );
@@ -105,7 +111,9 @@ test( 'Scan library disables while running and re-enables on completion', async 
 	expect( timeAfter ).not.toBe( timeBefore );
 } );
 
-test( 'the Monthly scan frequency persists across a reload', async ( { page } ) => {
+test( 'the Monthly scan frequency persists across a reload', async ( {
+	page,
+} ) => {
 	await loginAndOpenDashboard( page );
 
 	await page.getByRole( 'tab', { name: 'Settings' } ).click();
@@ -120,5 +128,7 @@ test( 'the Monthly scan frequency persists across a reload', async ( { page } ) 
 	await page.reload();
 	await page.getByRole( 'tab', { name: 'Settings' } ).click();
 
-	await expect( page.getByLabel( 'Scan the library automatically' ) ).toHaveValue( 'monthly' );
+	await expect(
+		page.getByLabel( 'Scan the library automatically' )
+	).toHaveValue( 'monthly' );
 } );

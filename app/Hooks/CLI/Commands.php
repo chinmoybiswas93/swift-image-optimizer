@@ -16,6 +16,7 @@ use SwiftImageOptimizer\App\Services\Bulk\Scanner;
 use SwiftImageOptimizer\App\Services\Diagnostics\EnvironmentReport;
 use SwiftImageOptimizer\App\Services\Logging\Logger;
 use SwiftImageOptimizer\App\Services\Rewrite\DatabaseRewriter;
+use SwiftImageOptimizer\App\Services\Upload\MimeReconciler;
 use WP_CLI;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -468,6 +469,59 @@ class Commands {
 			sprintf(
 				'Rebuilt %d backup manifest(s); %d row(s) had no files left to find. Those images can be restored again.',
 				$repaired,
+				$skipped
+			)
+		);
+	}
+
+	/**
+	 * Re-point attachments whose post_mime_type went stale.
+	 *
+	 * A re-fed upload (a sideload, or a re-submission of a leftover
+	 * derivative file) that slipped through before Interceptor's guard
+	 * existed leaves post_mime_type describing a file that is no longer
+	 * there, while the file on disk is genuinely WebP already. This writes
+	 * corrections only - see MimeReconciler::reconcile(). Run before
+	 * `repair-backups`, since a repaired row is what makes it visible to
+	 * that pass in the first place.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp swift-image-optimizer repair-mime
+	 *
+	 * @return void
+	 */
+	public function repair_mime() {
+		$repaired_mime = 0;
+		$repaired_log  = 0;
+		$skipped       = 0;
+		$after         = 0;
+
+		do {
+			$result         = MimeReconciler::reconcile( $after );
+			$repaired_mime += $result['repaired_mime'];
+			$repaired_log  += $result['repaired_log'];
+			$skipped       += $result['skipped'];
+			$moved          = $result['last_id'] > $after;
+			$after          = $result['last_id'];
+		} while ( $moved );
+
+		Logger::start_run( 'cli' );
+		Logger::mark(
+			'upload',
+			sprintf( '%d mime type(s) corrected, %d log row(s) updated, %d row(s) skipped.', $repaired_mime, $repaired_log, $skipped )
+		);
+
+		if ( 0 === $repaired_mime ) {
+			WP_CLI::success( sprintf( 'No stale mime types found. %d row(s) skipped.', $skipped ) );
+			return;
+		}
+
+		WP_CLI::success(
+			sprintf(
+				'Corrected %d mime type(s); %d log row(s) updated; %d row(s) skipped. Run repair-backups next to recover any lost manifests.',
+				$repaired_mime,
+				$repaired_log,
 				$skipped
 			)
 		);

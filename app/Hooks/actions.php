@@ -15,10 +15,12 @@
 use SwiftImageOptimizer\App\App;
 use SwiftImageOptimizer\App\Hooks\CLI\Commands;
 use SwiftImageOptimizer\App\Hooks\Handlers\AssetHandler;
+use SwiftImageOptimizer\App\Hooks\Handlers\EditorAssetHandler;
 use SwiftImageOptimizer\App\Hooks\Handlers\ForeignNoticeHandler;
 use SwiftImageOptimizer\App\Hooks\Handlers\MediaLibraryHandler;
 use SwiftImageOptimizer\App\Hooks\Handlers\MenuHandler;
 use SwiftImageOptimizer\App\Hooks\Handlers\NoticeHandler;
+use SwiftImageOptimizer\App\Hooks\Handlers\RestFieldHandler;
 use SwiftImageOptimizer\App\Hooks\Scheduler\BulkJobRunner;
 use SwiftImageOptimizer\App\Hooks\Scheduler\JobRunner;
 use SwiftImageOptimizer\App\Hooks\Scheduler\ScanJobRunner;
@@ -54,6 +56,13 @@ add_action('update_option_' . StoreSettings::OPTION, [ ScanJobRunner::class, 'se
  * Uploads. Intercepts new attachments so they are converted on the way in.
  */
 ( new Interceptor(App::make('optimizer')) )->register();
+
+/*
+ * REST field for the block editor. Deliberately outside the is_admin() block
+ * below: register_rest_field must run on every request, including
+ * /wp-json/wp/v2/media, which is never is_admin().
+ */
+( new RestFieldHandler() )->register();
 
 /*
  * Backups. Daily retention sweep.
@@ -96,6 +105,7 @@ add_action('init', static function () {
     ( new MediaLibraryHandler() )->register();
     ( new MenuHandler() )->register();
     ( new AssetHandler() )->register();
+    ( new EditorAssetHandler() )->register();
 }, 5);
 
 /*
@@ -112,4 +122,5 @@ if (defined('WP_CLI') && WP_CLI) {
     WP_CLI::add_command('swift-image-optimizer requeue', [ $swift_image_optimizer_commands, 'requeue' ]);
     WP_CLI::add_command('swift-image-optimizer rescan', [ $swift_image_optimizer_commands, 'rescan' ]);
     WP_CLI::add_command('swift-image-optimizer repair-backups', [ $swift_image_optimizer_commands, 'repair_backups' ]);
+    WP_CLI::add_command('swift-image-optimizer repair-mime', [ $swift_image_optimizer_commands, 'repair_mime' ]);
 }

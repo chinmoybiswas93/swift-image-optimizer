@@ -50,7 +50,9 @@ export const ToastProvider = ( { children } ) => {
 	const nextId = useRef( 0 );
 
 	const dismiss = useCallback( ( id ) => {
-		setToasts( ( current ) => current.filter( ( toast ) => toast.id !== id ) );
+		setToasts( ( current ) =>
+			current.filter( ( toast ) => toast.id !== id )
+		);
 
 		const timer = timers.current.get( id );
 
@@ -69,7 +71,9 @@ export const ToastProvider = ( { children } ) => {
 			const id = ++nextId.current;
 			const status = options.status || 'success';
 			const duration =
-				typeof options.duration === 'number' ? options.duration : DEFAULT_DURATION;
+				typeof options.duration === 'number'
+					? options.duration
+					: DEFAULT_DURATION;
 
 			setToasts( ( current ) => [ ...current, { id, message, status } ] );
 
@@ -111,12 +115,17 @@ export const ToastProvider = ( { children } ) => {
 						className={ `sio-toast sio-toast--${ toast.status }` }
 						role={ toast.status === 'error' ? 'alert' : 'status' }
 					>
-						<span className="sio-toast__body">{ toast.message }</span>
+						<span className="sio-toast__body">
+							{ toast.message }
+						</span>
 						<button
 							type="button"
 							className="sio-toast__dismiss"
 							onClick={ () => dismiss( toast.id ) }
-							aria-label={ __( 'Dismiss', 'swift-image-optimizer' ) }
+							aria-label={ __(
+								'Dismiss',
+								'swift-image-optimizer'
+							) }
 						>
 							<span aria-hidden="true">&times;</span>
 						</button>

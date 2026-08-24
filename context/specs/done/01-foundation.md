@@ -9,29 +9,6 @@ No image is converted in this unit. The deliverable is that `swift_image_optimiz
 without error, the table exists, and `EngineFactory::get()` returns a usable engine on any
 host that has one.
 
-## Read first
-
-- Nothing. This is the first unit.
-
-## Files changed
-
-| File | Purpose |
-|---|---|
-| `swift-image-optimizer.php` | Headers, constants, PSR-4 autoloader, activation/deactivation |
-| `uninstall.php` | Drop table + options, never touch media |
-| `src/Plugin.php` | Container; constructs and registers everything |
-| `src/Database.php` | Table schema via `dbDelta`, CRUD, status constants |
-| `src/Admin/Settings.php` | Defaults, `register_setting`, sanitize |
-| `src/Admin/Notices.php` | "No engine available" admin notice |
-| `src/Stats.php` | Aggregate savings, transient-cached |
-| `src/Engine/EngineInterface.php` | The contract |
-| `src/Engine/AbstractEngine.php` | Shared option parsing + `constrain()` |
-| `src/Engine/GdEngine.php` | Universal fallback |
-| `src/Engine/ImagickEngine.php` | Preferred engine |
-| `src/Engine/CwebpEngine.php` | Opt-in binary path |
-| `src/Engine/EngineFactory.php` | Detection, preference order, settings override |
-| `phpcs.xml.dist` | WordPress-Extra + WordPress-Docs + PHPCompatibilityWP |
-
 ## Key decisions
 
 **Hand-rolled autoloader, no Composer.** The plugin ships with zero runtime dependencies, so

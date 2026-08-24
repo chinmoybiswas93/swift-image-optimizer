@@ -107,12 +107,8 @@ backups.
 The knowledge graph at `graphify-out/` indexes the source and doc files. One query costs a
 fraction of what reading files costs.
 
-> **Rebuilt 2026-08-11 after Unit 11** — 1335 nodes, 1780 edges, 179 communities. It indexes the
-> current layout, the committed `tests/php/` harnesses, all 24 architecture invariants and the
-> closed issues. The classes an earlier warning here listed as phantoms (`Plugin`,
-> `*ServiceProvider`, `SettingsPage`, `ListTable`, `RetentionCron`, `SettingsRepository`,
-> `App\Foundation\*`) are gone from it. Still run `/graphify --update` after any unit that adds
-> or changes files.
+Current size is in `graphify-out/GRAPH_REPORT.md`. No count is repeated here — every copy of one
+written into these docs went stale within a unit or two.
 
 It is worth querying even for questions that feel like documentation rather than code. Reading
 the graph is what caught that the notice in the I-10 screenshot belonged to Elementor rather than
@@ -124,31 +120,38 @@ graphify path "AttachmentConverter" "DatabaseRewriter"
 graphify explain "Scanner"
 ```
 
-Read a file directly only when the graph points at a specific line to edit, the spec's
-"Read first" section names it, or you need an exact signature. Re-run `/graphify --update`
-after any unit that adds or changes files — a stale graph will confidently name a class that no
-longer exists.
+> **The graph still indexes the docs, including historical ones.** It will surface classes from
+> the plugin's first layout — `RetentionCron`, `SettingsPage`, `ListTable`, `SettingsRepository`,
+> `App\Foundation\*` — because the specs that name them are still in the tree. None of them exist
+> in code. Confirm any unfamiliar class against `app/` before building on it.
+
+Read a file directly only when the graph points at a specific line to edit, the spec names it, or
+you need an exact signature. Run `graphify update .` when you have moved or renamed enough that a
+stale graph would mislead the next session.
 
 ## Context files — query, don't read whole
 
 | Need | Where |
 |---|---|
-| Current unit, what's done, open questions | `context/progress-tracker.md` — **read directly**, it's small and always current |
-| The unit you're implementing | `context/specs/NN-*.md` — **read directly**, always required |
-| Class map, data model, engine selection | `graphify query`, not `architecture.md` in full |
-| The 24 **Architecture invariants** | `context/architecture.md` — **read directly**, they're short and several encode data-loss failure modes |
+| Where the project is now | `context/progress-tracker.md` — **read directly**, it's short |
+| What's still open | `context/issues.md` — **read directly**. Defects only; untested surfaces are in `context/pre-release-checks.md` |
+| The **26 architecture invariants** | `context/architecture.md` — **read directly**, they're short and several encode data-loss failure modes |
+| Data-loss rules, environment traps, how to test | `context/ai-workflow-rules.md` |
 | Security, DB access, filesystem, i18n rules | `context/code-standards.md` |
-| Known bugs and the backup-deletion incident | `context/current-issues/` |
-| Not-yet-scoped work (AVIF, resize, scheduling) | `context/future-specs/` — do not implement unspecced |
+| What the plugin is and deliberately isn't | `context/project-overview.md` |
+| Admin UI surfaces, design and copy rules | `context/ui-context.md` |
+| Class map, data model, engine selection | `graphify query`, not `architecture.md` in full |
+| The unit you're implementing | `context/specs/NN-*.md` — **read directly**, always required |
+| Why a past decision was made; closed issues | `context/memory/` — units and fixed issues |
+| Not-yet-scoped work (AVIF, resize, folder scan) | `context/future-specs/` — do not implement unspecced |
 
 ## Before writing any code
 
-1. Read `progress-tracker.md` — confirm which unit is In Progress
-2. Read that unit's spec
+1. Read `progress-tracker.md` and `issues.md` — both are short
+2. Read the spec, if the work has one
 3. Read the Architecture invariants table in `architecture.md`
-4. `graphify query` every class, table, hook, or pattern the spec names
-5. Read only the files listed under the spec's "Read first"
-6. Anything ambiguous → add to Open Questions in `progress-tracker.md` and ask
+4. `graphify query` every class, table, hook, or pattern involved
+5. Anything ambiguous → ask rather than assume
 
 ## Hard rules
 
@@ -193,23 +196,28 @@ Both cases are written up with the exact commands in `context/ai-workflow-rules.
 result says something surprising about the *environment* rather than the code, check the
 environment first.
 
-## A unit is not complete until
+## Verification is on request, not a ritual
 
-1. `npm run lint:php` clean (and `npm run lint:js` if JS changed). WPCS lives **outside** the
-   plugin — see `context/specs/done/09-phpcs-compliance.md`; never `require-dev` it here, because the
-   committed `vendor/` must stay autoloader-only (invariant 12)
-2. `composer dump-autoload -o` clean, and every moved class still resolves — a namespace/path
-   mismatch is a fatal at call time, not at load
-3. `npm run test:php` clean. Add `--web` (`tests/php/run.sh --web`) whenever the change touches an
-   engine: CLI PHP here has no Imagick, so a CLI-only run silently proves nothing about the
-   engine the site actually uses
-4. `npm run build` succeeds, `build/admin.asset.php` still excludes `wp-components`, and the admin
-   screen still mounts; `npm run test:e2e` if the UI changed
-5. `/security-review` on the diff — plus `owasp-security-review` on the files if the unit touched
-   REST, upload, shell-out, or backup/restore
-6. `/graphify --update`
-7. `progress-tracker.md` updated: spec moved to `specs/done/`, row added to Completed, next unit
-   set In Progress, any architectural decision recorded in `architecture.md`
+There is no checklist to run on every change. Run what the change actually earns, and say plainly
+what you ran and what you didn't. `context/ai-workflow-rules.md` has the full menu; the short
+version:
+
+- **One thing is required.** Any change under `Services/Rewrite/`, `Services/Backup/` or
+  `AttachmentConverter` re-runs `tests/php/run.sh rewriter-test` before and after. It needs no
+  WordPress, takes seconds, and guards the serialization invariants.
+- **Touching conversion, backups, bulk or an engine** is worth `npm run test:php` — with `--web`
+  if an engine is involved, since CLI PHP here has no Imagick and a CLI-only run proves nothing
+  about what the site actually uses.
+- **Moved or renamed a class?** `composer dump-autoload -o`, and check it still resolves. A
+  namespace/path mismatch is a fatal at call time, not at load.
+- **Changed JS?** `npm run build`, and confirm `build/admin.asset.php` still excludes
+  `wp-components`.
+- **Everything else** — `npm run lint:php`, `/security-review`, `owasp-security-review`,
+  `npm run test:e2e`, `graphify update .` — when it's asked for, or when your judgement says the
+  change earns it. Not by default, and never on a doc edit or a one-line fix.
+
+Keep `context/progress-tracker.md` and `context/issues.md` current as things land, and record an
+architectural decision in `architecture.md` when you make one.
 
 If tests fail, say so and show the output. Never describe partial work as complete, and
 distinguish a test-fixture bug from a code bug explicitly — several early "failures" here were

@@ -5,12 +5,6 @@
 Convert images to WebP as they are uploaded, so that from WordPress's point of view a `.webp`
 was uploaded in the first place.
 
-## Read first
-
-- `wp-admin/includes/file.php` — `_wp_handle_upload()`, specifically the final
-  `apply_filters( 'wp_handle_upload', ... )` at the end
-- `src/Engine/EngineFactory.php` — how an engine is selected
-
 ## The insight this unit is built on
 
 `wp_handle_upload` fires **after** the file is moved into `uploads/` but **before**
@@ -23,13 +17,6 @@ small. Do not confuse it with Feature 2, which has the opposite problem.
 
 In WP 7.0 the same filter fires for sideloads too, with `$context` set to `'sideload'`, so one
 hook covers `media_sideload_image()`, importers and form plugins.
-
-## Files changed
-
-| File | Purpose |
-|---|---|
-| `src/Optimizer.php` | File in → WebP file out. No DB, no attachments. |
-| `src/Upload/Interceptor.php` | The `wp_handle_upload` hook and its supporting filters |
 
 ## Pipeline
 
