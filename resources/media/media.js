@@ -75,7 +75,13 @@ const formatDuration = ( ms ) => {
 	}
 
 	if ( value < 1000 ) {
-		return sprintf( /* translators: %d: milliseconds. */ __( '%d ms', 'swift-image-optimizer' ), Math.round( value ) );
+		return sprintf(
+			/* translators: %d: milliseconds. */ __(
+				'%d ms',
+				'swift-image-optimizer'
+			),
+			Math.round( value )
+		);
 	}
 
 	return sprintf(
@@ -94,7 +100,12 @@ const formatFormat = ( mime ) => {
 		'image/gif': 'GIF',
 	};
 
-	return known[ mime ] || String( mime || '' ).replace( 'image/', '' ).toUpperCase();
+	return (
+		known[ mime ] ||
+		String( mime || '' )
+			.replace( 'image/', '' )
+			.toUpperCase()
+	);
 };
 
 /**
@@ -209,17 +220,29 @@ function logoMark() {
  * Keys match OptimizationLog::STATUS_*.
  */
 const STATUS_META = {
-	optimized: { dot: 'is-success', label: __( 'Image Optimized', 'swift-image-optimizer' ) },
-	skipped: { dot: 'is-muted', label: __( 'Not Optimized', 'swift-image-optimizer' ) },
-	failed: { dot: 'is-danger', label: __( 'Optimization Failed', 'swift-image-optimizer' ) },
-	restored: { dot: 'is-muted', label: __( 'Restored to Original', 'swift-image-optimizer' ) },
+	optimized: {
+		dot: 'is-success',
+		label: __( 'Image Optimized', 'swift-image-optimizer' ),
+	},
+	skipped: {
+		dot: 'is-muted',
+		label: __( 'Not Optimized', 'swift-image-optimizer' ),
+	},
+	failed: {
+		dot: 'is-danger',
+		label: __( 'Optimization Failed', 'swift-image-optimizer' ),
+	},
+	restored: {
+		dot: 'is-muted',
+		label: __( 'Restored to Original', 'swift-image-optimizer' ),
+	},
 };
 
 /**
  * Build the optimization panel for an attachment.
  *
- * @param {Object}   data      The swiftImageOptimizer payload.
- * @param {Function} onAction  Called with 'optimize' or 'restore'.
+ * @param {Object}   data     The swiftImageOptimizer payload.
+ * @param {Function} onAction Called with 'optimize' or 'restore'.
  * @return {HTMLElement|null} The panel, or null when there is nothing to say.
  */
 function buildPanel( data, onAction ) {
@@ -237,7 +260,13 @@ function buildPanel( data, onAction ) {
 
 	const brand = el( 'div', 'sio-panel__brand' );
 	brand.appendChild( logoMark() );
-	brand.appendChild( el( 'span', null, __( 'Swift Image Optimizer', 'swift-image-optimizer' ) ) );
+	brand.appendChild(
+		el(
+			'span',
+			null,
+			__( 'Swift Image Optimizer', 'swift-image-optimizer' )
+		)
+	);
 	panel.appendChild( brand );
 
 	const meta = STATUS_META[ data.status ];
@@ -290,12 +319,20 @@ function buildPanel( data, onAction ) {
 			metaParts.push( formatDuration( data.conversionMs ) );
 		}
 
-		panel.appendChild( el( 'div', 'sio-panel__meta', metaParts.join( ' · ' ) ) );
+		panel.appendChild(
+			el( 'div', 'sio-panel__meta', metaParts.join( ' · ' ) )
+		);
 
 		if ( data.canRestore ) {
-			const restore = el( 'button', 'sio-btn sio-btn--tertiary sio-panel__restore', __( 'Restore original', 'swift-image-optimizer' ) );
+			const restore = el(
+				'button',
+				'sio-btn sio-btn--tertiary sio-panel__restore',
+				__( 'Restore original', 'swift-image-optimizer' )
+			);
 			restore.type = 'button';
-			restore.addEventListener( 'click', () => onAction( 'restore', restore ) );
+			restore.addEventListener( 'click', () =>
+				onAction( 'restore', restore )
+			);
 			panel.appendChild( restore );
 		} else {
 			// Images converted during upload never had a backup, and expired
@@ -305,7 +342,10 @@ function buildPanel( data, onAction ) {
 				el(
 					'p',
 					'sio-panel__note',
-					__( 'No original stored, so this cannot be restored.', 'swift-image-optimizer' )
+					__(
+						'No original stored, so this cannot be restored.',
+						'swift-image-optimizer'
+					)
 				)
 			);
 		}
@@ -324,7 +364,10 @@ function buildPanel( data, onAction ) {
 				el(
 					'p',
 					'sio-panel__reason',
-					__( 'No image conversion engine is available on this server.', 'swift-image-optimizer' )
+					__(
+						'No image conversion engine is available on this server.',
+						'swift-image-optimizer'
+					)
 				)
 			);
 
@@ -335,9 +378,15 @@ function buildPanel( data, onAction ) {
 			? __( 'Try again', 'swift-image-optimizer' )
 			: __( 'Optimize', 'swift-image-optimizer' );
 
-		const button = el( 'button', 'sio-btn sio-btn--secondary sio-panel__optimize', label );
+		const button = el(
+			'button',
+			'sio-btn sio-btn--secondary sio-panel__optimize',
+			label
+		);
 		button.type = 'button';
-		button.addEventListener( 'click', () => onAction( 'optimize', button ) );
+		button.addEventListener( 'click', () =>
+			onAction( 'optimize', button )
+		);
 		panel.appendChild( button );
 	}
 
@@ -368,7 +417,10 @@ function renderPanel( model, container ) {
 	const onAction = async ( action, button ) => {
 		if ( 'restore' === action ) {
 			const ok = await sioConfirm( {
-				title: __( 'Restore the original image?', 'swift-image-optimizer' ),
+				title: __(
+					'Restore the original image?',
+					'swift-image-optimizer'
+				),
 				message: __(
 					'The optimized file will be removed and every reference to it updated back to the original.',
 					'swift-image-optimizer'
@@ -422,7 +474,8 @@ function renderPanel( model, container ) {
  * @return {HTMLElement|null} Target container.
  */
 const panelContainer = ( root ) =>
-	root.querySelector( '.attachment-info .details' ) || root.querySelector( '.attachment-info' );
+	root.querySelector( '.attachment-info .details' ) ||
+	root.querySelector( '.attachment-info' );
 
 /**
  * Patch both attachment details views.
@@ -479,7 +532,11 @@ class OptimizeProgress {
 		this.label = el( 'span', 'sio-bulk__label' );
 		this.savedLabel = el( 'span', 'sio-bulk__saved' );
 
-		this.stop = el( 'button', 'sio-btn sio-btn--secondary is-destructive sio-bulk__stop', __( 'Stop', 'swift-image-optimizer' ) );
+		this.stop = el(
+			'button',
+			'sio-btn sio-btn--secondary is-destructive sio-bulk__stop',
+			__( 'Stop', 'swift-image-optimizer' )
+		);
 		this.stop.type = 'button';
 		this.stop.addEventListener( 'click', onStop );
 
@@ -493,7 +550,13 @@ class OptimizeProgress {
 	}
 
 	update() {
-		const percent = this.total > 0 ? Math.min( 100, Math.round( ( this.done / this.total ) * 100 ) ) : 0;
+		const percent =
+			this.total > 0
+				? Math.min(
+						100,
+						Math.round( ( this.done / this.total ) * 100 )
+				  )
+				: 0;
 
 		this.fill.style.width = `${ percent }%`;
 		this.label.textContent = sprintf(
@@ -502,13 +565,14 @@ class OptimizeProgress {
 			this.done,
 			this.total
 		);
-		this.savedLabel.textContent = this.saved > 0
-			? sprintf(
-				/* translators: %s: formatted file size. */
-				__( '%s saved', 'swift-image-optimizer' ),
-				formatBytes( this.saved )
-			)
-			: '';
+		this.savedLabel.textContent =
+			this.saved > 0
+				? sprintf(
+						/* translators: %s: formatted file size. */
+						__( '%s saved', 'swift-image-optimizer' ),
+						formatBytes( this.saved )
+				  )
+				: '';
 	}
 
 	advance( count, savedBytes ) {
@@ -631,7 +695,10 @@ async function runSelection( controller, toolbar ) {
 		progress.finish(
 			sprintf(
 				/* translators: 1: optimized count, 2: skipped count, 3: failed count. */
-				__( 'Done — %1$d optimized, %2$d skipped, %3$d failed.', 'swift-image-optimizer' ),
+				__(
+					'Done — %1$d optimized, %2$d skipped, %3$d failed.',
+					'swift-image-optimizer'
+				),
 				optimized,
 				skipped,
 				failed
@@ -650,7 +717,12 @@ async function runSelection( controller, toolbar ) {
 function registerToolbar() {
 	const views = window.wp && window.wp.media && window.wp.media.view;
 
-	if ( ! config.isGrid || ! views || ! views.AttachmentsBrowser || ! views.Button ) {
+	if (
+		! config.isGrid ||
+		! views ||
+		! views.AttachmentsBrowser ||
+		! views.Button
+	) {
 		return;
 	}
 
@@ -663,24 +735,35 @@ function registerToolbar() {
 	const OptimizeModeButton = Button.extend( {
 		initialize() {
 			Button.prototype.initialize.apply( this, arguments );
-			this.controller.on( 'select:activate select:deactivate', this.toggleVisible, this );
+			this.controller.on(
+				'select:activate select:deactivate',
+				this.toggleVisible,
+				this
+			);
 		},
 
 		toggleVisible() {
-			this.$el.toggleClass( 'hidden', !! this.controller.isModeActive( 'select' ) );
+			this.$el.toggleClass(
+				'hidden',
+				!! this.controller.isModeActive( 'select' )
+			);
 		},
 
 		click() {
 			Button.prototype.click.apply( this, arguments );
 
 			if ( ! this.controller.isModeActive( 'select' ) ) {
-				this.controller.deactivateMode( 'edit' ).activateMode( 'select' );
+				this.controller
+					.deactivateMode( 'edit' )
+					.activateMode( 'select' );
 			}
 		},
 
 		render() {
 			Button.prototype.render.apply( this, arguments );
-			this.$el.addClass( 'swift-optimize-mode-button sio-btn sio-btn--secondary' );
+			this.$el.addClass(
+				'swift-optimize-mode-button sio-btn sio-btn--secondary'
+			);
 			this.el.insertBefore( boltIcon(), this.el.firstChild );
 			this.toggleVisible();
 			return this;
@@ -704,10 +787,10 @@ function registerToolbar() {
 				disabled: ! count,
 				text: count
 					? sprintf(
-						/* translators: %d: number of selected images. */
-						__( 'Optimize (%d)', 'swift-image-optimizer' ),
-						count
-					)
+							/* translators: %d: number of selected images. */
+							__( 'Optimize (%d)', 'swift-image-optimizer' ),
+							count
+					  )
 					: __( 'Optimize', 'swift-image-optimizer' ),
 			} );
 		},
@@ -720,7 +803,9 @@ function registerToolbar() {
 		render() {
 			Button.prototype.render.apply( this, arguments );
 
-			this.$el.addClass( 'swift-optimize-selected-button sio-btn sio-btn--primary' );
+			this.$el.addClass(
+				'swift-optimize-selected-button sio-btn sio-btn--primary'
+			);
 			this.el.insertBefore( boltIcon(), this.el.firstChild );
 
 			if ( ! this.controller.isModeActive( 'select' ) ) {
@@ -738,7 +823,10 @@ function registerToolbar() {
 		original.apply( this, arguments );
 
 		// Same guard core uses for its own grid-only toolbar items.
-		if ( ! this.controller.isModeActive || ! this.controller.isModeActive( 'grid' ) ) {
+		if (
+			! this.controller.isModeActive ||
+			! this.controller.isModeActive( 'grid' )
+		) {
 			return;
 		}
 
@@ -778,7 +866,9 @@ function registerToolbar() {
 		this.controller.on(
 			'select:activate',
 			function () {
-				this.toolbar.$( '.swift-optimize-selected-button' ).removeClass( 'hidden' );
+				this.toolbar
+					.$( '.swift-optimize-selected-button' )
+					.removeClass( 'hidden' );
 			},
 			this
 		);
@@ -786,7 +876,9 @@ function registerToolbar() {
 		this.controller.on(
 			'select:deactivate',
 			function () {
-				this.toolbar.$( '.swift-optimize-selected-button' ).addClass( 'hidden' );
+				this.toolbar
+					.$( '.swift-optimize-selected-button' )
+					.addClass( 'hidden' );
 			},
 			this
 		);

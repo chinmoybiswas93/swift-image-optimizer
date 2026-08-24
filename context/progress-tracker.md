@@ -1,19 +1,113 @@
 # Progress tracker
 
 Where the project is now. Finished units and their reasoning are in
-[memory/units.md](memory/units.md); open issues in [issues.md](issues.md).
+[memory/units.md](memory/units.md); open issues in [issues.md](issues.md); surfaces that are merely
+untested in [pre-release-checks.md](pre-release-checks.md).
 
 Keep this file short. When a section here becomes history, move it to `memory/`.
 
 ## Phase
 
-**Post-v1.1.0 — hardening before WordPress.org submission.** Both release blockers are closed and
-the dashboard has had a real browser pass. Units 01–14 are done.
+**v1.2.0 — hardening before WordPress.org submission.** Both release blockers are closed and the
+dashboard has had a real browser pass. Units 01–14 are done. 1.2.0 adds the block-editor status
+panel and WordPress 7.1 client-side media processing support; `readme.txt` is tested to 7.1.
+
+Not shippable yet: [issues.md](issues.md) issue 1 is a data-loss bug in the upload backup path.
 
 ## Where things stand
 
-The last three closures were all corrections to entries that were themselves wrong, which is the
-useful pattern to carry forward:
+- **I-19** — Images uploaded through Gutenberg were converted to WebP correctly but the panel
+  showed **nothing at all** — no status, no error. Root cause is **WordPress 7.1's client-side
+  media processing**, which is on by default in a secure context: the block editor uploads the
+  original with `generate_sub_sizes=false`, generates every size *in the browser* from the
+  full-resolution file, and `POST`s each one to `/wp/v2/media/<id>/sideload`. That endpoint uploads
+  through `wp_handle_upload()` with context `'upload'`, so the Interceptor was treating all eight
+  files as fresh uploads — eight conversions and eight backups per image — and core's
+  `update_attached_file()` for the `scaled` sideload then left the log row naming the pre-sideload
+  file. `optimized_output_exists()` went false, `optimization_payload()` blanked the status, and
+  `Panel.jsx:108` returned `null`. Closed with invariant 28: route detection on
+  `rest_request_before_callbacks`, a dedicated `handle_sideload()` that converts without backing up
+  or parking, and a repoint of `optimized_file` for `scaled`/`original`.
+
+  This also answers the question that ran through the whole I-18 investigation — why Gutenberg and
+  the Media Library behaved differently. The per-subsize `wp_handle_upload` calls were never coming
+  from core PHP; they come from the browser.
+
+  Two smaller defects fixed in the same pass: `already_belongs_to_an_attachment()` only ever looked
+  up the *incoming* extension, so a derivative of an already-converted parent (`photo-scaled.jpg`
+  against `photo.webp`) never resolved; and `optimization_payload()`'s `$stale` branch zeroed the
+  reported sizes on two lines that were immediately overwritten, so a stale row reported an empty
+  status beside real savings figures.
+
+  Verified by reproducing the exact CSMP sequence against the live REST endpoints: the row now
+  matches `_wp_attached_file` (`csmp-scaled-1.webp`), the panel reports `optimized` at 95.4%, the
+  backup folder gains exactly **one** file, and the library scan reports **0 pending**. Confirmed
+  afterwards by a real block-editor upload. Still only WordPress 7.1 on one install with Imagick —
+  `pre-release-checks.md` item 6 has what is left.
+
+  The same regression run turned up a **pre-existing data-loss bug, unrelated to this work**, now
+  issue 1: upload backups collide by filename and silently overwrite each other. Left unfixed
+  deliberately — the layout change touches `backup_file()`, `backup()`, `manifest_is_intact()` and
+  `reconcile()` together and has to stay readable to manifests already written.
+
+- **I-18** — Gutenberg uploads reported "Too large for the available memory" on
+  photos the Media Library optimized happily. Not flaky: `has_memory_for()`
+  charged `w × h × 4 × 2` for the **pre-scale** original, so anything past
+  ~28 MP was refused on a 256M limit (7728 × 5152 → 304 MB estimated to
+  produce a 2560px WebP), while every later path — Try again, the row action,
+  a bulk run — calls `can_optimize()` on `get_attached_file()`, by then
+  WordPress's 2560px `-scaled` copy at 4.4 MP. Same image, two answers,
+  because the two paths were handed different files. Fixed by charging the
+  second frame at the size it will actually be, exempting Imagick from an
+  estimate that only models a PHP-heap decode, and adding the `jpeg:size`
+  decode hint that makes that exemption safe.
+
+  The same investigation confirmed I-17's guard could never fire during
+  initial metadata generation — it consulted `_wp_attachment_metadata['sizes']`,
+  which WordPress writes only *after* generating every subsize — so subsize
+  files were still being converted and left unbindable. Attachments #8 and #10
+  on cb-test are in that state (WebP on disk, `post_mime_type` still
+  `image/jpeg`, log row still `skipped: insufficient-memory`); they need
+  `repair-mime` run once. Guard now resolves by name alone and fails closed.
+
+  Verified end to end over the real REST endpoint Gutenberg posts to
+  (`?rest_route=/wp/v2/media`, plain permalinks): the 7728 × 5152 / 17 MB photo
+  that used to skip now returns `optimized`, 17,091,942 → 1,010,398 bytes
+  (94.1%), `engine=imagick`, and leaves exactly **one** backup file rather than
+  one per generated subsize — which is the guard fix holding.
+
+  Left open as issue 8: an upload-path row's `optimized_file` does not match the
+  `-scaled` file WordPress attaches when the converted WebP is still wider than
+  the scaling threshold, so such images bucket as `pending` forever. Pre-existing
+  (attachments #9 and #11), and the cause of `bulk-e2e`'s one failing assertion.
+  Not reachable under the current defaults.
+
+- **I-17** — Gutenberg showed no optimization status at all (the classic
+  modal's data never reaches attachments fetched over REST) — closed with a
+  `register_rest_field` plus a new `resources/editor/` block-editor bundle.
+  Same investigation also found a second path to I-16's exact corruption
+  class: `Interceptor` had no guard against `wp_handle_upload` firing on a
+  file that already belongs to an existing attachment, confirmed live on
+  attachment #17. Closed with `Interceptor::already_belongs_to_an_attachment()`
+  plus a `repair-mime` command for attachments already affected. The memory
+  pre-check's `wp_raise_memory_limit('image')` ordering was tightened in the
+  same pass. Browser-verified live (Playwright): panel renders correctly
+  under the Image block's Settings tab with real optimized-state data. A
+  follow-up browser pass found a fourth, unrelated bug in the same
+  dashboard: `Services/http.js`'s `request()` mangled any call carrying its
+  own query string on a site using plain permalinks (this one), producing
+  "No route was found" on the Troubleshoot tab. Fixed and re-verified live.
+
+- **I-16** — `do_convert()` was not crash-safe: a PHP OOM fatal during core's
+  `wp_generate_attachment_metadata()` (confirmed live on attachment #656) left the file renamed to
+  WebP with no log row, so the next Optimize attempt re-encoded it and wrote a row whose
+  `original_file` pointed at the crash-artifact WebP — Restore original then restored the wrong
+  file. Fixed by writing an `OptimizationLog` row (new `STATUS_PENDING`) and the `post_mime_type`
+  update *before* the memory-hungry regen step, refusing to reprocess a pending row, and letting
+  `restore()` recover from one. `rewriter-test` still passes; no test yet forces the actual OOM.
+
+The three closures before that were all corrections to entries that were themselves wrong, which is
+the useful pattern to carry forward:
 
 - **I-4** — the CLI's bulk flags had never run. The conversion was never the untested part; flag
   parsing, the clamps and the `WP_CLI::error` exit codes were, and none of them exist when you
@@ -25,7 +119,8 @@ useful pattern to carry forward:
 - **I-9** — the entry said coverage was thin. There was none: every backup assertion ran through
   the variant that deliberately drops the expiry filter.
 
-Nothing is in progress. Next work comes off [issues.md](issues.md) or the `future-specs/` backlog.
+Nothing is in progress. Next work comes off [issues.md](issues.md), the verification passes in
+[pre-release-checks.md](pre-release-checks.md), or the `future-specs/` backlog.
 
 ## Verified behaviour
 

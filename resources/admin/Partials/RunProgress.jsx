@@ -42,7 +42,9 @@ const RunProgress = ( { phase } ) => {
 						{ steps.map( ( step ) => (
 							<span
 								key={ step }
-								className={ `sio-phase__dot${ step <= index ? ' is-done' : '' }` }
+								className={ `sio-phase__dot${
+									step <= index ? ' is-done' : ''
+								}` }
 							/>
 						) ) }
 					</span>
@@ -51,7 +53,10 @@ const RunProgress = ( { phase } ) => {
 
 			<div className="sio-progress">
 				<div className="sio-progress__bar">
-					<div className="sio-progress__fill" style={ { width: `${ percent }%` } } />
+					<div
+						className="sio-progress__fill"
+						style={ { width: `${ percent }%` } }
+					/>
 				</div>
 
 				<div className="sio-progress__meta">
@@ -79,7 +84,8 @@ const RunProgress = ( { phase } ) => {
 								) }
 							</span>
 							<span>
-								{ formatBytes( bulk.saved ) } { __( 'saved', 'swift-image-optimizer' ) }
+								{ formatBytes( bulk.saved ) }{ ' ' }
+								{ __( 'saved', 'swift-image-optimizer' ) }
 							</span>
 						</>
 					) }

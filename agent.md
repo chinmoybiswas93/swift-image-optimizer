@@ -134,7 +134,7 @@ stale graph would mislead the next session.
 | Need | Where |
 |---|---|
 | Where the project is now | `context/progress-tracker.md` — **read directly**, it's short |
-| What's still open | `context/issues.md` — **read directly** |
+| What's still open | `context/issues.md` — **read directly**. Defects only; untested surfaces are in `context/pre-release-checks.md` |
 | The **26 architecture invariants** | `context/architecture.md` — **read directly**, they're short and several encode data-loss failure modes |
 | Data-loss rules, environment traps, how to test | `context/ai-workflow-rules.md` |
 | Security, DB access, filesystem, i18n rules | `context/code-standards.md` |

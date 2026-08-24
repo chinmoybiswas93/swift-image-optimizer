@@ -5,12 +5,17 @@ import { Notice } from '../Components';
 
 const EngineNotice = ( { engine, engines } ) => {
 	if ( engine ) {
-		const available = Object.keys( engines ).filter( ( k ) => engines[ k ] );
+		const available = Object.keys( engines ).filter(
+			( k ) => engines[ k ]
+		);
 		return (
 			<p className="sio-muted">
 				{ sprintf(
 					/* translators: 1: active engine, 2: available engines. */
-					__( 'Using the %1$s engine. Available here: %2$s.', 'swift-image-optimizer' ),
+					__(
+						'Using the %1$s engine. Available here: %2$s.',
+						'swift-image-optimizer'
+					),
 					engine,
 					available.join( ', ' )
 				) }

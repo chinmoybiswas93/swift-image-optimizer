@@ -33,6 +33,10 @@ blob-report/
 playwright/.cache/
 coverage/
 
+# playwright-cli scratch: accessibility snapshots and console dumps it writes
+# beside whatever directory it was driven from.
+.playwright-cli/
+
 # PHPCS cache
 .phpcs.cache
 .phpunit.result.cache

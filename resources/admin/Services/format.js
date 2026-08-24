@@ -18,7 +18,7 @@ export const formatBytes = ( bytes ) => {
 	const units = [ 'KB', 'MB', 'GB', 'TB' ];
 
 	let size = value / 1024;
-	let i    = 0;
+	let i = 0;
 
 	while ( size >= 1024 && i < units.length - 1 ) {
 		size /= 1024;
@@ -57,7 +57,12 @@ export const formatTimeAgo = ( timestamp ) => {
 	if ( minutes < 60 ) {
 		return sprintf(
 			/* translators: %d: number of minutes. */
-			_n( '%d minute ago', '%d minutes ago', minutes, 'swift-image-optimizer' ),
+			_n(
+				'%d minute ago',
+				'%d minutes ago',
+				minutes,
+				'swift-image-optimizer'
+			),
 			minutes
 		);
 	}

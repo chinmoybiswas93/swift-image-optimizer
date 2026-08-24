@@ -231,6 +231,20 @@ class AttachmentConverter {
 
 		$existing = OptimizationLog::find( $attachment_id );
 
+		if ( $existing && OptimizationLog::STATUS_PENDING === $existing['status'] ) {
+			/*
+			 * A previous attempt renamed the file and pointed WordPress at it
+			 * before something (typically an OOM fatal during core's subsize
+			 * regeneration) killed the request. Reprocessing here would
+			 * re-encode the already-converted WebP and overwrite this row's
+			 * accurate original_file/backup_path with ones describing that
+			 * WebP instead of the true original - which is what silently
+			 * broke Restore original. Refuse instead; the row already has
+			 * enough information for Restore original to recover correctly.
+			 */
+			return new WP_Error( 'conversion-pending', __( 'A previous optimization of this image did not finish. Use Restore original, then try again.', 'swift-image-optimizer' ) );
+		}
+
 		if ( $existing && OptimizationLog::STATUS_OPTIMIZED === $existing['status'] ) {
 			if ( self::optimized_output_exists( $attachment_id, $existing ) ) {
 				return new WP_Error( 'already-optimized', __( 'This image has already been optimized.', 'swift-image-optimizer' ) );
@@ -318,6 +332,41 @@ class AttachmentConverter {
 		// Repoint WordPress at the new file, then rebuild the subsizes as WebP.
 		update_attached_file( $attachment_id, $target );
 
+		/*
+		 * Record what has already happened - and update post_mime_type to
+		 * match - before the memory-hungriest step (core's subsize
+		 * regeneration below). If that step OOMs, the request dies here
+		 * instead of after bookkeeping, but this row already points at the
+		 * true original and the real backup, so the state on disk and the
+		 * state in the database still agree with each other.
+		 */
+		$manifest = BackupManager::encode_manifest( $backup, $attachment_id );
+
+		OptimizationLog::upsert(
+			$attachment_id,
+			array(
+				'status'         => OptimizationLog::STATUS_PENDING,
+				'original_file'  => wp_basename( $file ),
+				'original_size'  => $optimized['original_size'],
+				'original_mime'  => $mime,
+				'optimized_file' => wp_basename( $target ),
+				'optimized_size' => $optimized['optimized_size'],
+				'backup_path'    => $manifest,
+				'backup_expires' => '' !== $manifest ? $backup['expires'] : 0,
+				'engine'         => $optimized['engine'],
+				'conversion_ms'  => isset( $optimized['duration_ms'] ) ? (int) $optimized['duration_ms'] : 0,
+				'reason'         => '',
+			)
+		);
+
+		wp_update_post(
+			array(
+				'ID'             => $attachment_id,
+				'post_mime_type' => 'image/webp',
+				'guid'           => wp_get_attachment_url( $attachment_id ),
+			)
+		);
+
 		require_once ABSPATH . 'wp-admin/includes/image.php';
 
 		$after = wp_generate_attachment_metadata( $attachment_id, $target );
@@ -335,14 +384,6 @@ class AttachmentConverter {
 			array(
 				'before' => isset( $before['sizes'] ) && is_array( $before['sizes'] ) ? count( $before['sizes'] ) : 0,
 				'after'  => isset( $after['sizes'] ) && is_array( $after['sizes'] ) ? count( $after['sizes'] ) : 0,
-			)
-		);
-
-		wp_update_post(
-			array(
-				'ID'             => $attachment_id,
-				'post_mime_type' => 'image/webp',
-				'guid'           => wp_get_attachment_url( $attachment_id ),
 			)
 		);
 
@@ -372,23 +413,13 @@ class AttachmentConverter {
 		// Only now remove the old files; a failure above leaves them intact.
 		$this->delete_files( $old_files, $target, $after, $attachment_id );
 
-		$manifest = BackupManager::encode_manifest( $backup, $attachment_id );
-
-		OptimizationLog::upsert(
+		// The pending row already has original_file, backup_path and mime;
+		// this just closes it out now that everything after it has succeeded.
+		OptimizationLog::update(
 			$attachment_id,
 			array(
-				'status'         => OptimizationLog::STATUS_OPTIMIZED,
-				'original_file'  => wp_basename( $file ),
-				'original_size'  => $optimized['original_size'],
-				'original_mime'  => $mime,
-				'optimized_file' => wp_basename( $target ),
-				'optimized_size' => $optimized['optimized_size'],
-				'backup_path'    => $manifest,
-				'backup_expires' => '' !== $manifest ? $backup['expires'] : 0,
-				'url_map'        => $url_map,
-				'engine'         => $optimized['engine'],
-				'conversion_ms'  => isset( $optimized['duration_ms'] ) ? (int) $optimized['duration_ms'] : 0,
-				'reason'         => '',
+				'status'  => OptimizationLog::STATUS_OPTIMIZED,
+				'url_map' => $url_map,
 			)
 		);
 
@@ -432,7 +463,9 @@ class AttachmentConverter {
 			Logger::start_run( 'restore' );
 		}
 
-		if ( ! $row || OptimizationLog::STATUS_OPTIMIZED !== $row['status'] ) {
+		$restorable_statuses = array( OptimizationLog::STATUS_OPTIMIZED, OptimizationLog::STATUS_PENDING );
+
+		if ( ! $row || ! in_array( $row['status'], $restorable_statuses, true ) ) {
 			$missing = new WP_Error( 'nothing-to-restore', __( 'This image has not been optimized by this plugin.', 'swift-image-optimizer' ) );
 
 			Logger::wp_error( 'restore', $missing, $attachment_id, true );

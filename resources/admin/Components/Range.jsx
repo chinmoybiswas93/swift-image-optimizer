@@ -7,7 +7,15 @@
 
 import Field from './Field';
 
-const Range = ( { label, help, value, onChange, min = 0, max = 100, step = 1 } ) => (
+const Range = ( {
+	label,
+	help,
+	value,
+	onChange,
+	min = 0,
+	max = 100,
+	step = 1,
+} ) => (
 	<Field label={ label } help={ help } className="sio-range">
 		{ ( { id, helpId } ) => (
 			<div className="sio-range__row">
@@ -20,7 +28,9 @@ const Range = ( { label, help, value, onChange, min = 0, max = 100, step = 1 } )
 					max={ max }
 					step={ step }
 					aria-describedby={ helpId }
-					onChange={ ( event ) => onChange && onChange( Number( event.target.value ) ) }
+					onChange={ ( event ) =>
+						onChange && onChange( Number( event.target.value ) )
+					}
 				/>
 				<output className="sio-range__value" htmlFor={ id }>
 					{ value }

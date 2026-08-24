@@ -31,30 +31,65 @@ const App = () => {
 
 	return (
 		<ToastProvider>
-		<div className="sio-app">
-			<Masthead />
-			<HeroStats snapshot={ snapshot } />
+			<div className="sio-app">
+				<Masthead />
+				<HeroStats snapshot={ snapshot } />
 
-			<Tabs
-				tabs={ [
-					{ name: 'bulk', title: __( 'Bulk Optimize', 'swift-image-optimizer' ) },
-					{ name: 'settings', title: __( 'Settings', 'swift-image-optimizer' ) },
-					{ name: 'backups', title: __( 'Backups', 'swift-image-optimizer' ) },
-					{ name: 'troubleshoot', title: __( 'Troubleshoot', 'swift-image-optimizer' ) },
-				] }
-			>
-				{ ( tab ) => {
-					if ( tab.name === 'settings' ) {
-						return <SettingsPage values={ settings } setValues={ setSettings } />;
-					}
-					if ( tab.name === 'backups' ) return <BackupsPage />;
-					if ( tab.name === 'troubleshoot' ) {
-						return <TroubleshootPage values={ settings } setValues={ setSettings } />;
-					}
-					return <BulkPage snapshot={ snapshot } setSnapshot={ setSnapshot } />;
-				} }
-			</Tabs>
-		</div>
+				<Tabs
+					tabs={ [
+						{
+							name: 'bulk',
+							title: __(
+								'Bulk Optimize',
+								'swift-image-optimizer'
+							),
+						},
+						{
+							name: 'settings',
+							title: __( 'Settings', 'swift-image-optimizer' ),
+						},
+						{
+							name: 'backups',
+							title: __( 'Backups', 'swift-image-optimizer' ),
+						},
+						{
+							name: 'troubleshoot',
+							title: __(
+								'Troubleshoot',
+								'swift-image-optimizer'
+							),
+						},
+					] }
+				>
+					{ ( tab ) => {
+						if ( tab.name === 'settings' ) {
+							return (
+								<SettingsPage
+									values={ settings }
+									setValues={ setSettings }
+								/>
+							);
+						}
+						if ( tab.name === 'backups' ) {
+							return <BackupsPage />;
+						}
+						if ( tab.name === 'troubleshoot' ) {
+							return (
+								<TroubleshootPage
+									values={ settings }
+									setValues={ setSettings }
+								/>
+							);
+						}
+						return (
+							<BulkPage
+								snapshot={ snapshot }
+								setSnapshot={ setSnapshot }
+							/>
+						);
+					} }
+				</Tabs>
+			</div>
 		</ToastProvider>
 	);
 };

@@ -73,7 +73,12 @@ const BulkPage = ( { snapshot, setSnapshot } ) => {
 				 * screen, and starting minutes of batched work as a side effect
 				 * of drawing a page is how a dashboard freezes a site.
 				 */
-				if ( ! autoScanned.current && state && ! state.busy && ! state.snapshot ) {
+				if (
+					! autoScanned.current &&
+					state &&
+					! state.busy &&
+					! state.snapshot
+				) {
 					autoScanned.current = true;
 					startScan();
 				}
@@ -123,11 +128,16 @@ const BulkPage = ( { snapshot, setSnapshot } ) => {
 			}
 
 			try {
-				state = await request( 'library/scan/batch', { method: 'POST' } );
+				state = await request( 'library/scan/batch', {
+					method: 'POST',
+				} );
 			} catch ( e ) {
 				// Cron or another tab took this batch. Ordinary, not a failure -
 				// hand over and let the poll keep the display current.
-				if ( e && ( e.code === 'scan-locked' || e.code === 'not-scanning' ) ) {
+				if (
+					e &&
+					( e.code === 'scan-locked' || e.code === 'not-scanning' )
+				) {
 					return;
 				}
 
@@ -165,7 +175,10 @@ const BulkPage = ( { snapshot, setSnapshot } ) => {
 			try {
 				state = await request( 'bulk/batch', { method: 'POST' } );
 			} catch ( e ) {
-				if ( e && ( e.code === 'bulk-locked' || e.code === 'not-running' ) ) {
+				if (
+					e &&
+					( e.code === 'bulk-locked' || e.code === 'not-running' )
+				) {
 					return;
 				}
 
@@ -283,8 +296,14 @@ const BulkPage = ( { snapshot, setSnapshot } ) => {
 
 			{ confirming && (
 				<ConfirmDialog
-					title={ __( 'Optimize your media library?', 'swift-image-optimizer' ) }
-					confirmLabel={ __( 'Start optimizing', 'swift-image-optimizer' ) }
+					title={ __(
+						'Optimize your media library?',
+						'swift-image-optimizer'
+					) }
+					confirmLabel={ __(
+						'Start optimizing',
+						'swift-image-optimizer'
+					) }
 					onConfirm={ startOptimize }
 					onCancel={ () => setConfirming( false ) }
 				>

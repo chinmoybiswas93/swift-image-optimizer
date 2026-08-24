@@ -21,12 +21,27 @@ apiFetch.use( apiFetch.createNonceMiddleware( config.nonce ) );
  * config.restUrl already carries the namespace and honours a site that serves
  * the REST API from a non-default location.
  *
- * @param {string} path    Route path relative to the plugin REST namespace.
+ * On a site using plain permalinks, config.restUrl is itself a query string
+ * (`…/index.php?rest_route=/namespace/`), so a route's own query string
+ * cannot just be concatenated on with a second `?` - that produces a URL
+ * apiFetch parses wrong, silently dropping everything after the first `=`
+ * in the second query string. Attaching it with the right separator for
+ * whichever form restUrl is in keeps both permalink structures working.
+ *
+ * @param {string} path    Route path relative to the plugin REST namespace,
+ *                         optionally carrying its own `?query=string`.
  * @param {Object} options apiFetch options (`method`, `data`, …).
  * @return {Promise<any>} Parsed response body.
  */
-export const request = ( path, options = {} ) =>
-	apiFetch( { url: config.restUrl + path, ...options } );
+export const request = ( path, options = {} ) => {
+	const [ routePath, queryString ] = path.split( '?' );
+	const base = config.restUrl + routePath;
+	const url = queryString
+		? `${ base }${ base.includes( '?' ) ? '&' : '?' }${ queryString }`
+		: base;
+
+	return apiFetch( { url, ...options } );
+};
 
 /**
  * Save plugin settings.

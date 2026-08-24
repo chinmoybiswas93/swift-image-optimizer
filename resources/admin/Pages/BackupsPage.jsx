@@ -34,7 +34,9 @@ const BackupsPage = () => {
 		setBusy( true );
 		setError( '' );
 		try {
-			const result = await request( 'backups/reconcile', { method: 'POST' } );
+			const result = await request( 'backups/reconcile', {
+				method: 'POST',
+			} );
 
 			setBytes( result.backup_bytes );
 			setRepairing( false );
@@ -84,10 +86,16 @@ const BackupsPage = () => {
 				freed
 					? sprintf(
 							/* translators: %s: formatted size, e.g. 12.4 MB. */
-							__( 'Backups deleted. %s reclaimed.', 'swift-image-optimizer' ),
+							__(
+								'Backups deleted. %s reclaimed.',
+								'swift-image-optimizer'
+							),
 							formatBytes( freed )
 					  )
-					: __( 'There was nothing left to delete.', 'swift-image-optimizer' )
+					: __(
+							'There was nothing left to delete.',
+							'swift-image-optimizer'
+					  )
 			);
 		} catch ( e ) {
 			// Previously shown as an info notice alongside successes, so a
@@ -100,7 +108,11 @@ const BackupsPage = () => {
 
 	return (
 		<>
-			{ error && <Notice status="error" onRemove={ () => setError( '' ) }>{ error }</Notice> }
+			{ error && (
+				<Notice status="error" onRemove={ () => setError( '' ) }>
+					{ error }
+				</Notice>
+			) }
 
 			<Section
 				icon={ <IconArchive /> }
@@ -111,7 +123,13 @@ const BackupsPage = () => {
 				) }
 			>
 				<div className="sio-stats">
-					<Stat label={ __( 'Backup storage used', 'swift-image-optimizer' ) } value={ formatBytes( bytes ) } />
+					<Stat
+						label={ __(
+							'Backup storage used',
+							'swift-image-optimizer'
+						) }
+						value={ formatBytes( bytes ) }
+					/>
 				</div>
 				<p className="sio-lede">
 					{ __(
@@ -131,7 +149,14 @@ const BackupsPage = () => {
 						onClick={ () => setRepairing( true ) }
 						disabled={ busy || ! bytes }
 					>
-						{ busy ? <Spinner /> : __( 'Repair backup records', 'swift-image-optimizer' ) }
+						{ busy ? (
+							<Spinner />
+						) : (
+							__(
+								'Repair backup records',
+								'swift-image-optimizer'
+							)
+						) }
 					</Button>
 					<Button
 						variant="secondary"
@@ -139,15 +164,28 @@ const BackupsPage = () => {
 						onClick={ () => setConfirming( true ) }
 						disabled={ busy || ! bytes }
 					>
-						{ busy ? <Spinner /> : __( 'Delete all backups now', 'swift-image-optimizer' ) }
+						{ busy ? (
+							<Spinner />
+						) : (
+							__(
+								'Delete all backups now',
+								'swift-image-optimizer'
+							)
+						) }
 					</Button>
 				</div>
 			</Section>
 
 			{ repairing && (
 				<ConfirmDialog
-					title={ __( 'Repair backup records?', 'swift-image-optimizer' ) }
-					confirmLabel={ __( 'Repair records', 'swift-image-optimizer' ) }
+					title={ __(
+						'Repair backup records?',
+						'swift-image-optimizer'
+					) }
+					confirmLabel={ __(
+						'Repair records',
+						'swift-image-optimizer'
+					) }
 					busy={ busy }
 					onConfirm={ repair }
 					onCancel={ () => setRepairing( false ) }
@@ -169,8 +207,14 @@ const BackupsPage = () => {
 
 			{ confirming && (
 				<ConfirmDialog
-					title={ __( 'Delete every stored original?', 'swift-image-optimizer' ) }
-					confirmLabel={ __( 'Delete backups', 'swift-image-optimizer' ) }
+					title={ __(
+						'Delete every stored original?',
+						'swift-image-optimizer'
+					) }
+					confirmLabel={ __(
+						'Delete backups',
+						'swift-image-optimizer'
+					) }
 					confirmWord={ CONFIRM_WORD }
 					isDestructive
 					busy={ busy }

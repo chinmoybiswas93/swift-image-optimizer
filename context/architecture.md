@@ -105,7 +105,7 @@ so treat them as non-negotiable.
 | 4 | **Back up before the first destructive operation, roll back on any failure.** | Steps 2–9 of the convert pipeline are wrapped; a failure at any point restores from backup. |
 | 5 | **The `Optimizer` never touches the database or attachments.** Files only. | It is shared by the upload path and the bulk path, which have completely different DB semantics. |
 | 6 | **Never delete old files until after metadata regeneration succeeds.** | A failure mid-way must leave a working site. |
-| 7 | **Estimate memory before decoding any image.** `width × height × 4 × 2` against `memory_limit`, **only when the chosen engine decodes in-process**. | The most common shared-host fatal. Turns a white screen into a logged skip. Applying it to cwebp, which runs as a separate process, refused images it could handle comfortably. |
+| 7 | **Estimate memory before decoding any image.** `(source pixels + constrained pixels) × 4` against `memory_limit`, **only when the chosen engine decodes in-process** — and only after `wp_raise_memory_limit('image')` has already run, so the estimate is compared against the raised limit, not PHP's base one. | The most common shared-host fatal. Turns a white screen into a logged skip. Applying it to cwebp *or Imagick*, neither of which allocates through `memory_limit`, refused images they handle comfortably. Checking against the base limit refused images that would have fit once the raise happened — which used to run only *after* this check, inside `optimize()`. Charging **two full frames** (`w × h × 4 × 2`) refused everything past ~28 MP on a 256M limit, even though the second frame is the resized working copy and is only ever `max_dimension` across: a 7728 × 5152 upload was estimated at 304 MB to produce a 2560px WebP. |
 | 8 | **Soft errors are defined once**, in `AttachmentConverter::soft_errors()` — `PERMANENT_SKIPS` plus `RETRYABLE_SKIPS`. | This list was duplicated in three places and drifted, causing 496 skipped images to be reported as failures. The permanent/retryable split is what lets `Scanner::requeue()` return environment-caused skips to the queue without retrying images that can never improve. |
 | 9 | **The log table's `status` stays `optimized` when a backup expires.** Availability is tracked by an empty `backup_path`. | Changing the status would zero that image's contribution to the savings stats. |
 | 10 | **Attachment references stored as IDs need no rewriting.** Only hardcoded URL strings are touched. | IDs resolve through metadata, which is updated separately. Rewriting them would be wrong. |
@@ -125,12 +125,15 @@ so treat them as non-negotiable.
 | 24 | **The server owns whether a bulk run is active.** `start()` is idempotent, `cancel()` keeps the cursor, and the client reconciles from `state()` rather than computing its own. | Two clients doing their own arithmetic over different snapshots is why progress figures disagreed, and an unguarded `start()` let a second tab reset a run mid-flight — which surfaced as "already running" from a button that looked available. |
 | 25 | **The library scan observes; it never writes to the log table.** A row claiming `optimized` whose file is missing is bucketed `pending` in the published snapshot and left exactly as it was. Deleting the row is `Scanner::rescan()`'s job, not the scan's. | The scan runs unattended on a schedule (invariant 13 already rules out a loopback trigger, so this has to be true for the same reason). A routine that mutates the log table while nobody is watching is a routine that can silently destroy the one record that makes Restore possible. |
 | 26 | **A file with no row pointing at it is not evidence there is nothing to restore.** The converse of invariant 22. `BackupManager::reconcile()` rebuilds manifests from files still on disk, driven from the log rows rather than a directory walk; it writes pointers and deletes nothing. Repair runs before any sweep — in the route list, in the Backups tab, and in the docs. | Backup files outlive their pointer routinely: a purge clears it, an encode fails, or a conversion dies between copying the originals and writing the row (the copy is first precisely so a death there is survivable). Until this existed, the only routine that touched an unreferenced backup was `purge_orphans()`, which deletes it — so the recovery path and the demolition path were the same button. Deleting is not a repair. |
+| 27 | **`Interceptor` refuses to convert a file that already belongs to an existing attachment**, `already_belongs_to_an_attachment()` checking both the exact URL and the WordPress subsize-naming pattern against `attachment_url_to_postid()`, trying the converted extension as well as the incoming one — a derivative is named after its parent's *source* file (`photo-scaled.jpg`) while the converted parent's `_wp_attached_file` reads `photo.webp`, so looking only for the incoming extension never matched. **Resolving by name is the whole test** — it deliberately does *not* confirm against the parent's `_wp_attachment_metadata['sizes']`, because WordPress writes that metadata only after it has generated every subsize, so during generation the array is empty and the confirmation waved through exactly the files the guard exists to stop (observed on attachments #8 and #10: WebP on disk, `post_mime_type` still `image/jpeg`, log row still `skipped`). It fails closed: a false positive costs one unconverted derivative the next bulk run picks up, a false negative costs a renamed file whose row no longer describes it. | `wp_handle_upload` can fire for a file that is not a genuine new upload — a sideload, or a re-submission of a derivative already sitting in the uploads folder. Converting it renames and deletes without a matching `add_attachment` ever firing, so `bind_attachment()` can never bind the result: the file becomes WebP on disk while `post_mime_type` and the log row silently keep describing the file that used to be there. `MimeReconciler::reconcile()` (`repair-mime`) is the repair half, for attachments this already happened to before the guard existed — same "repair before sweep" shape as invariant 26, run first so `repair-backups` can see the rows it corrects. |
+| 28 | **One upload is not one `wp_handle_upload` call.** WordPress 7.1's client-side media processing has the browser generate every size and `POST` each to `/wp/v2/media/<id>/sideload`; that endpoint uploads through `upload_from_file()` → `wp_handle_upload()`, so each arrives with context `'upload'`, indistinguishable from a first-party upload. `Interceptor` captures the route on `rest_request_before_callbacks` and routes those files to `handle_sideload()`: convert them (so a WebP full-size does not end up with JPEG subsizes) but **never** back them up and **never** park a `$pending` entry, and when `image_size` is `scaled` or `original` repoint the existing row's `optimized_file` at the converted path. `source_original` and the two animated companions are returned untouched. | `sideload_item()` calls `update_attached_file()` for `scaled`/`original`, so without the repoint the row keeps naming the pre-sideload file, `optimized_output_exists()` goes false, and both the media modal and the block-editor panel treat a correctly optimized image as having no result at all — `Panel.jsx` renders nothing, which is what "converted to WebP but no status" was. Backing up each generated size wrote seven redundant copies of one image; `source_original` is the preserved source-format original, so converting it destroys the one copy meant to stay in its original format. |
 
 ## The upload path (Feature 1)
 
 ```
 wp_handle_upload( $upload )
   ├─ auto_optimize off?              → return unchanged
+  ├─ already_belongs_to_an_attachment?  → return unchanged (invariant 27)
   ├─ Optimizer::can_optimize()       → mime, format, engine, memory checks
   ├─ Optimizer::optimize()           → temp .webp beside the original
   │    └─ result >= original bytes?  → discard, log 'skipped-larger', keep original
@@ -144,6 +147,26 @@ add_attachment( $id )
 ```
 
 WordPress then generates every subsize as WebP with no further involvement from us.
+
+## Reading the result (classic modal, block editor)
+
+`MediaLibraryHandler::optimization_payload()` is the one place that turns a
+log row plus a disk check into the status/reason/percent/canOptimize payload
+a client shows. Two consumers call it, and neither duplicates its logic:
+
+- `expose_to_js()`, via `wp_prepare_attachment_for_js` — the classic
+  Backbone media modal. `resources/media/media.js` patches
+  `wp.media.view.Attachment.Details`/`.TwoColumn` to render it.
+- `RestFieldHandler`, via `register_rest_field('attachment', 'swiftImageOptimizer', ...)`
+  on the core REST attachment schema — the block editor, which fetches
+  attachments over `/wp/v2/media`, not admin-ajax. `resources/editor/`
+  (a separate, React `enqueue_block_editor_assets` bundle — `AssetHandler`'s
+  `media-views`-gated enqueue does not reliably fire inside the block editor)
+  renders the same panel inside a selected `core/image` block's
+  `InspectorControls`.
+
+Both surfaces call the plugin's existing `optimize`/`restore` REST routes
+(`app/Http/Routes/api.php`, `MediaPolicy`-guarded) to act.
 
 ## The conversion path (Feature 2)
 
@@ -243,12 +266,21 @@ from a Display-P3 photo makes it visibly desaturate. GD strips ICC unconditional
 compensates by baking EXIF orientation into the pixels before encoding (otherwise portrait
 photos would come out sideways).
 
+Imagick also reports `decodes_in_process() === false`, for the same reason cwebp does: its pixel
+buffer lives in ImageMagick's own C heap, governed by ImageMagick's resource limits — which page
+to disk rather than fataling — so PHP's `memory_limit` says nothing about whether the decode will
+survive. That exemption is only safe because `ImagickEngine::convert()` sets the `jpeg:size`
+decode hint first, so libjpeg DCT-scales during decode and the frame Imagick allocates stays near
+the output size instead of the source's. **The two go together — do not keep one without the
+other.** GD remains the only in-process engine, and the only one the estimate still gates.
+
 `CwebpEngine` never ships a binary. It checks `function_exists('exec')`, that `exec` is not in
 `disable_functions`, and that a binary exists at a known path or via the
 `swift_image_optimizer_cwebp_binary` filter — then escapes every argument. It also **declines any
 JPEG whose EXIF orientation is not 1**: cwebp has no rotate option and `-metadata icc` discards
 the orientation flag, so it would write portrait photos permanently sideways. It reports
-`decodes_in_process() === false`, which exempts it from the memory estimate.
+`decodes_in_process() === false`, which exempts it from the memory estimate — as does Imagick,
+for the reason given above.
 
 ## Extension points
 

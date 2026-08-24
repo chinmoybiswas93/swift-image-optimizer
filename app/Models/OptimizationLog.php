@@ -34,6 +34,7 @@ class OptimizationLog extends Model {
     const STATUS_SKIPPED   = 'skipped';
     const STATUS_FAILED    = 'failed';
     const STATUS_RESTORED  = 'restored';
+    const STATUS_PENDING   = 'pending';
 
     /**
      * Transient holding the cached stats aggregate.
@@ -279,6 +280,48 @@ class OptimizationLog extends Model {
         }
 
         return $rows;
+    }
+
+    /**
+     * Attachments whose recorded mime type no longer matches the file
+     * WordPress actually has attached - the signature a re-fed upload
+     * leaves behind: post_mime_type still says image/jpeg or image/png
+     * while _wp_attached_file was silently renamed to .webp underneath it
+     * (see Interceptor::already_belongs_to_an_attachment()).
+     *
+     * Paged by post ID for the same reason attachmentScanPage() and
+     * unbackedPage() are: nothing here rewrites post_mime_type mid-page,
+     * but MimeReconciler::reconcile() does, between pages, so an OFFSET
+     * would skip rows as the mismatched set shrinks.
+     *
+     * @param int $after Only rows with a greater attachment ID.
+     * @param int $limit Page size.
+     * @return array<int, array<string, mixed>> Rows of attachment_id, mime, attached_file.
+     */
+    public static function mimeMismatchPage( $after, $limit ) {
+        $db = self::db();
+
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Core table names cannot be bound; every value is prepared.
+        $rows = $db->get_results(
+            $db->prepare(
+                "SELECT p.ID AS attachment_id, p.post_mime_type AS mime, pm.meta_value AS attached_file
+                FROM {$db->posts} p
+                INNER JOIN {$db->postmeta} pm ON pm.post_id = p.ID AND pm.meta_key = '_wp_attached_file'
+                WHERE p.post_type = 'attachment'
+                    AND p.post_mime_type IN ( 'image/jpeg', 'image/png' )
+                    AND pm.meta_value LIKE %s
+                    AND p.ID > %d
+                ORDER BY p.ID ASC
+                LIMIT %d",
+                '%.webp',
+                (int) $after,
+                (int) $limit
+            ),
+            ARRAY_A
+        );
+        // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+        return is_array( $rows ) ? $rows : [];
     }
 
     /**

@@ -13,6 +13,140 @@ last one matters most. "Closed" is not the same as "proven everywhere".
 
 ---
 
+## I-17 — Block editor showed nothing; a second bookkeeping-desync path fed the same class of bug I-16 closed (2026-08-23, no unit)
+
+**A fourth finding, from a follow-up browser pass after this entry first closed:**
+the dashboard's Troubleshoot tab showed a bare "No route was found matching
+the URL and request method." `resources/admin/Services/http.js`'s `request()`
+built every call as `config.restUrl + path` — plain string concatenation.
+On a site using plain permalinks (this one, confirmed via
+`get_option('permalink_structure')` being empty), `rest_url()` itself already
+returns a query string (`…/index.php?rest_route=/namespace/`), so a call
+carrying its own query string (`request('logs?lines=500')`) produced a URL
+with two `?` characters. `apiFetch` doesn't parse that correctly: the actual
+request that left the browser was `rest_route=…logs%3Flines&_locale=user` —
+`lines`'s value silently disappeared. Reproduced live via Playwright network
+trace; confirmed the `logs` route itself was fine via `curl` against the
+`?rest_route=` fallback directly. Fixed by splitting `path` on `?` and
+attaching the query string with the separator matching whichever form
+`restUrl` is already in (`?` when it's a clean path, `&` when it already
+carries `rest_route=…`) — verified live afterward: the same request now
+resolves to `rest_route=…/logs&lines=500` and returns 200, with a clean
+console. Pre-existing bug, unrelated to anything else in this entry; only
+surfaces under plain permalinks, which is why it went unnoticed until this
+session happened to be running against a plain-permalink site.
+
+Three more findings from the original investigation, on a freshly reset cb-test.local:
+
+**No status/error UI in Gutenberg.** `expose_to_js()` only reaches attachment
+data fetched via admin-ajax `query-attachments` (`wp_prepare_attachment_for_js`).
+The block editor's Image/Gallery blocks read attachments over
+`/wp/v2/media/...`, which never runs that filter, so `swiftImageOptimizer`
+was silently absent there — the panel rendered by `resources/media/media.js`
+never even runs, since that bundle patches the classic Backbone
+`wp.media.view.Attachment.Details`, not anything the block editor uses.
+Closed by extracting the payload logic out of `expose_to_js()` into
+`MediaLibraryHandler::optimization_payload()`, exposing it via a new
+`register_rest_field('attachment', 'swiftImageOptimizer', ...)`
+(`RestFieldHandler`), and adding a small React bundle (`resources/editor/`,
+`enqueue_block_editor_assets`) that reads the field and renders the same
+panel inside a selected `core/image` block's `InspectorControls`. Verified
+end-to-end via `rest_do_request()`: the field returns the correct payload for
+an authenticated request and `null` for a logged-out one. Also verified live
+in the browser (Playwright, admin session on cb-test.local): opened Sample
+Page's Gallery block, selected an already-optimized image, and the panel
+rendered under the Image block's **Settings** tab — not **Content** (core's
+Image block puts Media/Alt text under Content; `<InspectorControls>` without
+a `group` prop lands in Settings, the correct, unsurprising default, just
+worth remembering when looking for it) — showing "Image Optimized",
+"Saved 73.4%", "1.86 MB → 506.5 KB" and a working Restore original button,
+matching the REST payload exactly. A stale block referencing a
+since-deleted attachment (left over from an earlier site reset) correctly
+rendered no panel at all and logged no error beyond the expected 404 on
+`fetchStatus()` — the `catch` → `setData(null)` path held.
+
+**A second, independent path to the exact corruption I-16 fixed.** Confirmed
+live: attachment #17 had `post_mime_type: image/jpeg` while
+`_wp_attached_file` was already `.webp`. The debug log showed
+`wp_handle_upload` firing separately for subsize/derivative files of an
+already-existing attachment — not a genuine new upload. `Interceptor` had no
+guard against this: it renamed and deleted the source exactly as it would
+for a real upload, but since the result was never a *new* attachment,
+`add_attachment` never fired, so `bind_attachment()`'s exact-path match on
+`$pending` never matched, and `post_mime_type`/the log row were silently left
+describing a file no longer there — same failure shape as I-16 (do_convert()
+crash-safety), different code path (Interceptor, upload-time). Closed by
+`Interceptor::already_belongs_to_an_attachment()`, checked right after the
+existing empty-file guard: refuses to convert when `attachment_url_to_postid()`
+already resolves the file's URL, or when stripping a WordPress
+subsize-naming suffix (`-WxH`, `-scaled`, `-rotated`) resolves to an
+attachment whose own registered metadata names this exact file. Verified via
+reflection against real files on cb-test: correctly blocks both a re-fed
+main file and a re-fed subsize, and does not block a genuinely new upload.
+
+**Already-corrupted attachments needed their own repair**, since the guard
+only stops new occurrences. `MimeReconciler::reconcile()` (new, modeled on
+`BackupManager::reconcile()`'s "read log + disk, write corrections, delete
+nothing" pattern — not a modification of `reconcile()` itself) corrects
+`post_mime_type` from the actual file and, only when a prior row with real
+`original_size` data exists, restores the log row to `optimized` with
+`backup_path` deliberately left empty so `BackupManager::reconcile()` picks
+it up next. Exposed as `wp swift-image-optimizer repair-mime` and
+`POST reconcile-mime`, documented to run *before* `repair-backups` — same
+"repair before sweep" ordering invariant 26 already established. Verified
+live: deliberately corrupted attachment #30 the way the bug did, ran
+`repair-mime` (mime and log row corrected, `backup_path` empty as designed),
+then ran `repair-backups` against the result and confirmed it picked up the
+row and rebuilt a working manifest.
+
+**Also fixed in the same pass**, contributing factor: `Optimizer::can_optimize()`'s
+memory pre-check ran against PHP's base `memory_limit`, before
+`wp_raise_memory_limit('image')` — which used to run later, inside
+`optimize()`, after the check had already decided. Moved the raise into
+`can_optimize()`, immediately before the check that depends on it. Confirmed
+via grep: `can_optimize()` has exactly two callers, both proceeding straight
+to conversion on `true`, so raising unconditionally there wastes nothing.
+
+**Still unproven:** only the "Try again"/not-optimized state of the block
+editor panel — every browser check landed on an already-optimized image,
+since every attachment on cb-test.local happened to be `status: optimized`
+at verification time. Same component, same shared payload the classic modal
+already renders that state from correctly, so low risk, but not literally
+seen. The memory-raise reorder has no fixture that actually observes an
+image flipping from rejected to accepted under the change — `test:php`
+passing confirms no regression, not the behavior change itself.
+
+---
+
+## I-16 — `do_convert()` not crash-safe, Restore silently used the wrong file (2026-08-23, no unit)
+
+Confirmed live on cb-test attachment #656 (`benjamin-chambon-zO0le9E7Ono-unsplash`). The rename to
+WebP and `update_attached_file()` ran before `wp_generate_attachment_metadata()` — core's own
+subsize regeneration, the memory-hungriest step — and before `post_mime_type` and
+`OptimizationLog::upsert()`. A PHP OOM fatal during metadata regen killed the request after the
+destructive rename but before any bookkeeping: the file was already `.webp` on disk,
+`post_mime_type` still read the old format, and no log row existed. The next Optimize attempt then
+treated the file as untouched, re-encoded the already-converted WebP a second time, and the
+resulting row's `original_file` pointed at that crash-artifact WebP instead of the true original —
+so Restore original silently restored to the wrong file while the real original sat orphaned in
+the backup folder.
+
+Fixed by moving the `post_mime_type` update and an `OptimizationLog` write to immediately after
+`update_attached_file()`, ahead of `wp_generate_attachment_metadata()`, under a new
+`STATUS_PENDING`. That row already carries the correct `original_file` and `backup_path` before
+the risky step runs, so a crash there leaves the database and the disk agreeing with each other.
+`do_convert()` now refuses to reprocess a `STATUS_PENDING` row (`conversion-pending` error) instead
+of silently re-encoding it and overwriting the correct row with a wrong one, and `restore()` now
+accepts `STATUS_PENDING` rows too, since the backup they point at is genuine. On success the pending
+row is finalized in place (`status` → `optimized`, `url_map` added) rather than replaced.
+
+**Still unproven:** no test actually forces an OOM mid-`wp_generate_attachment_metadata()` to
+exercise the crash path end-to-end — `tests/php/rewriter-test.php` (unaffected by this change)
+still passes, but that suite doesn't touch `do_convert()`. A browser or WP-CLI repro that kills PHP
+partway through metadata regen, followed by a Restore original, would close this properly.
+
+---
+
 ## I-9 — Retention expiry untested (2026-08-16, no unit)
 
 The entry said the purge had "only been exercised via artificially expired rows." It understated

@@ -10,12 +10,22 @@
 
 import useFieldId from './useFieldId';
 
-const Toggle = ( { label, help, checked = false, onChange, disabled = false } ) => {
-	const id     = useFieldId( 'sio-toggle' );
+const Toggle = ( {
+	label,
+	help,
+	checked = false,
+	onChange,
+	disabled = false,
+} ) => {
+	const id = useFieldId( 'sio-toggle' );
 	const helpId = help ? `${ id }-help` : undefined;
 
 	return (
-		<div className={ `sio-field sio-toggle${ disabled ? ' is-disabled' : '' }` }>
+		<div
+			className={ `sio-field sio-toggle${
+				disabled ? ' is-disabled' : ''
+			}` }
+		>
 			<label className="sio-toggle__row" htmlFor={ id }>
 				<input
 					id={ id }
@@ -24,7 +34,9 @@ const Toggle = ( { label, help, checked = false, onChange, disabled = false } ) 
 					checked={ !! checked }
 					disabled={ disabled }
 					aria-describedby={ helpId }
-					onChange={ ( event ) => onChange && onChange( event.target.checked ) }
+					onChange={ ( event ) =>
+						onChange && onChange( event.target.checked )
+					}
 				/>
 				<span className="sio-toggle__track" aria-hidden="true">
 					<span className="sio-toggle__thumb" />

@@ -51,7 +51,11 @@ const Tabs = ( { tabs, initial, children } ) => {
 	return (
 		<div className="sio-tabs">
 			{ /* eslint-disable-next-line jsx-a11y/no-noninteractive-element-to-interactive-role */ }
-			<div className="sio-tabs__list" role="tablist" onKeyDown={ onKeyDown }>
+			<div
+				className="sio-tabs__list"
+				role="tablist"
+				onKeyDown={ onKeyDown }
+			>
 				{ tabs.map( ( tab ) => {
 					const isActive = tab.name === active;
 
@@ -67,7 +71,9 @@ const Tabs = ( { tabs, initial, children } ) => {
 							tabIndex={ isActive ? 0 : -1 }
 							// Reserves the bold width so activating a tab cannot reflow the row.
 							data-title={ tab.title }
-							className={ `sio-tabs__tab${ isActive ? ' is-active' : '' }` }
+							className={ `sio-tabs__tab${
+								isActive ? ' is-active' : ''
+							}` }
 							onClick={ () => setActive( tab.name ) }
 						>
 							{ tab.title }

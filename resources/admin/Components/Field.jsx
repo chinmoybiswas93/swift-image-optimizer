@@ -9,11 +9,15 @@
 import useFieldId from './useFieldId';
 
 const Field = ( { label, help, className = '', children } ) => {
-	const id     = useFieldId( 'sio-field' );
+	const id = useFieldId( 'sio-field' );
 	const helpId = help ? `${ id }-help` : undefined;
 
 	return (
-		<div className={ [ 'sio-field', className ].filter( Boolean ).join( ' ' ) }>
+		<div
+			className={ [ 'sio-field', className ]
+				.filter( Boolean )
+				.join( ' ' ) }
+		>
 			{ label && (
 				<label className="sio-field__label" htmlFor={ id }>
 					{ label }

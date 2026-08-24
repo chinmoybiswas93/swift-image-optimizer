@@ -11,12 +11,12 @@ import { formatTimeAgo } from '../Services/format';
  * which is the point of the unit: the old screen read its tiles from a live
  * mime count and its hero from the log table, so the two could never agree.
  *
- * @param {Object}   props           Component props.
- * @param {Object}   props.snapshot  Published scan snapshot, or null if never scanned.
- * @param {Object}   props.scan      Live scan state from the server.
- * @param {boolean}  props.stale     Whether settings changed since the snapshot.
- * @param {boolean}  props.disabled  Whether scanning is blocked for another reason.
- * @param {Function} props.onScan    Start a scan.
+ * @param {Object}   props          Component props.
+ * @param {Object}   props.snapshot Published scan snapshot, or null if never scanned.
+ * @param {Object}   props.scan     Live scan state from the server.
+ * @param {boolean}  props.stale    Whether settings changed since the snapshot.
+ * @param {boolean}  props.disabled Whether scanning is blocked for another reason.
+ * @param {Function} props.onScan   Start a scan.
  * @return {JSX.Element} The summary block.
  */
 const ScanSummary = ( { snapshot, scan, stale, disabled, onScan } ) => {
@@ -41,7 +41,8 @@ const ScanSummary = ( { snapshot, scan, stale, disabled, onScan } ) => {
 	const percent = snapshot ? snapshot.percent ?? 0 : 0;
 
 	// Server-computed shares, so the ring never divides in the browser.
-	const mutedPercent = total > 0 ? Math.round( ( permanent / total ) * 100 ) : 0;
+	const mutedPercent =
+		total > 0 ? Math.round( ( permanent / total ) * 100 ) : 0;
 
 	const lastScanned = snapshot ? formatTimeAgo( snapshot.completed_at ) : '';
 
@@ -65,7 +66,10 @@ const ScanSummary = ( { snapshot, scan, stale, disabled, onScan } ) => {
 									optimized,
 									total
 							  )
-							: __( 'Your library has not been scanned yet.', 'swift-image-optimizer' )
+							: __(
+									'Your library has not been scanned yet.',
+									'swift-image-optimizer'
+							  )
 					}
 				/>
 			</div>
@@ -82,21 +86,33 @@ const ScanSummary = ( { snapshot, scan, stale, disabled, onScan } ) => {
 					<>
 						<div className="sio-stats">
 							<Stat
-								label={ __( 'Optimized', 'swift-image-optimizer' ) }
+								label={ __(
+									'Optimized',
+									'swift-image-optimizer'
+								) }
 								value={ optimized }
 								tone="good"
 							/>
 							<Stat
-								label={ __( 'Still to do', 'swift-image-optimizer' ) }
+								label={ __(
+									'Still to do',
+									'swift-image-optimizer'
+								) }
 								value={ actionable }
 								tone={ actionable > 0 ? 'warn' : 'good' }
 							/>
 							<Stat
-								label={ __( 'Cannot be improved', 'swift-image-optimizer' ) }
+								label={ __(
+									'Cannot be improved',
+									'swift-image-optimizer'
+								) }
 								value={ permanent }
 							/>
 							<Stat
-								label={ __( 'Failed', 'swift-image-optimizer' ) }
+								label={ __(
+									'Failed',
+									'swift-image-optimizer'
+								) }
 								value={ failed }
 								tone={ failed > 0 ? 'warn' : undefined }
 							/>
@@ -112,8 +128,7 @@ const ScanSummary = ( { snapshot, scan, stale, disabled, onScan } ) => {
 									'swift-image-optimizer'
 								),
 								total
-							) }
-							{ ' ' }
+							) }{ ' ' }
 							{ permanent > 0 &&
 								sprintf(
 									/* translators: %d: images that cannot be improved. */
@@ -153,7 +168,11 @@ const ScanSummary = ( { snapshot, scan, stale, disabled, onScan } ) => {
 				) }
 
 				<div className="sio-scanmeta">
-					<Button variant="secondary" onClick={ onScan } disabled={ scanDisabled }>
+					<Button
+						variant="secondary"
+						onClick={ onScan }
+						disabled={ scanDisabled }
+					>
 						{ scanning && ! stalled ? (
 							<Spinner />
 						) : (
@@ -165,14 +184,20 @@ const ScanSummary = ( { snapshot, scan, stale, disabled, onScan } ) => {
 						{ scanning && ! stalled
 							? sprintf(
 									/* translators: 1: images checked, 2: images to check. */
-									__( 'Checking %1$d of %2$d…', 'swift-image-optimizer' ),
+									__(
+										'Checking %1$d of %2$d…',
+										'swift-image-optimizer'
+									),
 									scan.scanned ?? 0,
 									scan.total_estimate ?? 0
 							  )
 							: lastScanned &&
 							  sprintf(
 									/* translators: %s: how long ago, e.g. "5 minutes ago". */
-									__( 'Last scanned %s', 'swift-image-optimizer' ),
+									__(
+										'Last scanned %s',
+										'swift-image-optimizer'
+									),
 									lastScanned
 							  ) }
 					</span>
